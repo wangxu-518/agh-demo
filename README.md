@@ -1,106 +1,47 @@
-# AGH 跨境肿瘤患者管理系统 — 后端 API
+# AGH 跨境肿瘤医疗协同运营平台 Demo
 
-## 环境要求
+用于客户需求确认的多子系统高保真演示系统。统一演示中心下包含患者端、马来服务端、中国运营端、专家端、国内医院承接端和归国健康管理端。
 
-- Python 3.10+
-- PostgreSQL 14+
-- Redis 6+
+## 核心能力
 
-## 本地开发
+- 同一患者、Case ID、任务和时间线贯穿六端
+- 关键操作产生真实跨端状态联动
+- 患者移动 H5，内部角色桌面工作台
+- 中英文切换
+- 浏览器本地持久化及一键重置
+- 五阶段归国健康管理和高危预警闭环
 
-```bash
-cd agh-demo-api
-pip install -r requirements.txt
+## 本地运行
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 填写数据库和 Redis 配置
+使用工作区内置 Node/Pnpm：
 
-# 初始化数据库
-python init_db.py
-
-# 启动开发服务器
-uvicorn app.main:app --reload --port 8000
+```powershell
+$node='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe'
+$pnpm='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\pnpm\bin\pnpm.mjs'
+& $node $pnpm install
+& $node $pnpm dev
 ```
 
-## 目录结构
+## 验证
 
-```
-agh-demo-api/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI 应用入口
-│   ├── config.py            # 配置管理
-│   ├── database.py         # 数据库连接
-│   ├── models/             # SQLAlchemy 模型
-│   │   ├── __init__.py
-│   │   ├── patient.py      # 患者模型
-│   │   ├── review.py       # 评审记录模型
-│   │   ├── hospital.py     # 医院模型
-│   │   ├── doctor.py       # 医生模型
-│   │   └── followup.py     # 随访记录模型
-│   ├── schemas/            # Pydantic schemas
-│   │   ├── __init__.py
-│   │   ├── patient.py
-│   │   ├── review.py
-│   │   └── followup.py
-│   ├── api/                # API 路由
-│   │   ├── __init__.py
-│   │   ├── patients.py
-│   │   ├── reviews.py
-│   │   ├── hospitals.py
-│   │   └── followups.py
-│   └── services/           # 业务逻辑
-│       ├── __init__.py
-│       ├── patient_service.py
-│       ├── review_service.py
-│       └── followup_service.py
-├── tests/
-├── .env.example
-├── requirements.txt
-└── README.md
+```powershell
+& $node $pnpm test
+& $node $pnpm build
 ```
 
-## API 文档
+## 路由
 
-启动服务后访问：http://localhost:8000/docs
+- `/demo`：统一演示中心
+- `/patient`：患者移动端
+- `/malaysia`：马来服务端
+- `/china-ops`：中国运营端
+- `/expert`：专家评审端
+- `/hospital`：医院承接端
+- `/health-management`：归国健康管理端
+- `/legacy`：旧版原型（内部参考，资源位于 `public/legacy`）
 
-## 核心接口
+所有患者数据均为虚构或匿名化演示数据。本系统不用于医疗诊断或真实临床决策。
 
-### 患者管理
+## 服务器部署
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/v1/patients | 创建患者档案 |
-| GET | /api/v1/patients | 查询患者列表 |
-| GET | /api/v1/patients/{id} | 获取患者详情 |
-| PUT | /api/v1/patients/{id} | 更新患者信息 |
-| POST | /api/v1/patients/{id}/files | 上传病历文件 |
-
-### 评审工作流
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/v1/reviews | 创建评审任务 |
-| GET | /api/v1/reviews | 查询评审列表 |
-| GET | /api/v1/reviews/{id} | 获取评审详情 |
-| PUT | /api/v1/reviews/{id}/status | 更新评审状态 |
-| POST | /api/v1/reviews/{id}/assign | 分配医生 |
-| POST | /api/v1/reviews/{id}/complete | 提交评审结果 |
-
-### 医院/医生
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/v1/hospitals | 医院列表 |
-| GET | /api/v1/hospitals/{id} | 医院详情 |
-| GET | /api/v1/doctors | 医生列表 |
-| POST | /api/v1/doctors/{id}/availability | 更新医生排班 |
-
-### 术后随访
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /api/v1/followups | 随访列表 |
-| GET | /api/v1/followups/pending | 待执行随访 |
-| POST | /api/v1/followups/{id}/complete | 标记已完成 |
+构建产物部署在 `/opt/agh-demo-demo/current`，服务名为 `agh-demo.service`，监听 `8789`。部署脚本位于 `scripts/deploy_server.sh`，静态路由回退服务位于 `scripts/spa_server.py`。

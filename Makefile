@@ -1,18 +1,14 @@
-.PHONY: check test lint typecheck clean
+.PHONY: check test build dev clean
 
-check: lint typecheck test
+NODE := C:/Users/wangx/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe
 
 test:
-	pytest tests/ -v --tb=short
+	"$(NODE)" node_modules/vitest/vitest.mjs run
 
-lint:
-	ruff check app/ tests/ --fix
-	ruff format --check app/ tests/
+build:
+	"$(NODE)" node_modules/vite/bin/vite.js build
 
-typecheck:
-	mypy app/ --ignore-missing-imports
+check: test build
 
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name '*.pyc' -delete 2>/dev/null || true
-	find . -type d -name '.ruff_cache' -exec rm -rf {} + 2>/dev/null || true
+dev:
+	"$(NODE)" node_modules/vite/bin/vite.js --host 0.0.0.0

@@ -8,23 +8,17 @@
 
 | 模块 | 技术 |
 |------|------|
-| 后端框架 | FastAPI 0.109 + Python 3.10 |
-| 数据库 | PostgreSQL 14 + SQLAlchemy 2.0 (async) |
-| 缓存 | Redis 6 |
-| 前端 | 原型 HTML + Vue3（后续开发）|
-| 文件存储 | 阿里云 OSS |
-| AI 接入 | Kimi (Moonshot) API |
-| WhatsApp | WhatsApp Business Cloud API |
-| 部署 | Docker + 阿里云 |
+| 前端框架 | Vue 3 + Vite |
+| 路由 | Vue Router |
+| 状态管理 | Pinia + localStorage |
+| 测试 | Vitest |
+| 部署 | 静态构建 + systemd |
 
 ## 首次运行
 
 ```bash
-pip install -r requirements.txt
-cp .env.example .env
-python init_db.py --seed
-uvicorn app.main:app --reload --port 8000
-curl http://localhost:8000/health
+pnpm install
+pnpm dev
 ```
 
 ## 全局硬约束
@@ -40,8 +34,7 @@ curl http://localhost:8000/health
 ```bash
 make check          # 全部检查
 make test          # 测试
-make lint          # lint
-make typecheck     # 类型检查
+make build         # 生产构建
 ```
 
 ## 专题文档
@@ -55,15 +48,12 @@ make typecheck     # 类型检查
 
 ```
 agh-demo/
-├── app/
-│   ├── main.py           # FastAPI 入口
-│   ├── config.py        # 配置
-│   ├── database.py      # 数据库
-│   ├── models/          # 模型
-│   ├── schemas/         # Pydantic
-│   └── api/             # 路由
-├── tests/
-├── docs/
+├── src/
+│   ├── views/           # 六端页面与演示中心
+│   ├── components/      # 共享组件
+│   ├── stores/          # Pinia 状态与测试
+│   └── data/            # 演示种子数据
+├── legacy/              # 旧版单页原型
 ├── Makefile
 ├── requirements.txt
 ├── requirements-dev.txt

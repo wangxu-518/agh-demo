@@ -1,159 +1,18 @@
 {
-  "version": "1.0.0",
-  "updated": "2026-05-28",
+  "version": "2.0.0",
+  "updated": "2026-06-20",
   "features": [
-    {
-      "id": "PAT-001",
-      "module": "patient",
-      "title": "患者档案创建",
-      "behavior": "POST /api/v1/patients 创建患者档案",
-      "verification": "curl -X POST http://localhost:8000/api/v1/patients -H 'Content-Type: application/json' -d '{\"name\":\"测试患者\",\"country\":\"马来西亚\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"id\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "纸质表格记录"
-    },
-    {
-      "id": "PAT-002",
-      "module": "patient",
-      "title": "患者档案查询",
-      "behavior": "GET /api/v1/patients 返回患者列表，支持分页/筛选/搜索",
-      "verification": "curl http://localhost:8000/api/v1/patients?page=1 | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"total\") >= 0 else \"fail\")'",
-      "status": "not_started",
-      "baseline": "纸质表格"
-    },
-    {
-      "id": "PAT-003",
-      "module": "patient",
-      "title": "患者详情获取",
-      "behavior": "GET /api/v1/patients/{id} 返回患者完整档案",
-      "verification": "curl http://localhost:8000/api/v1/patients/1 | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"id\") == 1 else \"fail\")'",
-      "status": "not_started",
-      "baseline": "无此功能"
-    },
-    {
-      "id": "PAT-004",
-      "module": "patient",
-      "title": "患者信息更新",
-      "behavior": "PUT /api/v1/patients/{id} 更新患者信息",
-      "verification": "curl -X PUT http://localhost:8000/api/v1/patients/1 -H 'Content-Type: application/json' -d '{\"status\":\"consulting\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"status\") == \"consulting\" else \"fail\")'",
-      "status": "not_started",
-      "baseline": "无此功能"
-    },
-    {
-      "id": "PAT-005",
-      "module": "patient",
-      "title": "病历文件上传",
-      "behavior": "POST /api/v1/patients/{id}/files 上传病历图片",
-      "verification": "curl -X POST -F 'file=@/tmp/test.jpg' http://localhost:8000/api/v1/patients/1/files | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"url\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信传输"
-    },
-    {
-      "id": "REV-001",
-      "module": "review",
-      "title": "创建评审任务",
-      "behavior": "POST /api/v1/reviews 创建评审任务",
-      "verification": "curl -X POST http://localhost:8000/api/v1/reviews -H 'Content-Type: application/json' -d '{\"patient_id\":1,\"priority\":\"normal\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"id\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信群手动分配"
-    },
-    {
-      "id": "REV-002",
-      "module": "review",
-      "title": "评审列表查询",
-      "behavior": "GET /api/v1/reviews 返回评审列表和统计",
-      "verification": "curl http://localhost:8000/api/v1/reviews | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"pending_count\") is not None else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信群查看"
-    },
-    {
-      "id": "REV-003",
-      "module": "review",
-      "title": "医生分配",
-      "behavior": "POST /api/v1/reviews/{id}/assign 分配医生",
-      "verification": "curl -X POST http://localhost:8000/api/v1/reviews/1/assign -H 'Content-Type: application/json' -d '{\"doctor_id\":1}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"status\") == \"assigned\" else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信群@医生"
-    },
-    {
-      "id": "REV-004",
-      "module": "review",
-      "title": "评审完成",
-      "behavior": "POST /api/v1/reviews/{id}/complete 提交评审结论",
-      "verification": "curl -X POST http://localhost:8000/api/v1/reviews/1/complete -H 'Content-Type: application/json' -d '{\"conclusion\":\"建议手术\",\"recommended_hospital_id\":1,\"recommended_doctor_id\":1,\"surgery_plan\":\"根治性切除\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"status\") == \"completed\" else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信群回复"
-    },
-    {
-      "id": "HOS-001",
-      "module": "hospital",
-      "title": "医院列表查询",
-      "behavior": "GET /api/v1/hospitals 返回医院列表",
-      "verification": "curl http://localhost:8000/api/v1/hospitals | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if isinstance(d, list) else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售人工记忆"
-    },
-    {
-      "id": "DOC-001",
-      "module": "hospital",
-      "title": "医生列表查询",
-      "behavior": "GET /api/v1/doctors 返回医生列表",
-      "verification": "curl http://localhost:8000/api/v1/doctors | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if isinstance(d, list) else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售人工记忆"
-    },
-    {
-      "id": "FLW-001",
-      "module": "followup",
-      "title": "随访列表查询",
-      "behavior": "GET /api/v1/followups 返回随访列表",
-      "verification": "curl http://localhost:8000/api/v1/followups | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"pending_count\") is not None else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售手动跟进"
-    },
-    {
-      "id": "FLW-002",
-      "module": "followup",
-      "title": "待执行随访查询",
-      "behavior": "GET /api/v1/followups/pending 返回待执行随访",
-      "verification": "curl http://localhost:8000/api/v1/followups/pending | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if isinstance(d, list) else \"fail\")'",
-      "status": "not_started",
-      "baseline": "无此功能"
-    },
-    {
-      "id": "AI-001",
-      "module": "ai",
-      "title": "病历 OCR 识别",
-      "behavior": "Kimi 多模态模型提取病历图片文字",
-      "verification": "python3 -c 'from app.services.ai import analyze_image; print(\"pass\" if analyze_image(\"url\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售手动录入"
-    },
-    {
-      "id": "AI-002",
-      "module": "ai",
-      "title": "病情结构化提取",
-      "behavior": "从病历文本提取肿瘤类型/分期等字段",
-      "verification": "python3 -c 'from app.services.ai import extract_info; print(\"pass\" if extract_info(\"肺癌晚期\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售手动判断"
-    },
-    {
-      "id": "WHA-001",
-      "module": "whatsapp",
-      "title": "WhatsApp 消息接收",
-      "behavior": "Webhook 接收患者消息并关联患者",
-      "verification": "curl -X POST http://localhost:8000/webhooks/whatsapp -d '{\"from\":\"123\",\"body\":\"test\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"ok\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "微信群截图"
-    },
-    {
-      "id": "WHA-002",
-      "module": "whatsapp",
-      "title": "WhatsApp 消息发送",
-      "behavior": "向患者发送 WhatsApp 消息",
-      "verification": "curl -X POST http://localhost:8000/api/v1/whatsapp/send -d '{\"to\":\"123\",\"message\":\"test\"}' | python3 -c 'import sys,json; d=json.load(sys.stdin); print(\"pass\" if d.get(\"message_id\") else \"fail\")'",
-      "status": "not_started",
-      "baseline": "销售手动发送"
-    }
+    {"id":"CORE-001","module":"core","title":"统一演示中心","behavior":"展示六端入口、主案例进度、统计和协同时间线","verification":"访问 /demo 可进入所有子系统","status":"implemented"},
+    {"id":"CORE-002","module":"core","title":"共享状态持久化","behavior":"Pinia 状态写入 localStorage，刷新后保留","verification":"操作后刷新页面状态不丢失","status":"implemented"},
+    {"id":"CORE-003","module":"core","title":"一键重置","behavior":"恢复标准种子数据","verification":"点击重置后评审状态恢复 in_review","status":"implemented"},
+    {"id":"I18N-001","module":"core","title":"中英文切换","behavior":"全系统导航和核心文案切换","verification":"点击语言按钮后界面语言变化","status":"implemented"},
+    {"id":"PAT-001","module":"patient","title":"患者移动门户","behavior":"展示方案、资料、行程、进度、随访和应急入口","verification":"移动宽度访问 /patient 无横向溢出","status":"implemented"},
+    {"id":"MY-001","module":"malaysia","title":"马来 CRM 与 Case 提交","behavior":"管理患者列表、资料、签约并提交中国运营","verification":"提交后患者进入 review 阶段并生成事件","status":"implemented"},
+    {"id":"CN-001","module":"china_ops","title":"跨境资料中心","behavior":"展示原始资料、翻译、版本和结构化摘要","verification":"访问 /china-ops 可查看主案例资料","status":"implemented"},
+    {"id":"EXP-001","module":"expert","title":"专家评审工作区","behavior":"病例摘要、资料、影像、MDT和评审意见","verification":"提交评审后 review=completed","status":"implemented"},
+    {"id":"HOS-001","module":"hospital","title":"医院承接工作台","behavior":"确认接诊、床位、治疗日程、费用和出院资料","verification":"确认后 treatment=accepted 且床位已预留","status":"implemented"},
+    {"id":"HLT-001","module":"health","title":"五阶段归国计划","behavior":"生成归国前至长期随访五阶段计划","verification":"生成后 stages 长度为5且首阶段 active","status":"implemented"},
+    {"id":"HLT-002","module":"health","title":"高危预警升级","behavior":"异常复查升级为专家复评任务","verification":"升级后 alert=escalated 且新增 urgent 任务","status":"implemented"},
+    {"id":"AUD-001","module":"audit","title":"协同审计时间线","behavior":"关键操作记录角色、系统、时间和详情","verification":"每个主线操作后 events 新增记录","status":"implemented"}
   ]
 }
