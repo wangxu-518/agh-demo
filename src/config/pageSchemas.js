@@ -1,14 +1,3 @@
-const patients = [
-  ['AGH-MY-2026-0018', '林秀英', '肺腺癌 IIIB期', '专家评审', 'Aisyah'],
-  ['AGH-MY-2026-0021', '陈伟强', '胃癌待分期', '新咨询', 'Nur'],
-  ['AGH-MY-2026-0012', '王美玲', '乳腺癌术后', '在华治疗', 'Aisyah'],
-  ['AGH-MY-2026-0007', '黄丽珍', '卵巢癌复查异常', '高危随访', 'Farah'],
-]
-
-const patientRows = (extra = []) => patients.map((p, i) => ({
-  id: p[0], cells: [p[1], p[0], p[2], p[3], p[4], ...(extra[i] || [])],
-}))
-
 export const pageSchemas = {
   patient: {
     records: {
@@ -36,13 +25,7 @@ export const pageSchemas = {
       metrics: [['今日新增','12'],['待首次联系','5'],['已预约咨询','8'],['本月转化率','31.6%']],
       filters: ['全部线索','待联系','跟进中','已预约','已转患者'],
       columns: ['姓名','来源','意向病种','联系电话','跟进状态','负责人'],
-      rows: [
-        {id:'LEAD-260621-01',filter:'待联系',cells:['陈伟强','TikTok','胃癌','+60 12-*** 1120','待首次联系','Nur']},
-        {id:'LEAD-260621-04',filter:'待联系',cells:['Siti Aminah','Facebook','乳腺癌','+60 13-*** 6721','待首次联系','Nur']},
-        {id:'LEAD-260621-05',filter:'跟进中',cells:['Lee Kok Wai','WhatsApp','肺癌','+60 19-*** 3342','已完成初次沟通','Aisyah']},
-        {id:'LEAD-260621-02',filter:'已预约',cells:['Mohd Azlan','Facebook','肝癌','+60 17-*** 2198','已预约视频咨询','Aisyah']},
-        {id:'LEAD-260620-09',filter:'已转患者',cells:['黄丽珍','患者转介绍','卵巢癌','+60 16-*** 8802','已转患者','Farah']},
-      ],
+      rowSource: 'leads',
     },
     cases: {
       eyebrow: 'PATIENT & CASE', title: '患者与 Case', description: '管理患者主档、服务阶段、责任人和跨境 Case',
@@ -50,7 +33,7 @@ export const pageSchemas = {
       metrics: [['服务中患者','46'],['待提交 Case','7'],['中国评审中','12'],['本月赴华','9']],
       filters: ['全部患者','新咨询','专家评审','在华治疗','归国随访'],
       columns: ['患者','Case ID','诊断','当前阶段','服务负责人'],
-      rows: patientRows(),
+      rowSource: 'patientCases',
     },
     documents: {
       eyebrow: 'DOCUMENT & CONTRACT', title: '资料与签约', description: '咨询表、合同、授权书和医疗资料的完整性管理',
@@ -68,13 +51,7 @@ export const pageSchemas = {
       metrics: [['合作机构','38'],['覆盖城市','8'],['可预约检验','26'],['本月服务','42']],
       filters: ['全部资源','医院','检验中心','药房','康复机构','保险'],
       columns: ['机构名称','类型','城市','服务能力','合作状态','联系人'],
-      rows: [
-        {id:'RES-001',filter:'医院',cells:['Sunway Medical Centre','医院','Kuala Lumpur','肿瘤复查 / 急诊','合作中','Dr. Lee']},
-        {id:'RES-008',filter:'检验中心',cells:['BP Healthcare Bangsar','检验中心','Kuala Lumpur','血液 / 肿瘤标志物','可预约','Ms. Tan']},
-        {id:'RES-011',filter:'药房',cells:['Health Lane Pharmacy','药房','Kuala Lumpur','处方药 / 冷链配送','合作中','Mr. Wong']},
-        {id:'RES-015',filter:'康复机构',cells:['ReGen Rehab Centre','康复机构','Petaling Jaya','术后康复 / 营养','合作中','Farah']},
-        {id:'RES-022',filter:'保险',cells:['AIA Malaysia Medical','保险','Malaysia','理赔预审 / 文件协助','合作中','Ms. Lim']},
-      ],
+      rowSource: 'resources',
     },
   },
   china: {
@@ -84,7 +61,7 @@ export const pageSchemas = {
       metrics: [['今日新病例','6'],['待核验','9'],['资料退回','3'],['平均接收时长','3.2h']],
       filters: ['待接收','核验中','已退回','已接收'],
       columns: ['患者','Case ID','来源国家','资料完整度','授权状态','优先级'],
-      rows: patientRows([[ '86%'],['35%'],['100%'],['100%']]).map((r, i) => ({...r, cells:[r.cells[0],r.cells[1],'马来西亚',r.cells[5],i===1?'待签署':'已授权',i===0?'高优先':'普通']})),
+      rowSource: 'chinaIntake',
     },
     records: {
       eyebrow: 'MEDICAL RECORD CENTER', title: '诊疗资料中心', description: '原始文件、翻译件、结构化摘要与版本留痕',
@@ -110,8 +87,11 @@ export const pageSchemas = {
     },
     handoff: {
       eyebrow: 'CROSS-BORDER HANDOVER', title: '跨国交接', description: '完成患者赴华前的人员、资料、行程和医院交接',
-      type: 'checklist', primary: ['完成赴华交接', 'completeHandoff'],
+      type: 'case-list', primary: ['完成赴华交接', 'completeHandoff'],
       metrics: [['交接完成度','78%'],['待确认事项','4'],['距离入院','7天'],['参与角色','6']],
+      filters: ['全部病例', '待交接', '交接中', '已完成'],
+      columns: ['患者', 'Case ID', '诊断', '医院状态', '费用确认', '行程确认', '交接状态'],
+      rowSource: 'handoffCases',
     },
   },
   expert: {
@@ -121,16 +101,22 @@ export const pageSchemas = {
       metrics: [['待评审','7'],['今日到期','2'],['高优先级','3'],['平均完成时间','18h']],
       filters: ['全部','待接收','评审中','资料待补','即将超时'],
       columns: ['患者','Case ID','诊断','资料完整度','截止时间','优先级'],
-      rows: patientRows().slice(0,3).map((r,i)=>({...r,cells:[r.cells[0],r.cells[1],r.cells[2],['86%','72%','100%'][i],['明天 18:00','今天 20:00','6月24日'][i],['紧急','高','普通'][i]]})),
+      rowSource: 'expertQueue',
     },
     case: {
       eyebrow: 'CASE REVIEW', title: '病例详情', description: '结构化病历、原始资料、关键影像、检查缺口和评审意见',
-      type: 'review', primary: ['提交评审意见', 'finishReview'],
+      type: 'case-list', primary: ['提交评审意见', 'finishReview'],
+      filters: ['全部病例', '待接收', '评审中', '待补资料', '已完成'],
+      columns: ['患者', 'Case ID', '诊断', '资料完整度', '评审专家', '评审状态', '意见版本'],
+      rowSource: 'expertCases',
     },
     mdt: {
       eyebrow: 'MULTIDISCIPLINARY TEAM', title: 'MDT 会诊', description: '管理议题、参会专家、会议记录和多学科结论',
-      type: 'meeting', primary: ['完成 MDT', 'finishMdt'],
+      type: 'case-list', primary: ['完成 MDT', 'finishMdt'],
       metrics: [['今日会议','3'],['待确认专家','2'],['待出具纪要','1'],['本月MDT','22']],
+      filters: ['全部会议', '待安排', '待召开', '已完成'],
+      columns: ['患者', 'Case ID', '诊断', '会议时间', '牵头专家', '参会科室', '会议状态'],
+      rowSource: 'mdtCases',
     },
     history: {
       eyebrow: 'REVIEW HISTORY', title: '历史评审', description: '检索意见版本、复查解读、修改记录和引用历史',
@@ -151,34 +137,49 @@ export const pageSchemas = {
       metrics: [['待审核申请','5'],['今日新增','2'],['床位待协调','3'],['已确认赴院','8']],
       filters: ['待审核','协调中','已承接','已拒绝'],
       columns: ['患者','Case ID','诊断','推荐科室','拟入院日期','申请状态'],
-      rows: patientRows().slice(0,3).map((r,i)=>({...r,cells:[r.cells[0],r.cells[1],r.cells[2],['胸外科','胃外科','乳腺外科'][i],['6月28日','7月2日','在院'][i],['待审核','资料核验中','已承接'][i]]})),
+      rowSource: 'hospitalIntake',
     },
     schedule: {
       eyebrow: 'BED & SCHEDULE', title: '床位与日程', description: '协调病区床位、检查、手术、会诊和出院日程',
-      type: 'calendar', primary: ['确认日程', 'confirmSchedule'],
+      type: 'case-list', primary: ['确认日程', 'confirmSchedule'],
       metrics: [['国际床位','12'],['已占用','8'],['本周入院','6'],['手术排期','9']],
+      filters: ['全部患者', '待排期', '已确认', '进行中', '已结束'],
+      columns: ['患者', 'Case ID', '科室', '床位', '入院日期', '已确认节点', '日程状态'],
+      rowSource: 'scheduleCases',
     },
     inpatient: {
       eyebrow: 'INPATIENT MANAGEMENT', title: '在院管理', description: '追踪检查、治疗节点、病情沟通和家属同步',
-      type: 'timeline', primary: ['推进至术后恢复', 'advanceTreatment'],
+      type: 'case-list', primary: ['推进至术后恢复', 'advanceTreatment'],
       metrics: [['在院国际患者','8'],['今日检查','12'],['今日手术','3'],['待沟通事项','5']],
+      filters: ['全部患者', '待入院', '治疗中', '术后恢复', '待出院'],
+      columns: ['患者', 'Case ID', '诊断', '科室/医生', '当前治疗状态', '最近节点', '风险'],
+      rowSource: 'inpatientCases',
     },
     billing: {
       eyebrow: 'BILLING MANAGEMENT', title: '费用管理', description: '管理预估、预付款、账单、发票与保险材料',
-      type: 'billing', primary: ['登记预付款', 'recordPayment'],
+      type: 'case-list', primary: ['登记预付款', 'recordPayment'],
       metrics: [['费用预估','¥180k–230k'],['已收预付款','¥0'],['待确认账单','3'],['保险材料','待准备']],
+      filters: ['全部患者', '待确认预估', '待付款', '部分付款', '已结清', '退款中'],
+      columns: ['患者', 'Case ID', '费用预估', '已付款', '付款状态', '保险状态', '账单版本'],
+      rowSource: 'billingCases',
     },
     discharge: {
       eyebrow: 'DISCHARGE HANDOVER', title: '出院交接', description: '交付双语出院资料、带药、复查计划和归国任务',
-      type: 'checklist', primary: ['完成出院交接', 'completeDischarge'],
+      type: 'case-list', primary: ['完成出院交接', 'completeDischarge'],
       metrics: [['预计出院','7月8日'],['资料完成度','62%'],['待签字文件','3'],['归国任务','未创建']],
+      filters: ['全部患者', '待准备', '待签收', '已交接'],
+      columns: ['患者', 'Case ID', '治疗状态', '资料完成度', '患者签收', '健康任务', '交接状态'],
+      rowSource: 'dischargeCases',
     },
   },
   health: {
     followups: {
       eyebrow: 'FOLLOW-UP PLANS', title: '随访计划', description: '按五阶段生成频次、项目、责任角色和提醒',
-      type: 'stages', primary: ['生成五阶段计划', 'generateFollowup'],
+      type: 'case-list', primary: ['生成五阶段计划', 'generateFollowup'],
       metrics: [['管理中患者','126'],['今日随访','18'],['待制定计划','7'],['完成率','93%']],
+      filters: ['全部患者', '待制定', '进行中', '高危', '已结束'],
+      columns: ['患者', 'Case ID', '诊断', '当前阶段', '健康管家', '开放预警', '计划状态'],
+      rowSource: 'followupCases',
     },
     medication: {
       eyebrow: 'MEDICATION MANAGEMENT', title: '用药管理', description: '管理用药方案、提醒、依从性、副作用和续药',
@@ -197,7 +198,7 @@ export const pageSchemas = {
       type: 'table', primary: ['完成康复评估', 'completeRehab'],
       metrics: [['康复计划','39'],['今日训练','16'],['护理上门','5'],['待评估','4']],
       columns: ['患者','康复阶段','本周目标','最近评估','执行人员','状态'],
-      rows: patientRows().slice(0,3).map((r,i)=>({...r,cells:[r.cells[0],['术后早期','功能恢复','长期体能'][i],['呼吸训练','上肢活动度','步行耐力'][i],['6月20日','6月19日','6月18日'][i],['Physio Lim','Nurse Aina','Farah'][i],['进行中','待复评','正常'][i]]})),
+      rowSource: 'rehabCases',
     },
     alerts: {
       eyebrow: 'ALERTS & EMERGENCY', title: '预警与应急', description: '分级处理复查异常、用药风险、急症和服务事件',
@@ -212,6 +213,172 @@ export const pageSchemas = {
   },
 }
 
-export function schemaFor(system, page) {
-  return pageSchemas[system]?.[page]
+function rowsFromState(source, state) {
+  if (!state) return []
+  const patientRows = state.patients.map((patient) => ({
+    id: patient.caseId,
+    filter: patient.phaseLabel,
+    cells: [patient.name, patient.caseId, patient.diagnosis, patient.phaseLabel, patient.owner],
+  }))
+  if (source === 'leads') return state.leads.map((lead) => ({
+    id: lead.id, filter: lead.status,
+    cells: [lead.name, lead.source, lead.disease, lead.phone, lead.note || lead.status, lead.owner],
+  }))
+  if (source === 'resources') return state.resources.map((resource) => ({
+    id: resource.id, filter: resource.type,
+    cells: [resource.name, resource.type, resource.city, resource.capability, resource.status, resource.contact],
+  }))
+  if (source === 'patientCases') return patientRows
+  if (source === 'chinaIntake') return state.patients.map((patient) => {
+    const currentCase = state.cases[patient.caseId]
+    return {
+      id: patient.caseId,
+      filter: patient.phase === 'intake' ? '待接收' : patient.phase === 'review' ? '已接收' : '核验中',
+      cells: [patient.name, patient.caseId, patient.country, `${patient.completeness}%`, currentCase.consent.status, patient.risk === 'high' || patient.risk === 'critical' ? '高优先' : '普通'],
+    }
+  })
+  if (source === 'expertQueue') return state.patients
+    .filter((patient) => ['review', 'planning'].includes(patient.phase))
+    .map((patient) => {
+      const review = state.cases[patient.caseId].review
+      const task = state.tasks.find((item) => item.caseId === patient.caseId && item.to === 'expert' && item.status !== 'done')
+      return {
+        id: patient.caseId,
+        filter: review.status === 'assigned' ? '待接收' : review.status === 'changes_requested' ? '资料待补' : '评审中',
+        cells: [patient.name, patient.caseId, patient.diagnosis, `${patient.completeness}%`, task?.dueAt || '待安排', task?.priority || '普通'],
+      }
+    })
+  if (source === 'hospitalIntake') return state.patients
+    .filter((patient) => ['planning', 'travel', 'treatment', 'discharge'].includes(patient.phase))
+    .map((patient) => {
+      const treatment = state.cases[patient.caseId].treatment
+      return {
+        id: patient.caseId,
+        filter: treatment.status === 'requested' ? '待审核' : treatment.status === 'accepted' ? '已承接' : treatment.status === 'rejected' ? '已拒绝' : '协调中',
+        cells: [patient.name, patient.caseId, patient.diagnosis, treatment.department || '待匹配', treatment.admissionDate || '待确认', treatment.status],
+      }
+    })
+  if (source === 'rehabCases') return state.patients
+    .filter((patient) => state.cases[patient.caseId].followup.generated)
+    .map((patient) => {
+      const followup = state.cases[patient.caseId].followup
+      const activeStage = followup.stages.find((stage) => stage.status === 'active')
+      return { id: patient.caseId, cells: [patient.name, activeStage?.name || '待制定', activeStage?.items?.[0] || '待评估', patient.updatedAt, patient.owner, followup.status] }
+    })
+  if (source === 'expertCases') return state.patients.map((patient) => {
+    const review = state.cases[patient.caseId].review
+    const status = review.status === 'assigned' ? '待接收' : review.status === 'changes_requested' ? '待补资料' : review.status === 'completed' ? '已完成' : '评审中'
+    return {
+      id: patient.caseId, filter: status,
+      cells: [patient.name, patient.caseId, patient.diagnosis, `${patient.completeness}%`, review.expert || '待分配', status, `v${review.version}`],
+    }
+  })
+  if (source === 'mdtCases') return state.patients
+    .filter((patient) => state.cases[patient.caseId].review.version > 0)
+    .map((patient) => {
+      const review = state.cases[patient.caseId].review
+      const status = review.mdtCompletedAt ? '已完成' : review.meetingAt ? '待召开' : '待安排'
+      return {
+        id: patient.caseId, filter: status,
+        cells: [patient.name, patient.caseId, patient.diagnosis, review.meetingAt || '待安排', review.expert || '待分配', review.specialty || '待确定', status],
+      }
+    })
+  if (source === 'handoffCases') return state.patients
+    .filter((patient) => {
+      const currentCase = state.cases[patient.caseId]
+      return currentCase.review.status === 'completed' || ['requested', 'accepted', 'completed'].includes(currentCase.treatment.status)
+    })
+    .map((patient) => {
+      const currentCase = state.cases[patient.caseId]
+      const completed = currentCase.travel.status === 'confirmed'
+      const status = completed ? '已完成' : currentCase.treatment.status === 'accepted' ? '交接中' : '待交接'
+      return {
+        id: patient.caseId, filter: status,
+        cells: [patient.name, patient.caseId, patient.diagnosis, currentCase.treatment.status, currentCase.billing.patientConfirmed ? '已确认' : '待确认', currentCase.travel.patientConfirmed ? '患者已确认' : '待确认', status],
+      }
+    })
+  if (source === 'scheduleCases') return state.patients
+    .filter((patient) => state.cases[patient.caseId].treatment.hospital)
+    .map((patient) => {
+      const treatment = state.cases[patient.caseId].treatment
+      const confirmed = treatment.schedule.filter((item) => ['confirmed', 'done'].includes(item.status)).length
+      const status = treatment.status === 'completed' ? '已结束' : treatment.status === 'accepted' ? (confirmed ? '已确认' : '待排期') : '进行中'
+      return { id: patient.caseId, filter: status, cells: [patient.name, patient.caseId, treatment.department || '待确认', treatment.bed, treatment.admissionDate || '待确认', `${confirmed}/${treatment.schedule.length}`, status] }
+    })
+  if (source === 'inpatientCases') return state.patients
+    .filter((patient) => ['planning', 'travel', 'treatment', 'discharge', 'followup'].includes(patient.phase))
+    .map((patient) => {
+      const treatment = state.cases[patient.caseId].treatment
+      const status = treatment.status === 'post_operation' ? '术后恢复' : treatment.status === 'in_treatment' ? '治疗中' : treatment.status === 'completed' ? '待出院' : '待入院'
+      const lastNode = [...treatment.schedule].reverse().find((item) => item.status === 'done')?.title || '尚未开始'
+      return { id: patient.caseId, filter: status, cells: [patient.name, patient.caseId, patient.diagnosis, `${treatment.department || '待确认'} / ${treatment.doctor || '待确认'}`, status, lastNode, patient.risk] }
+    })
+  if (source === 'billingCases') return state.patients
+    .filter((patient) => state.cases[patient.caseId].billing.estimatedMax > 0)
+    .map((patient) => {
+      const billing = state.cases[patient.caseId].billing
+      const status = billing.paid <= 0 ? (billing.patientConfirmed ? '待付款' : '待确认预估') : billing.paid < billing.estimatedMin ? '部分付款' : '已结清'
+      return { id: patient.caseId, filter: status, cells: [patient.name, patient.caseId, `${billing.currency} ${billing.estimatedMin.toLocaleString()}–${billing.estimatedMax.toLocaleString()}`, `${billing.currency} ${billing.paid.toLocaleString()}`, status, billing.insuranceStatus, `v${billing.estimateVersion}`] }
+    })
+  if (source === 'dischargeCases') return state.patients
+    .filter((patient) => ['treatment', 'discharge', 'followup'].includes(patient.phase))
+    .map((patient) => {
+      const currentCase = state.cases[patient.caseId]
+      const checklist = currentCase.treatment.dischargeChecklist
+      const completed = Object.values(checklist).filter(Boolean).length
+      const status = currentCase.treatment.dischargeReady ? '已交接' : checklist.patientSigned ? '待签收' : '待准备'
+      const healthTask = state.tasks.some((task) => task.caseId === patient.caseId && task.to === 'health')
+      return { id: patient.caseId, filter: status, cells: [patient.name, patient.caseId, currentCase.treatment.status, `${completed}/5`, checklist.patientSigned ? '已签收' : '待签收', healthTask ? '已创建' : '未创建', status] }
+    })
+  if (source === 'followupCases') return state.patients
+    .filter((patient) => ['discharge', 'followup'].includes(patient.phase) || state.cases[patient.caseId].followup.generated)
+    .map((patient) => {
+      const followup = state.cases[patient.caseId].followup
+      const stage = followup.stages.find((item) => item.status === 'active')
+      const openAlerts = state.alerts.filter((alert) => alert.caseId === patient.caseId && alert.status !== 'closed').length
+      const status = openAlerts && patient.risk === 'critical' ? '高危' : followup.generated ? '进行中' : '待制定'
+      return { id: patient.caseId, filter: status, cells: [patient.name, patient.caseId, patient.diagnosis, stage?.name || '待制定', patient.owner, String(openAlerts), status] }
+    })
+  return []
+}
+
+function metricsFromState(system, page, state, fallback) {
+  if (!state) return fallback
+  if (system === 'malaysia' && page === 'cases') {
+    return [
+      ['服务中患者', String(state.patients.filter((patient) => patient.phase !== 'closed').length)],
+      ['待提交 Case', String(state.patients.filter((patient) => patient.phase === 'lead').length)],
+      ['中国评审中', String(state.patients.filter((patient) => patient.phase === 'review').length)],
+      ['本月赴华', String(state.patients.filter((patient) => ['travel', 'treatment'].includes(patient.phase)).length)],
+    ]
+  }
+  if (system === 'health' && page === 'alerts') {
+    return [
+      ['开放预警', String(state.alerts.filter((alert) => alert.status !== 'closed').length)],
+      ['高危', String(state.alerts.filter((alert) => alert.severity === 'critical' && alert.status !== 'closed').length)],
+      ['已升级', String(state.alerts.filter((alert) => alert.status === 'escalated').length)],
+      ['闭环率', `${Math.round((state.alerts.filter((alert) => alert.status === 'closed').length / Math.max(state.alerts.length, 1)) * 100)}%`],
+    ]
+  }
+  if (system === 'china' && page === 'hospitals') {
+    const cases = Object.values(state.cases)
+    const candidates = cases.flatMap((item) => item.hospitalMatching?.candidates || [])
+    return [
+      ['当前患者候选', String(state.cases[state.activeCaseId]?.hospitalMatching?.candidates.length || 0)],
+      ['待匹配患者', String(cases.filter((item) => ['ready', 'waiting_review'].includes(item.hospitalMatching?.status)).length)],
+      ['已发送申请', String(cases.filter((item) => item.hospitalMatching?.status === 'requested').length)],
+      ['已确认承接', String(cases.filter((item) => ['accepted', 'completed'].includes(item.hospitalMatching?.status)).length)],
+    ]
+  }
+  return fallback
+}
+
+export function schemaFor(system, page, state) {
+  const template = pageSchemas[system]?.[page]
+  if (!template) return template
+  return {
+    ...template,
+    rows: template.rowSource ? rowsFromState(template.rowSource, state) : template.rows,
+    metrics: metricsFromState(system, page, state, template.metrics),
+  }
 }

@@ -7,12 +7,25 @@ import TaskList from '../components/TaskList.vue'
 import { useDemoStore } from '../stores/demo'
 const store = useDemoStore()
 const tab = ref('crm')
+const showPatientForm = ref(false)
+const patientForm = ref({ name: '', phone: '', diagnosis: '', city: '', source: 'WhatsApp', owner: 'Aisyah' })
+const formMessage = ref('')
+
+function createPatient() {
+  const result = store.createPatient(patientForm.value)
+  formMessage.value = result.message
+  if (result.ok) {
+    showPatientForm.value = false
+    patientForm.value = { name: '', phone: '', diagnosis: '', city: '', source: 'WhatsApp', owner: 'Aisyah' }
+  }
+}
 </script>
 <template>
   <PageHeader eyebrow="Malaysia service workspace" title="马来服务团队工作台" subtitle="从广告线索到签约、资料收集和中国团队交接">
-    <button class="secondary-button">＋ 新建患者</button>
-    <button class="primary-button" @click="store.submitCase()">提交中国运营审核</button>
+    <button class="secondary-button" @click="showPatientForm=true">＋ 新建患者</button>
+    <button class="primary-button" @click="formMessage=store.submitCase().message">提交中国运营审核</button>
   </PageHeader>
+  <div v-if="formMessage" class="action-success">{{ formMessage }}</div>
   <div class="stats-grid">
     <StatCard label="今日新线索" value="12" note="Facebook 占58%" icon="+" />
     <StatCard label="待补资料" value="7" note="2例今天到期" icon="▤" tone="orange" />
@@ -50,4 +63,17 @@ const tab = ref('crm')
       <div class="notice">系统会在提交时生成中国运营任务，并锁定当前资料版本。后续补充资料以新版本追加，不覆盖原始医疗记录。</div>
     </div>
   </SectionCard>
+  <div v-if="showPatientForm" class="business-modal-backdrop" @click.self="showPatientForm=false">
+    <form class="business-modal" @submit.prevent="createPatient">
+      <header><div><small>PATIENT INTAKE</small><h2>建立患者档案</h2></div><button type="button" @click="showPatientForm=false">×</button></header>
+      <div class="modal-fields">
+        <label>患者姓名<input v-model="patientForm.name" required /></label>
+        <label>联系电话<input v-model="patientForm.phone" required /></label>
+        <label>所在城市<input v-model="patientForm.city" /></label>
+        <label>线索来源<select v-model="patientForm.source"><option>WhatsApp</option><option>Facebook</option><option>TikTok</option><option>患者转介绍</option></select></label>
+        <label class="wide">初步诊断或病情描述<textarea v-model="patientForm.diagnosis" required></textarea></label>
+      </div>
+      <footer><button type="button" class="secondary-button" @click="showPatientForm=false">取消</button><button class="primary-button" type="submit">建立档案</button></footer>
+    </form>
+  </div>
 </template>

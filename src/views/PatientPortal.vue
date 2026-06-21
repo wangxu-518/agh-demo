@@ -36,7 +36,7 @@ const router = useRouter()
 
     <section class="patient-service-flow"><small>HOW IT WORKS</small><h2>我们的服务流程</h2><div><span>1<em>提交资料</em></span><i></i><span>2<em>专家评审</em></span><i></i><span>3<em>赴华治疗</em></span><i></i><span>4<em>归国管理</em></span></div></section>
 
-    <section class="patient-contact-card"><div><small>NEED HELP?</small><h2>联系我们</h2><p>服务时间：周一至周日 08:00–22:00</p></div><div class="contact-actions"><a href="tel:+60388992026">☎ +60 3-8899 2026</a><button>WhatsApp 咨询</button></div></section>
+    <section class="patient-contact-card"><div><small>NEED HELP?</small><h2>联系我们</h2><p>服务时间：周一至周日 08:00–22:00</p></div><div class="contact-actions"><a href="tel:+60388992026">☎ +60 3-8899 2026</a><a href="https://wa.me/60388992026" target="_blank" rel="noreferrer">WhatsApp 咨询</a></div></section>
     <footer class="patient-home-footer">匿名化演示平台 · 不用于真实医疗诊断</footer>
   </div>
 </template>

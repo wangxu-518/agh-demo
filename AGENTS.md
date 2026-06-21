@@ -42,6 +42,7 @@ make build         # 生产构建
 - feature_list.json - 功能三元组
 - PROGRESS.md - 进度记录
 - DECISIONS.md - 技术决策
+- REQUIREMENTS_MATRIX.md - 客户需求确认矩阵
 - docs/system_design.md - 系统方案
 
 ## 目录结构

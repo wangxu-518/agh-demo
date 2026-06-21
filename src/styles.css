@@ -400,10 +400,40 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .hospital-comparison { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .hospital-comparison article { padding: 22px; border: 1px solid #dfe6ef; border-radius: 15px; background: #fff; }
 .hospital-comparison article.recommended { border: 2px solid var(--system-color); box-shadow: 0 12px 30px #163d6e12; }
+.hospital-comparison article.selected { background: #f4f8ff; }
+.hospital-comparison article header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.hospital-comparison article header > span { display: inline-block; padding: 4px 7px; border-radius: 5px; color: #fff; background: var(--system-color); font-size: 8px; }
+.hospital-comparison article header strong { color: var(--system-color); font-size: 24px; line-height: 1; text-align: right; }
+.hospital-comparison article header strong small { display: block; margin-top: 4px; color: var(--muted); font-size: 8px; font-weight: 500; }
 .hospital-comparison article > span { display: inline-block; padding: 4px 7px; border-radius: 5px; color: #fff; background: var(--system-color); font-size: 8px; }
 .hospital-comparison h3 { margin: 14px 0 7px; font-size: 14px; }
 .hospital-comparison p { color: var(--muted); font-size: 9px; line-height: 1.6; }
 .hospital-comparison ul { margin: 18px 0; padding-left: 17px; display: grid; gap: 9px; color: #52627a; font-size: 10px; }
+.hospital-comparison article footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; }
+.hospital-comparison article footer > span { color: var(--muted); font-size: 9px; }
+.hospital-comparison button:disabled { cursor: not-allowed; opacity: .45; }
+.hospital-match-layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 16px; align-items: start; }
+.matching-case-panel { min-width: 0; display: grid; gap: 16px; }
+.matching-patient-list { display: grid; gap: 8px; }
+.matching-patient-list > button { width: 100%; display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 11px; background: #fff; text-align: left; cursor: pointer; }
+.matching-patient-list > button.active { border-color: var(--system-color); background: #f4f8ff; box-shadow: 0 5px 16px #163d6e10; }
+.matching-patient-list div { min-width: 0; }
+.matching-patient-list b, .matching-patient-list small { display: block; }
+.matching-patient-list small { margin-top: 3px; color: var(--muted); font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.matching-patient-list em { color: var(--system-color); font-size: 8px; font-style: normal; text-align: right; }
+.matching-patient-list i { grid-column: 2 / 4; color: var(--muted); font-size: 8px; font-style: normal; }
+.matching-case-summary { display: grid; grid-template-columns: minmax(260px, 1.5fr) repeat(3, minmax(100px, 1fr)); gap: 16px; align-items: center; }
+.matching-case-summary > div:first-child { display: flex; gap: 11px; align-items: center; }
+.matching-case-summary h3 { margin: 0; font-size: 14px; }
+.matching-case-summary p { margin: 5px 0 0; color: var(--muted); font-size: 9px; }
+.matching-case-summary > div:not(:first-child) span, .matching-case-summary > div:not(:first-child) b { display: block; }
+.matching-case-summary > div:not(:first-child) span { color: var(--muted); font-size: 8px; }
+.matching-case-summary > div:not(:first-child) b { margin-top: 5px; font-size: 10px; }
+.match-reasons, .match-constraints { display: grid; gap: 6px; margin-top: 14px; padding: 11px; border-radius: 9px; background: #f5f8fc; font-size: 9px; }
+.match-reasons b, .match-constraints b { font-size: 9px; }
+.match-reasons span { color: #246b53; }
+.match-constraints { background: #fff7ed; color: #985f1f; }
+.action-warning { margin-top: 14px; padding: 11px 13px; border: 1px solid #f3d7a7; border-radius: 9px; background: #fff8eb; color: #8a5a16; font-size: 9px; line-height: 1.6; }
 .real-check { min-height: 43px; display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; border-bottom: 1px solid #edf1f6; font-size: 10px; }
 .real-check small { color: var(--muted); font-size: 8px; }
 .participant { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #edf1f6; font-size: 10px; }
@@ -464,10 +494,17 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .detail-grid { margin-top: 16px; }
 .detail-form { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
 .detail-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 11px; }
+.detail-actions input { min-width: 180px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; font: inherit; }
+.payment-input { margin-top: 16px; display: grid; gap: 7px; color: var(--muted); font-size: 9px; }
+.payment-input input { padding: 10px; border: 1px solid var(--line); border-radius: 9px; font: inherit; }
+.discharge-check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.discharge-check-grid label { min-height: 48px; display: flex; align-items: center; gap: 9px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fafbfd; font-size: 10px; }
 
 @media (max-width: 1100px) {
   .kanban-board, .schedule-board { grid-template-columns: repeat(2, 1fr); }
   .hospital-comparison { grid-template-columns: 1fr; }
+  .hospital-match-layout { grid-template-columns: 1fr; }
+  .matching-case-summary { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 760px) {
   .business-toolbar, .detail-heading { align-items: stretch; flex-direction: column; }
@@ -476,7 +513,9 @@ h1, h2, h3, h4, p { margin-top: 0; }
   .completion-grid, .quality-grid { grid-template-columns: repeat(2, 1fr); }
   .kanban-board, .schedule-board { grid-template-columns: 1fr; }
   .modal-fields, .detail-form { grid-template-columns: 1fr; }
+  .discharge-check-grid { grid-template-columns: 1fr; }
   .modal-fields .wide { grid-column: auto; }
+  .matching-case-summary { grid-template-columns: 1fr; }
 }
 
 /* Patient mobile-native marketing and service pages */

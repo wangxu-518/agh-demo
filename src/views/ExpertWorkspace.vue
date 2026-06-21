@@ -6,14 +6,15 @@ import TaskList from '../components/TaskList.vue'
 import { useDemoStore } from '../stores/demo'
 const store = useDemoStore()
 const tab = ref('summary')
+const reviewText = ref(store.activeReview.recommendation || '建议完善 EBUS 纵隔淋巴结取样、肺功能和分子检测；根据结果由胸外科、肿瘤内科及放疗科 MDT 制定综合治疗方案。')
 </script>
 <template>
   <PageHeader eyebrow="Expert review workspace" title="专家评审与 MDT 中心" subtitle="标准化病例摘要、原始资料和多学科意见集中呈现">
-    <button class="secondary-button">发起 MDT 会诊</button>
-    <button class="primary-button" @click="store.finishReview()">提交评审意见</button>
+    <button class="secondary-button" @click="store.performAction('finishMdt', { conclusion: reviewText })">形成 MDT 结论</button>
+    <button class="primary-button" @click="store.finishReview({ recommendation: reviewText })">提交评审意见</button>
   </PageHeader>
   <div class="grid-2">
-    <SectionCard title="病例工作区" :subtitle="`评审版本 v${store.state.review.version}`">
+    <SectionCard title="病例工作区" :subtitle="`评审版本 v${store.activeReview.version}`">
       <div class="tabs">
         <button v-for="item in ['summary','records','imaging','history']" :key="item" class="tab-button" :class="{active:tab===item}" @click="tab=item">{{ {summary:'病例摘要',records:'病历资料',imaging:'影像摘要',history:'历史评审'}[item] }}</button>
       </div>
@@ -32,9 +33,9 @@ const tab = ref('summary')
             <div class="info-row"><span>资料完整度</span><b>{{ store.activePatient.completeness }}%</b></div>
           </div>
         </div>
-        <div class="notice" style="margin-top:16px">{{ store.state.review.summary }}</div>
+        <div class="notice" style="margin-top:16px">{{ store.activeReview.summary }}</div>
         <label style="display:block;margin-top:16px;font-size:11px;font-weight:600">专家评审意见</label>
-        <textarea style="width:100%;min-height:110px;margin-top:7px;border:1px solid #dfe6ef;border-radius:10px;padding:11px;resize:vertical" :value="store.state.review.recommendation || '建议完善 EBUS 纵隔淋巴结取样、肺功能和分子检测；根据结果由胸外科、肿瘤内科及放疗科 MDT 制定综合治疗方案。'"></textarea>
+        <textarea v-model="reviewText" style="width:100%;min-height:110px;margin-top:7px;border:1px solid #dfe6ef;border-radius:10px;padding:11px;resize:vertical"></textarea>
       </template>
       <template v-else-if="tab === 'records'">
         <div v-for="doc in store.activeDocuments" :key="doc.id" class="mobile-row"><div class="mobile-row-icon">PDF</div><div class="mobile-row-copy"><b>{{ doc.name }}</b><small>{{ doc.type }} · {{ doc.source }} · v{{ doc.version }}</small></div><b>查看</b></div>
@@ -51,7 +52,7 @@ const tab = ref('summary')
       <SectionCard title="我的评审任务" subtitle="按优先级和SLA排序"><TaskList system="expert" /></SectionCard>
       <SectionCard title="MDT 会议信息">
         <div class="info-list">
-          <div class="info-row"><span>时间</span><b>{{ store.state.review.meetingAt }}</b></div>
+          <div class="info-row"><span>时间</span><b>{{ store.activeReview.meetingAt || '待安排' }}</b></div>
           <div class="info-row"><span>参与科室</span><b>胸外 / 肿瘤内 / 放疗</b></div>
           <div class="info-row"><span>跨境参会</span><b>马来医生、健康顾问</b></div>
           <div class="info-row"><span>状态</span><span class="status-pill pending">待召开</span></div>

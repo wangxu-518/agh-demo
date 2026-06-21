@@ -7,7 +7,7 @@ const store = useDemoStore()
 </script>
 <template>
   <PageHeader eyebrow="Post-return care workspace" title="归国全生命周期健康管理中心" subtitle="五阶段服务计划连接健康管家、中马医生、本地医护、检验、康复与药房">
-    <button class="secondary-button">创建随访任务</button>
+    <button class="secondary-button" @click="store.performAction('createFollowupTask', { title: '电话随访并记录症状', owner: 'Farah' })">创建随访任务</button>
     <button class="primary-button" @click="store.generateFollowup()">生成五阶段计划</button>
   </PageHeader>
   <div class="stats-grid">
@@ -17,9 +17,9 @@ const store = useDemoStore()
     <StatCard label="高危预警" :value="store.state.alerts.filter(a => a.status === 'open').length" note="需立即分级响应" icon="!" tone="red" />
   </div>
   <div class="grid-2">
-    <SectionCard title="重点患者五阶段计划" :subtitle="store.state.followup.generated ? '计划已生成并同步' : '从待制定计划列表进入'">
+    <SectionCard title="重点患者五阶段计划" :subtitle="store.activeFollowup.generated ? '计划已生成并同步' : '从待制定计划列表进入'">
       <div class="stage-list">
-        <div v-for="(stage, i) in store.state.followup.stages" :key="stage.id" class="stage-card" :class="{active:stage.status==='active'}">
+        <div v-for="(stage, i) in store.activeFollowup.stages" :key="stage.id" class="stage-card" :class="{active:stage.status==='active'}">
           <div class="stage-number">{{ i + 1 }}</div>
           <div><h4>{{ stage.name }} <small style="font-weight:400">{{ stage.period }}</small></h4><p>{{ stage.frequency }} · {{ stage.owner }}</p><div class="stage-items"><span v-for="item in stage.items" :key="item">{{ item }}</span></div></div>
           <span class="status-pill" :class="stage.status === 'active' ? 'done' : 'pending'">{{ stage.status === 'active' ? '进行中' : '待启动' }}</span>
@@ -31,7 +31,7 @@ const store = useDemoStore()
         <div v-for="alert in store.state.alerts" :key="alert.id" class="alert-card">
           <div style="display:flex;justify-content:space-between;gap:10px"><h4>{{ alert.patient }} · {{ alert.type }}</h4><span class="status-pill" :class="alert.status">{{ alert.status === 'escalated' ? '已升级' : '待处理' }}</span></div>
           <p>{{ alert.detail }}</p>
-          <button v-if="alert.status === 'open'" class="primary-button danger-button" @click="store.escalateAlert(alert.id)">升级专家复评</button>
+          <button v-if="alert.status === 'open'" class="primary-button danger-button" @click="store.escalateAlert({ alertId: alert.id, assessment: alert.detail })">升级专家复评</button>
         </div>
       </SectionCard>
       <SectionCard title="服务质控" subtitle="参考归国服务SOP">

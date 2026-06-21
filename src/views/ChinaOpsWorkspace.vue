@@ -34,8 +34,8 @@ const store = useDemoStore()
       <div class="info-list">
         <div class="info-row"><span>评审专家</span><b>张建国 主任 · 胸外科</b></div>
         <div class="info-row"><span>MDT团队</span><b>胸外科 / 肿瘤内科 / 放疗科</b></div>
-        <div class="info-row"><span>推荐医院</span><b>{{ store.state.treatment.hospital }}</b></div>
-        <div class="info-row"><span>预计入院</span><b>{{ store.state.treatment.admissionDate }}</b></div>
+        <div class="info-row"><span>推荐医院</span><b>{{ store.activeTreatment.hospital || '待匹配' }}</b></div>
+        <div class="info-row"><span>预计入院</span><b>{{ store.activeTreatment.admissionDate || '待确认' }}</b></div>
       </div>
       <div class="notice" style="margin-top:14px">专家评审完成后，治疗建议将自动生成医院承接任务，并向患者端展示已确认内容。</div>
     </SectionCard>

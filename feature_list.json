@@ -1,5 +1,5 @@
 {
-  "version": "2.4.0",
+  "version": "3.0.0",
   "updated": "2026-06-21",
   "features": [
     {"id":"PORTAL-001","module":"portal","title":"六端统一入口页","behavior":"集中展示六个独立子系统的名称、账号和登录链接，并在新标签打开","verification":"点击 /portal 六张入口卡均新开对应登录页","status":"implemented"},
@@ -27,6 +27,16 @@
     {"id":"AUD-001","module":"audit","title":"协同审计时间线","behavior":"关键操作记录角色、系统、时间和详情","verification":"每个主线操作后 events 新增记录","status":"implemented"}
     ,{"id":"LINK-001","module":"workflow","title":"专家任务联动","behavior":"中国运营分配专家后，专家端出现待评审任务","verification":"assignExpert 后专家队列存在 T-EXP-201","status":"implemented"}
     ,{"id":"LINK-002","module":"workflow","title":"医院承接联动","behavior":"中国运营发送承接申请后，医院接诊页出现待办","verification":"requestHospital 后医院队列存在 T-HOS-201","status":"implemented"}
-    ,{"id":"LINK-003","module":"workflow","title":"出院健康管理联动","behavior":"医院完成出院交接后，健康管理端出现五阶段建档任务","verification":"completeDischarge 后健康队列存在 T-HLT-201","status":"implemented"}
+    ,{"id":"LINK-003","module":"workflow","title":"出院健康管理联动","behavior":"医院完成出院交接后，健康管理端出现五阶段建档任务","verification":"completeDischarge 后健康队列存在对应 Case 的 T-HLT 任务","status":"implemented"}
+    ,{"id":"CORE-007","module":"core","title":"Case 聚合数据模型","behavior":"评审、治疗、费用、行程、随访和授权按 caseId 独立存储","verification":"多患者隔离测试修改主案例后辅助案例保持不变","status":"implemented"}
+    ,{"id":"CORE-008","module":"workflow","title":"业务状态机与准入校验","behavior":"资料、授权、评审、承接、费用、行程和出院清单形成前置门槛","verification":"非法状态跳转测试返回失败且不修改状态","status":"implemented"}
+    ,{"id":"CORE-009","module":"core","title":"动态列表与统计","behavior":"患者列表、接收队列、专家队列、医院队列和关键统计从统一状态派生","verification":"切换和修改病例后 schemaFor 返回最新记录","status":"implemented"}
+    ,{"id":"FORM-001","module":"workflow","title":"专用业务表单","behavior":"专家分配、医院申请、付款、出院、预警等操作使用各自字段并持久化","verification":"生产构建及关键动作单元测试通过","status":"implemented"}
+    ,{"id":"DOC-001","module":"documents","title":"医疗文件生命周期","behavior":"文件包含原件、翻译、核验、版本、授权、访问和作废属性，同名上传追加版本","verification":"同名文件上传测试生成 v3 且旧版本保留","status":"implemented"}
+    ,{"id":"COL-001","module":"collaboration","title":"任务协作记录","behavior":"任务支持开始处理、评论、转派、SLA暂停和完成留痕","verification":"任务协作测试保存两条评论并可重置","status":"implemented"}
+    ,{"id":"REQ-001","module":"requirements","title":"客户需求确认矩阵","behavior":"按角色、场景、字段、状态、操作结果和确认状态管理需求基线","verification":"REQUIREMENTS_MATRIX.md 覆盖六端核心场景及权限矩阵","status":"implemented"}
+    ,{"id":"CN-003","module":"china_ops","title":"患者级医院匹配","behavior":"先选择患者 Case，再显示该病例专属候选医院、评分、依据、限制和状态","verification":"浏览器切换林秀英与陈伟强时候选医院集合和首选医院不同","status":"implemented"}
+    ,{"id":"LINK-004","module":"workflow","title":"Case 与医院申请强绑定","behavior":"承接申请必须绑定当前 caseId 与候选 hospitalId，拒绝非候选医院","verification":"单元测试验证未知医院被拒绝且其他患者选择不受影响","status":"implemented"}
+    ,{"id":"CORE-010","module":"core","title":"病例集合到详情导航","behavior":"内部病例型菜单先展示患者/Case 列表，点击后按路由 Case ID 加载对应业务详情","verification":"浏览器分别从专家病例、医院费用和健康随访列表进入不同患者详情","status":"implemented"}
   ]
 }

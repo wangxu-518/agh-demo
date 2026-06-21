@@ -9,6 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const demo = useDemoStore()
+const currentUser = computed(() => demo.state.currentUsers[system.value])
 const system = computed(() => route.meta.system)
 const config = computed(() => systems[system.value])
 const prefix = computed(() => ({ china: 'china-ops', health: 'health-management' }[system.value] || system.value))
@@ -29,7 +30,7 @@ function logout() {
           <i>{{ page.slice(0, 1).toUpperCase() }}</i><span>{{ demo.state.language === 'zh' ? title : titleEn }}</span>
         </RouterLink>
       </nav>
-      <div class="system-user"><div class="avatar">{{ config.icon }}</div><div><b>{{ config.account.split('@')[0] }}</b><small>演示用户</small></div><button @click="logout">退出</button></div>
+      <div class="system-user"><div class="avatar">{{ config.icon }}</div><div><b>{{ currentUser.name }}</b><small>{{ currentUser.role }} · {{ currentUser.organization }}</small></div><button @click="logout">退出</button></div>
     </aside>
     <main class="system-main">
       <header class="system-topbar">
