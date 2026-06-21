@@ -60,4 +60,21 @@ describe('cross-system demo store', () => {
     expect(store.state.review.status).toBe('in_review')
     expect(store.state.activeCaseId).toBe('AGH-MY-2026-0018')
   })
+
+  it('creates cross-system tasks from operational actions', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.performAction('assignExpert')
+    store.performAction('requestHospital')
+    expect(store.state.tasks.some((task) => task.id === 'T-EXP-201' && task.to === 'expert')).toBe(true)
+    expect(store.state.tasks.some((task) => task.id === 'T-HOS-201' && task.to === 'hospital')).toBe(true)
+  })
+
+  it('creates post-return handoff after discharge', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.performAction('completeDischarge')
+    expect(store.activePatient.phase).toBe('followup')
+    expect(store.state.tasks.some((task) => task.id === 'T-HLT-201' && task.to === 'health')).toBe(true)
+  })
 })

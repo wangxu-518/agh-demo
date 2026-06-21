@@ -1,11 +1,12 @@
 # AGH 跨境肿瘤医疗协同运营平台 Demo
 
-用于客户需求确认的多子系统高保真演示系统。统一演示中心下包含患者端、马来服务端、中国运营端、专家端、国内医院承接端和归国健康管理端。
+用于客户需求确认的多子系统高保真演示系统。患者端、马来服务端、中国运营端、专家端、国内医院承接端和归国健康管理端均有独立登录入口、导航和业务页面。
 
 ## 核心能力
 
 - 同一患者、Case ID、任务和时间线贯穿六端
-- 关键操作产生真实跨端状态联动
+- 分配专家、医院承接、出院交接和异常升级等操作产生真实跨端待办
+- 列表、详情、任务、日程、费用、随访等页面均可跳转和执行动作
 - 患者移动 H5，内部角色桌面工作台
 - 中英文切换
 - 浏览器本地持久化及一键重置
@@ -29,16 +30,18 @@ $pnpm='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\n
 & $node $pnpm build
 ```
 
-## 路由
+## 演示入口
 
-- `/demo`：统一演示中心
-- `/patient`：患者移动端
-- `/malaysia`：马来服务端
-- `/china-ops`：中国运营端
-- `/expert`：专家评审端
-- `/hospital`：医院承接端
-- `/health-management`：归国健康管理端
-- `/legacy`：旧版原型（内部参考，资源位于 `public/legacy`）
+| 系统 | 登录地址 | 演示账号 |
+|---|---|---|
+| 患者端 | `/patient/login` | `patient@agh.demo` |
+| 马来服务端 | `/malaysia/login` | `malaysia@agh.demo` |
+| 中国运营端 | `/china-ops/login` | `china@agh.demo` |
+| 专家端 | `/expert/login` | `expert@agh.demo` |
+| 医院承接端 | `/hospital/login` | `hospital@agh.demo` |
+| 归国健康管理端 | `/health-management/login` | `health@agh.demo` |
+
+所有演示账号密码均为 `123456`，登录页也提供一键进入。根路径默认进入患者端登录页。
 
 所有患者数据均为虚构或匿名化演示数据。本系统不用于医疗诊断或真实临床决策。
 

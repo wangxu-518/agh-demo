@@ -49,7 +49,8 @@ make build         # 生产构建
 ```
 agh-demo/
 ├── src/
-│   ├── views/           # 六端页面与演示中心
+│   ├── views/           # 六端工作台、登录页与业务页面
+│   ├── config/          # 六端入口、账号和导航配置
 │   ├── components/      # 共享组件
 │   ├── stores/          # Pinia 状态与测试
 │   └── data/            # 演示种子数据

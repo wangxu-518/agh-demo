@@ -1,27 +1,45 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DemoCenter from './views/DemoCenter.vue'
+import LoginView from './views/LoginView.vue'
+import SystemLayout from './components/SystemLayout.vue'
 import PatientPortal from './views/PatientPortal.vue'
 import MalaysiaWorkspace from './views/MalaysiaWorkspace.vue'
 import ChinaOpsWorkspace from './views/ChinaOpsWorkspace.vue'
 import ExpertWorkspace from './views/ExpertWorkspace.vue'
 import HospitalWorkspace from './views/HospitalWorkspace.vue'
 import HealthWorkspace from './views/HealthWorkspace.vue'
-import LegacyView from './views/LegacyView.vue'
+import ModulePage from './views/ModulePage.vue'
+import { systems, systemFromPath } from './config/systems'
+import { useAuthStore } from './stores/auth'
 
-export const routes = [
-  { path: '/', redirect: '/demo' },
-  { path: '/demo', component: DemoCenter, meta: { title: '演示中心', icon: '✦' } },
-  { path: '/patient', component: PatientPortal, meta: { title: '患者端', icon: '⌁', patient: true } },
-  { path: '/malaysia', component: MalaysiaWorkspace, meta: { title: '马来服务端', icon: 'MY' } },
-  { path: '/china-ops', component: ChinaOpsWorkspace, meta: { title: '中国运营端', icon: 'CN' } },
-  { path: '/expert', component: ExpertWorkspace, meta: { title: '专家端', icon: 'MD' } },
-  { path: '/hospital', component: HospitalWorkspace, meta: { title: '医院承接端', icon: 'H' } },
-  { path: '/health-management', component: HealthWorkspace, meta: { title: '归国健康管理端', icon: '♥' } },
-  { path: '/legacy', component: LegacyView, meta: { title: '旧版参考', icon: '↗', hidden: true } },
-]
+const prefixes = { patient: 'patient', malaysia: 'malaysia', china: 'china-ops', expert: 'expert', hospital: 'hospital', health: 'health-management' }
+const dashboards = { patient: PatientPortal, malaysia: MalaysiaWorkspace, china: ChinaOpsWorkspace, expert: ExpertWorkspace, hospital: HospitalWorkspace, health: HealthWorkspace }
 
-export default createRouter({
-  history: createWebHistory(),
-  routes,
-  scrollBehavior: () => ({ top: 0 }),
+const routes = [{ path: '/', redirect: '/patient/login' }]
+for (const [system, config] of Object.entries(systems)) {
+  const prefix = prefixes[system]
+  routes.push({
+    path: `/${prefix}/login`,
+    component: LoginView,
+    meta: { system, public: true, title: `${config.short}登录` },
+  })
+  routes.push({
+    path: `/${prefix}`,
+    component: SystemLayout,
+    meta: { system },
+    children: config.nav.map(([page, title]) => ({
+      path: page,
+      component: page === 'home' || page === 'dashboard' ? dashboards[system] : ModulePage,
+      meta: { system, page, title },
+    })),
+  })
+}
+
+const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: () => ({ top: 0 }) })
+router.beforeEach((to) => {
+  const system = to.meta.system || systemFromPath(to.path)
+  if (!system || to.meta.public) return true
+  const auth = useAuthStore()
+  if (!auth.isLoggedIn(system)) return `/${prefixes[system]}/login`
+  return true
 })
+export default router

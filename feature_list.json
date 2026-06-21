@@ -1,12 +1,13 @@
 {
-  "version": "2.0.0",
-  "updated": "2026-06-20",
+  "version": "2.1.0",
+  "updated": "2026-06-21",
   "features": [
-    {"id":"CORE-001","module":"core","title":"统一演示中心","behavior":"展示六端入口、主案例进度、统计和协同时间线","verification":"访问 /demo 可进入所有子系统","status":"implemented"},
+    {"id":"AUTH-001","module":"auth","title":"六端独立登录","behavior":"每个子系统拥有独立登录入口和会话","verification":"浏览器依次登录六端并进入各自首页","status":"implemented"},
+    {"id":"CORE-001","module":"core","title":"独立子系统导航","behavior":"六端使用各自布局、菜单和业务路由，根路径进入患者登录","verification":"访问各系统业务路由可导航至列表和处理页","status":"implemented"},
     {"id":"CORE-002","module":"core","title":"共享状态持久化","behavior":"Pinia 状态写入 localStorage，刷新后保留","verification":"操作后刷新页面状态不丢失","status":"implemented"},
     {"id":"CORE-003","module":"core","title":"一键重置","behavior":"恢复标准种子数据","verification":"点击重置后评审状态恢复 in_review","status":"implemented"},
     {"id":"I18N-001","module":"core","title":"中英文切换","behavior":"全系统导航和核心文案切换","verification":"点击语言按钮后界面语言变化","status":"implemented"},
-    {"id":"PAT-001","module":"patient","title":"患者移动门户","behavior":"展示方案、资料、行程、进度、随访和应急入口","verification":"移动宽度访问 /patient 无横向溢出","status":"implemented"},
+    {"id":"PAT-001","module":"patient","title":"患者移动门户","behavior":"展示方案、资料、行程、进度、随访和应急入口","verification":"移动宽度登录 /patient/login 后导航无横向溢出","status":"implemented"},
     {"id":"MY-001","module":"malaysia","title":"马来 CRM 与 Case 提交","behavior":"管理患者列表、资料、签约并提交中国运营","verification":"提交后患者进入 review 阶段并生成事件","status":"implemented"},
     {"id":"CN-001","module":"china_ops","title":"跨境资料中心","behavior":"展示原始资料、翻译、版本和结构化摘要","verification":"访问 /china-ops 可查看主案例资料","status":"implemented"},
     {"id":"EXP-001","module":"expert","title":"专家评审工作区","behavior":"病例摘要、资料、影像、MDT和评审意见","verification":"提交评审后 review=completed","status":"implemented"},
@@ -14,5 +15,8 @@
     {"id":"HLT-001","module":"health","title":"五阶段归国计划","behavior":"生成归国前至长期随访五阶段计划","verification":"生成后 stages 长度为5且首阶段 active","status":"implemented"},
     {"id":"HLT-002","module":"health","title":"高危预警升级","behavior":"异常复查升级为专家复评任务","verification":"升级后 alert=escalated 且新增 urgent 任务","status":"implemented"},
     {"id":"AUD-001","module":"audit","title":"协同审计时间线","behavior":"关键操作记录角色、系统、时间和详情","verification":"每个主线操作后 events 新增记录","status":"implemented"}
+    ,{"id":"LINK-001","module":"workflow","title":"专家任务联动","behavior":"中国运营分配专家后，专家端出现待评审任务","verification":"assignExpert 后专家队列存在 T-EXP-201","status":"implemented"}
+    ,{"id":"LINK-002","module":"workflow","title":"医院承接联动","behavior":"中国运营发送承接申请后，医院接诊页出现待办","verification":"requestHospital 后医院队列存在 T-HOS-201","status":"implemented"}
+    ,{"id":"LINK-003","module":"workflow","title":"出院健康管理联动","behavior":"医院完成出院交接后，健康管理端出现五阶段建档任务","verification":"completeDischarge 后健康队列存在 T-HLT-201","status":"implemented"}
   ]
 }

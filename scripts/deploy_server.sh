@@ -28,4 +28,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now agh-demo.service
 sudo systemctl restart agh-demo.service
 sudo systemctl --no-pager --full status agh-demo.service | head -18
-curl -fsS http://127.0.0.1:8789/demo | head -c 120
+curl --retry 5 --retry-delay 1 --retry-connrefused -fsS http://127.0.0.1:8789/patient/login | head -c 120
