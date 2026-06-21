@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from './views/LoginView.vue'
+import PortalView from './views/PortalView.vue'
 import SystemLayout from './components/SystemLayout.vue'
 import PatientPortal from './views/PatientPortal.vue'
 import MalaysiaWorkspace from './views/MalaysiaWorkspace.vue'
@@ -14,7 +15,10 @@ import { useAuthStore } from './stores/auth'
 const prefixes = { patient: 'patient', malaysia: 'malaysia', china: 'china-ops', expert: 'expert', hospital: 'hospital', health: 'health-management' }
 const dashboards = { patient: PatientPortal, malaysia: MalaysiaWorkspace, china: ChinaOpsWorkspace, expert: ExpertWorkspace, hospital: HospitalWorkspace, health: HealthWorkspace }
 
-const routes = [{ path: '/', redirect: '/patient/login' }]
+const routes = [
+  { path: '/', redirect: '/portal' },
+  { path: '/portal', component: PortalView, meta: { public: true, title: '系统入口' } },
+]
 for (const [system, config] of Object.entries(systems)) {
   const prefix = prefixes[system]
   routes.push({

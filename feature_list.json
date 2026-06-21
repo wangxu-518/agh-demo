@@ -2,6 +2,7 @@
   "version": "2.1.0",
   "updated": "2026-06-21",
   "features": [
+    {"id":"PORTAL-001","module":"portal","title":"六端统一入口页","behavior":"集中展示六个独立子系统的名称、账号和登录链接","verification":"访问 /portal 可进入六个系统的独立登录页","status":"implemented"},
     {"id":"AUTH-001","module":"auth","title":"六端独立登录","behavior":"每个子系统拥有独立登录入口和会话","verification":"浏览器依次登录六端并进入各自首页","status":"implemented"},
     {"id":"CORE-001","module":"core","title":"独立子系统导航","behavior":"六端使用各自布局、菜单和业务路由，根路径进入患者登录","verification":"访问各系统业务路由可导航至列表和处理页","status":"implemented"},
     {"id":"CORE-002","module":"core","title":"共享状态持久化","behavior":"Pinia 状态写入 localStorage，刷新后保留","verification":"操作后刷新页面状态不丢失","status":"implemented"},

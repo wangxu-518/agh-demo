@@ -32,6 +32,8 @@ $pnpm='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\n
 
 ## 演示入口
 
+统一入口页：`/portal`
+
 | 系统 | 登录地址 | 演示账号 |
 |---|---|---|
 | 患者端 | `/patient/login` | `patient@agh.demo` |
@@ -41,7 +43,7 @@ $pnpm='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\n
 | 医院承接端 | `/hospital/login` | `hospital@agh.demo` |
 | 归国健康管理端 | `/health-management/login` | `health@agh.demo` |
 
-所有演示账号密码均为 `123456`，登录页也提供一键进入。根路径默认进入患者端登录页。
+所有演示账号密码均为 `123456`，登录页也提供一键进入。根路径默认进入 Portal。
 
 所有患者数据均为虚构或匿名化演示数据。本系统不用于医疗诊断或真实临床决策。
 
