@@ -8,7 +8,8 @@ import ChinaOpsWorkspace from './views/ChinaOpsWorkspace.vue'
 import ExpertWorkspace from './views/ExpertWorkspace.vue'
 import HospitalWorkspace from './views/HospitalWorkspace.vue'
 import HealthWorkspace from './views/HealthWorkspace.vue'
-import ModulePage from './views/ModulePage.vue'
+import BusinessPage from './views/BusinessPage.vue'
+import RecordDetail from './views/RecordDetail.vue'
 import { systems, systemFromPath } from './config/systems'
 import { useAuthStore } from './stores/auth'
 
@@ -30,11 +31,14 @@ for (const [system, config] of Object.entries(systems)) {
     path: `/${prefix}`,
     component: SystemLayout,
     meta: { system },
-    children: config.nav.map(([page, title]) => ({
+    children: [
+      ...config.nav.map(([page, title]) => ({
       path: page,
-      component: page === 'home' || page === 'dashboard' ? dashboards[system] : ModulePage,
+      component: page === 'home' || page === 'dashboard' ? dashboards[system] : BusinessPage,
       meta: { system, page, title },
-    })),
+      })),
+      { path: 'record/:id', component: RecordDetail, meta: { system, title: '业务详情' } },
+    ],
   })
 }
 

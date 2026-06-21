@@ -38,12 +38,14 @@ const descriptions = {
         <p>所有演示账号密码均为 <b>123456</b></p>
       </div>
       <div class="portal-grid">
-        <RouterLink
+        <a
           v-for="(system, key) in systems"
           :key="key"
           class="portal-system-card"
           :style="{ '--portal-color': system.color }"
-          :to="`/${prefixes[key]}/login`"
+          :href="`/${prefixes[key]}/login`"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <div class="portal-system-icon">{{ system.icon }}</div>
           <div class="portal-system-copy">
@@ -55,7 +57,7 @@ const descriptions = {
             <span>{{ system.account }}</span>
             <b>进入登录 →</b>
           </div>
-        </RouterLink>
+        </a>
       </div>
       <footer class="portal-footer">
         <span>匿名化演示数据 · 不用于真实医疗诊断</span>
