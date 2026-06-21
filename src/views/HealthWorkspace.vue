@@ -1,6 +1,5 @@
 <script setup>
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import StatCard from '../components/StatCard.vue'
 import { useDemoStore } from '../stores/demo'
@@ -17,9 +16,8 @@ const store = useDemoStore()
     <StatCard label="本周复查" value="9" note="检验机构已预约" icon="Lab" tone="green" />
     <StatCard label="高危预警" :value="store.state.alerts.filter(a => a.status === 'open').length" note="需立即分级响应" icon="!" tone="red" />
   </div>
-  <PatientBanner />
   <div class="grid-2">
-    <SectionCard title="主案例五阶段计划" :subtitle="store.state.followup.generated ? '计划已生成并同步' : '尚未生成正式计划'">
+    <SectionCard title="重点患者五阶段计划" :subtitle="store.state.followup.generated ? '计划已生成并同步' : '从待制定计划列表进入'">
       <div class="stage-list">
         <div v-for="(stage, i) in store.state.followup.stages" :key="stage.id" class="stage-card" :class="{active:stage.status==='active'}">
           <div class="stage-number">{{ i + 1 }}</div>

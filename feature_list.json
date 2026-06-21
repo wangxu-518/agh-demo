@@ -1,10 +1,13 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "updated": "2026-06-21",
   "features": [
     {"id":"PORTAL-001","module":"portal","title":"六端统一入口页","behavior":"集中展示六个独立子系统的名称、账号和登录链接，并在新标签打开","verification":"点击 /portal 六张入口卡均新开对应登录页","status":"implemented"},
     {"id":"CORE-004","module":"core","title":"独立菜单业务页面","behavior":"28个非首页菜单按业务类型展示不同字段、列表、工作区和动作","verification":"页面规格测试覆盖所有菜单，浏览器遍历六端全部页面","status":"implemented"},
     {"id":"CORE-005","module":"core","title":"业务详情与办理","behavior":"列表记录进入可编辑详情，主操作打开业务处理表单并反馈结果","verification":"浏览器从患者与Case列表进入详情并完成表单打开检查","status":"implemented"},
+    {"id":"PAT-002","module":"patient","title":"平台介绍首页","behavior":"患者首页展示平台价值、合作医院、服务流程和联系方式","verification":"移动浏览器可见4项选择理由、3家合作医院及联系方式","status":"implemented"},
+    {"id":"PAT-003","module":"patient","title":"移动专用业务页面","behavior":"资料、方案、行程、随访及详情使用独立手机布局","verification":"4个主页及行程/随访详情在390px宽度无横向溢出","status":"implemented"},
+    {"id":"CORE-006","module":"core","title":"集合页患者上下文隔离","behavior":"内部集合页不固定展示单个患者，病例信息仅在详情显示","verification":"遍历29个内部菜单无固定患者顶部信息或患者横幅","status":"implemented"},
     {"id":"AUTH-001","module":"auth","title":"六端独立登录","behavior":"每个子系统拥有独立登录入口和会话","verification":"浏览器依次登录六端并进入各自首页","status":"implemented"},
     {"id":"CORE-001","module":"core","title":"独立子系统导航","behavior":"六端使用各自布局、菜单和业务路由，根路径进入患者登录","verification":"访问各系统业务路由可导航至列表和处理页","status":"implemented"},
     {"id":"CORE-002","module":"core","title":"共享状态持久化","behavior":"Pinia 状态写入 localStorage，刷新后保留","verification":"操作后刷新页面状态不丢失","status":"implemented"},

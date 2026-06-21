@@ -1,6 +1,5 @@
 <script setup>
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import TaskList from '../components/TaskList.vue'
 import { useDemoStore } from '../stores/demo'
@@ -10,7 +9,6 @@ const store = useDemoStore()
   <PageHeader eyebrow="China operations workspace" title="中国诊疗运营中心" subtitle="完成跨境资料标准化、专家分配、医院匹配和赴华治疗协调">
     <button class="primary-button" @click="store.completeTask('T-102')">确认资料整理完成</button>
   </PageHeader>
-  <PatientBanner />
   <div class="grid-2">
     <SectionCard title="病例资料中心" subtitle="原始资料、翻译件和结构化摘要分层保存" flush>
       <table class="data-table">
@@ -24,7 +22,7 @@ const store = useDemoStore()
     <SectionCard title="运营待办" subtitle="跨团队任务与SLA"><TaskList system="china" /></SectionCard>
   </div>
   <div class="grid-equal">
-    <SectionCard title="结构化病例摘要" subtitle="由运营整理，专家确认">
+    <SectionCard title="重点病例快速处理" subtitle="从待办队列中选择的高优先级病例">
       <div class="info-list">
         <div class="info-row"><span>核心诊断</span><b>{{ store.activePatient.diagnosis }}</b></div>
         <div class="info-row"><span>当前症状</span><b>间断咳嗽、轻度气促，无咯血</b></div>

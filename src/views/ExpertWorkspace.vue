@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import TaskList from '../components/TaskList.vue'
 import { useDemoStore } from '../stores/demo'
@@ -13,7 +12,6 @@ const tab = ref('summary')
     <button class="secondary-button">发起 MDT 会诊</button>
     <button class="primary-button" @click="store.finishReview()">提交评审意见</button>
   </PageHeader>
-  <PatientBanner />
   <div class="grid-2">
     <SectionCard title="病例工作区" :subtitle="`评审版本 v${store.state.review.version}`">
       <div class="tabs">

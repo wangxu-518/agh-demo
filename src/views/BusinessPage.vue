@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import StatCard from '../components/StatCard.vue'
 import TaskList from '../components/TaskList.vue'
@@ -40,7 +39,6 @@ function confirmAction() {
     <PageHeader :eyebrow="schema.eyebrow" :title="schema.title" :subtitle="schema.description">
       <button class="primary-button" @click="startAction">{{ schema.primary[0] }}</button>
     </PageHeader>
-    <PatientBanner v-if="system !== 'patient'" />
     <div v-if="message" class="action-success">✓ {{ message }}</div>
 
     <div v-if="schema.metrics" class="stats-grid compact-stats">
@@ -71,9 +69,9 @@ function confirmAction() {
           </div>
         </SectionCard>
         <SectionCard title="文件列表" subtitle="点击文件查看预览及版本信息">
-          <div v-for="doc in store.activeDocuments" :key="doc.id" class="document-row" @click="router.push(`/${prefix}/record/${doc.id}?source=${page}`)">
-            <div class="file-icon">PDF</div><div><b>{{ doc.name }}</b><small>{{ doc.type }} · {{ doc.language }} · {{ doc.source }}</small></div>
-            <span class="status-pill done">{{ doc.status }}</span><button class="mini-button">预览</button>
+          <div v-for="patient in store.state.patients" :key="patient.id" class="document-row" @click="router.push(`/${prefix}/record/${patient.caseId}?source=${page}`)">
+            <div class="file-icon">{{ patient.avatar }}</div><div><b>{{ patient.name }} · {{ patient.caseId }}</b><small>{{ patient.diagnosis }} · 负责人 {{ patient.owner }}</small></div>
+            <span class="status-pill" :class="patient.completeness===100?'done':'pending'">{{ patient.completeness }}%</span><button class="mini-button">查看资料</button>
           </div>
         </SectionCard>
       </div>
@@ -156,7 +154,7 @@ function confirmAction() {
     </template>
 
     <div v-if="showModal" class="business-modal-backdrop" @click.self="showModal=false">
-      <form class="business-modal" @submit.prevent="confirmAction"><header><div><small>{{ schema.eyebrow }}</small><h2>{{ schema.primary[0] }}</h2></div><button type="button" @click="showModal=false">×</button></header><div class="modal-fields"><label>当前患者<input :value="store.activePatient.name + ' · ' + store.activePatient.caseId" readonly /></label><label>处理负责人<select><option>当前演示用户</option><option>李雯</option><option>Aisyah</option><option>刘协调员</option></select></label><label class="wide">处理说明<textarea placeholder="填写本次操作说明、交接要求或备注"></textarea></label><label>计划完成时间<input type="datetime-local" /></label><label>优先级<select><option>普通</option><option>高</option><option>紧急</option></select></label></div><footer><button type="button" class="secondary-button" @click="showModal=false">取消</button><button class="primary-button" type="submit">确认提交</button></footer></form>
+      <form class="business-modal" @submit.prevent="confirmAction"><header><div><small>{{ schema.eyebrow }}</small><h2>{{ schema.primary[0] }}</h2></div><button type="button" @click="showModal=false">×</button></header><div class="modal-fields"><label>处理对象<select><option v-for="patient in store.state.patients" :key="patient.id">{{ patient.name }} · {{ patient.caseId }}</option></select></label><label>处理负责人<select><option>当前演示用户</option><option>李雯</option><option>Aisyah</option><option>刘协调员</option></select></label><label class="wide">处理说明<textarea placeholder="填写本次操作说明、交接要求或备注"></textarea></label><label>计划完成时间<input type="datetime-local" /></label><label>优先级<select><option>普通</option><option>高</option><option>紧急</option></select></label></div><footer><button type="button" class="secondary-button" @click="showModal=false">取消</button><button class="primary-button" type="submit">确认提交</button></footer></form>
     </div>
   </div>
 </template>

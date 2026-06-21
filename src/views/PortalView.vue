@@ -29,7 +29,7 @@ const descriptions = {
         <h1>跨境肿瘤医疗协同平台</h1>
         <p>请选择需要演示的独立业务系统。每个系统拥有独立登录、业务页面和角色权限。</p>
       </div>
-      <div class="portal-case"><span>贯穿演示案例</span><b>AGH-MY-2026-0018 · 林秀英</b></div>
+      <div class="portal-case"><span>演示范围</span><b>咨询 · 评审 · 治疗 · 归国健康管理</b></div>
     </header>
 
     <section class="portal-content">

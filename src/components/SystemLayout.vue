@@ -34,7 +34,7 @@ function logout() {
     <main class="system-main">
       <header class="system-topbar">
         <div v-if="isPatient" class="patient-top-brand"><span>{{ config.icon }}</span><b>{{ config.name }}</b></div>
-        <div v-else><b>{{ route.meta.title || config.short }}</b><small>{{ demo.activePatient?.caseId }} · {{ demo.activePatient?.name }}</small></div>
+        <div v-else><b>{{ route.meta.title || config.short }}</b><small>{{ config.name }} · 演示环境</small></div>
         <div class="top-actions">
           <button class="ghost-button" @click="demo.toggleLanguage()">{{ demo.state.language === 'zh' ? 'EN' : '中文' }}</button>
           <button v-if="isPatient" class="ghost-button" @click="logout">退出</button>

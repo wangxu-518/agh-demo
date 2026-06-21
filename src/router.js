@@ -3,6 +3,8 @@ import LoginView from './views/LoginView.vue'
 import PortalView from './views/PortalView.vue'
 import SystemLayout from './components/SystemLayout.vue'
 import PatientPortal from './views/PatientPortal.vue'
+import PatientMobilePage from './views/PatientMobilePage.vue'
+import PatientMobileDetail from './views/PatientMobileDetail.vue'
 import MalaysiaWorkspace from './views/MalaysiaWorkspace.vue'
 import ChinaOpsWorkspace from './views/ChinaOpsWorkspace.vue'
 import ExpertWorkspace from './views/ExpertWorkspace.vue'
@@ -34,10 +36,11 @@ for (const [system, config] of Object.entries(systems)) {
     children: [
       ...config.nav.map(([page, title]) => ({
       path: page,
-      component: page === 'home' || page === 'dashboard' ? dashboards[system] : BusinessPage,
+      component: page === 'home' || page === 'dashboard' ? dashboards[system] : system === 'patient' ? PatientMobilePage : BusinessPage,
       meta: { system, page, title },
       })),
       { path: 'record/:id', component: RecordDetail, meta: { system, title: '业务详情' } },
+      ...(system === 'patient' ? [{ path: 'detail/:id', component: PatientMobileDetail, meta: { system, title: '详情' } }] : []),
     ],
   })
 }

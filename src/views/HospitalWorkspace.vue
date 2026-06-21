@@ -1,6 +1,5 @@
 <script setup>
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import StatCard from '../components/StatCard.vue'
 import TaskList from '../components/TaskList.vue'
@@ -17,9 +16,8 @@ const store = useDemoStore()
     <StatCard label="床位预留" value="5" note="胸外科2张" icon="B" tone="orange" />
     <StatCard label="待交付出院资料" value="3" note="需双语版本" icon="↗" tone="red" />
   </div>
-  <PatientBanner />
   <div class="grid-2">
-    <SectionCard title="承接评估" subtitle="医院确认范围仅限资源和诊疗安排">
+    <SectionCard title="今日重点承接申请" subtitle="从待接诊队列中选择的高优先级申请">
       <div class="info-list">
         <div class="info-row"><span>推荐科室</span><b>{{ store.state.treatment.department }}</b></div>
         <div class="info-row"><span>拟接诊医生</span><b>{{ store.state.treatment.doctor }}</b></div>

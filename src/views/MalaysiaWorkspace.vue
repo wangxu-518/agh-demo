@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
-import PatientBanner from '../components/PatientBanner.vue'
 import SectionCard from '../components/SectionCard.vue'
 import StatCard from '../components/StatCard.vue'
 import TaskList from '../components/TaskList.vue'
@@ -20,7 +19,6 @@ const tab = ref('crm')
     <StatCard label="本月签约" value="18" note="转化率 31.6%" icon="✓" tone="green" />
     <StatCard label="需关注患者" value="3" note="含1例高风险" icon="!" tone="red" />
   </div>
-  <PatientBanner />
   <div class="grid-2">
     <SectionCard title="患者 CRM" subtitle="线索、签约与Case状态统一管理" flush>
       <div class="tabs" style="margin:0;padding:0 14px">
