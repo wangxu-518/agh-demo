@@ -1,21 +1,24 @@
 <script setup>
+import { computed } from 'vue'
 import { useDemoStore } from '../stores/demo'
+const props = defineProps({ patient: Object })
 const store = useDemoStore()
+const current = computed(() => props.patient || store.activePatient)
 </script>
 <template>
   <section class="patient-banner">
-    <div class="patient-avatar">{{ store.activePatient.avatar }}</div>
+    <div class="patient-avatar">{{ current.avatar }}</div>
     <div class="patient-main">
       <div class="patient-title">
-        <h2>{{ store.activePatient.name }} <small>{{ store.activePatient.englishName }}</small></h2>
-        <span class="status-pill blue">{{ store.activePatient.phaseLabel }}</span>
-        <span class="status-pill" :class="store.activePatient.risk">{{ store.activePatient.risk === 'high' ? '高优先级' : '常规' }}</span>
+        <h2>{{ current.name }} <small>{{ current.englishName }}</small></h2>
+        <span class="status-pill blue">{{ current.phaseLabel }}</span>
+        <span class="status-pill" :class="current.risk">{{ current.risk === 'high' ? '高优先级' : '常规' }}</span>
       </div>
-      <p>{{ store.activePatient.caseId }} · {{ store.activePatient.age }}岁 · {{ store.activePatient.city }} · {{ store.activePatient.diagnosis }}</p>
+      <p>{{ current.caseId }} · {{ current.age }}岁 · {{ current.city }} · {{ current.diagnosis }}</p>
     </div>
     <div class="banner-meta">
-      <span>资料完整度</span><b>{{ store.activePatient.completeness }}%</b>
-      <div class="progress"><i :style="{ width: `${store.activePatient.completeness}%` }"></i></div>
+      <span>资料完整度</span><b>{{ current.completeness }}%</b>
+      <div class="progress"><i :style="{ width: `${current.completeness}%` }"></i></div>
     </div>
   </section>
 </template>

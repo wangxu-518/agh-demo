@@ -25,4 +25,13 @@ describe('business page schemas', () => {
     )
     expect(new Set(titles).size).toBe(titles.length)
   })
+
+  it('provides records for every Malaysia lead and resource filter', () => {
+    for (const page of ['leads', 'resources']) {
+      const schema = schemaFor('malaysia', page)
+      for (const filter of schema.filters.slice(1)) {
+        expect(schema.rows.some((row) => row.filter === filter), `${page}/${filter}`).toBe(true)
+      }
+    }
+  })
 })

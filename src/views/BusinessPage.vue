@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
@@ -16,11 +16,29 @@ const activeFilter = ref('全部')
 const search = ref('')
 const showModal = ref(false)
 const message = ref('')
+const selectedTask = ref(null)
+const showTaskModal = ref(false)
 const system = computed(() => route.meta.system)
 const page = computed(() => route.meta.page)
 const schema = computed(() => schemaFor(system.value, page.value))
 const prefix = computed(() => ({ china: 'china-ops', health: 'health-management' }[system.value] || system.value))
-const filteredRows = computed(() => (schema.value.rows || []).filter((row) => row.cells.join(' ').toLowerCase().includes(search.value.toLowerCase())))
+const filteredRows = computed(() => (schema.value.rows || []).filter((row) => {
+  const firstFilter = schema.value.filters?.[0]
+  const matchesFilter = !row.filter || activeFilter.value === firstFilter || activeFilter.value === row.filter
+  return matchesFilter && row.cells.join(' ').toLowerCase().includes(search.value.toLowerCase())
+}))
+const malaysiaTasks = computed(() => store.state.tasks.filter(task => task.to === system.value))
+const tasksByColumn = computed(() => ({
+  待处理: malaysiaTasks.value.filter(task => task.status === 'pending'),
+  处理中: malaysiaTasks.value.filter(task => task.status === 'processing'),
+  等待对方: malaysiaTasks.value.filter(task => task.status === 'blocked'),
+  已完成: malaysiaTasks.value.filter(task => task.status === 'done'),
+}))
+
+watch(page, () => {
+  activeFilter.value = schema.value.filters?.[0] || '全部'
+  search.value = ''
+}, { immediate: true })
 
 function openRecord(row) {
   router.push({ path: `/${prefix.value}/record/${row.id}`, query: { source: page.value } })
@@ -31,6 +49,15 @@ function startAction() {
 function confirmAction() {
   message.value = store.performAction(schema.value.primary[1])
   showModal.value = false
+}
+function beginTask(task) {
+  selectedTask.value = task
+  showTaskModal.value = true
+}
+function confirmTask() {
+  selectedTask.value.status = 'processing'
+  message.value = `任务“${selectedTask.value.title}”已进入处理中`
+  showTaskModal.value = false
 }
 </script>
 
@@ -68,8 +95,12 @@ function confirmAction() {
             <button v-for="(group,index) in ['患者基本资料','病理与诊断','影像资料','检验报告','治疗记录','合同与授权']" :key="group">▸ {{ group }} <span>{{ [2,4,3,5,2,3][index] }}</span></button>
           </div>
         </SectionCard>
-        <SectionCard title="文件列表" subtitle="点击文件查看预览及版本信息">
-          <div v-for="patient in store.state.patients" :key="patient.id" class="document-row" @click="router.push(`/${prefix}/record/${patient.caseId}?source=${page}`)">
+        <SectionCard :title="system === 'china' ? '医疗文件列表' : '患者资料列表'" subtitle="点击记录查看对应对象及版本信息">
+          <div v-if="system === 'china'" v-for="doc in store.state.documents" :key="doc.id" class="document-row" @click="router.push(`/${prefix}/record/${doc.id}?source=${page}`)">
+            <div class="file-icon">PDF</div><div><b>{{ doc.name }}</b><small>{{ doc.type }} · {{ doc.language }} · {{ doc.source }}</small></div>
+            <span class="status-pill done">{{ doc.status }}</span><button class="mini-button">查看详情</button>
+          </div>
+          <div v-else v-for="patient in store.state.patients" :key="patient.id" class="document-row" @click="router.push(`/${prefix}/record/${patient.caseId}?source=${page}`)">
             <div class="file-icon">{{ patient.avatar }}</div><div><b>{{ patient.name }} · {{ patient.caseId }}</b><small>{{ patient.diagnosis }} · 负责人 {{ patient.owner }}</small></div>
             <span class="status-pill" :class="patient.completeness===100?'done':'pending'">{{ patient.completeness }}%</span><button class="mini-button">查看资料</button>
           </div>
@@ -85,9 +116,10 @@ function confirmAction() {
     <template v-else-if="schema.type === 'tasks'">
       <div class="kanban-board">
         <SectionCard v-for="status in ['待处理','处理中','等待对方','已完成']" :key="status" :title="status">
-          <div v-for="(task,i) in store.state.tasks.filter(t => t.to === system).slice(0,status==='待处理'?3:1)" :key="task.id + status" class="kanban-card">
-            <small>{{ task.id }} · {{ task.due }}</small><b>{{ task.title }}</b><span>{{ task.owner }}</span><button class="mini-button" @click="store.completeTask(task.id)">{{ status === '已完成' ? '查看记录' : '开始处理' }}</button>
+          <div v-for="task in tasksByColumn[status]" :key="task.id" class="kanban-card">
+            <small>{{ task.id }} · {{ task.due }}</small><b>{{ task.title }}</b><span>{{ task.owner }}</span><button class="mini-button" @click="status === '已完成' ? openRecord({id:task.id}) : beginTask(task)">{{ status === '已完成' ? '查看记录' : status === '处理中' ? '继续处理' : '开始处理' }}</button>
           </div>
+          <div v-if="!tasksByColumn[status].length" class="empty-state">暂无任务</div>
         </SectionCard>
       </div>
     </template>
@@ -155,6 +187,9 @@ function confirmAction() {
 
     <div v-if="showModal" class="business-modal-backdrop" @click.self="showModal=false">
       <form class="business-modal" @submit.prevent="confirmAction"><header><div><small>{{ schema.eyebrow }}</small><h2>{{ schema.primary[0] }}</h2></div><button type="button" @click="showModal=false">×</button></header><div class="modal-fields"><label>处理对象<select><option v-for="patient in store.state.patients" :key="patient.id">{{ patient.name }} · {{ patient.caseId }}</option></select></label><label>处理负责人<select><option>当前演示用户</option><option>李雯</option><option>Aisyah</option><option>刘协调员</option></select></label><label class="wide">处理说明<textarea placeholder="填写本次操作说明、交接要求或备注"></textarea></label><label>计划完成时间<input type="datetime-local" /></label><label>优先级<select><option>普通</option><option>高</option><option>紧急</option></select></label></div><footer><button type="button" class="secondary-button" @click="showModal=false">取消</button><button class="primary-button" type="submit">确认提交</button></footer></form>
+    </div>
+    <div v-if="showTaskModal" class="business-modal-backdrop" @click.self="showTaskModal=false">
+      <form class="business-modal" @submit.prevent="confirmTask"><header><div><small>CROSS-BORDER TASK</small><h2>开始处理跨国协同任务</h2></div><button type="button" @click="showTaskModal=false">×</button></header><div class="modal-fields"><label class="wide">任务<input :value="selectedTask?.title" readonly /></label><label>任务编号<input :value="selectedTask?.id" readonly /></label><label>截止时间<input :value="selectedTask?.due" readonly /></label><label class="wide">处理说明<textarea placeholder="填写联系患者、补充资料或回复中方团队的处理计划"></textarea></label></div><footer><button type="button" class="secondary-button" @click="showTaskModal=false">取消</button><button class="primary-button" type="submit">确认开始处理</button></footer></form>
     </div>
   </div>
 </template>
