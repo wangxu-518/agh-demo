@@ -45,7 +45,7 @@ const reviewText = ref(store.activeReview.recommendation || '建议完善 EBUS �
         <div style="height:240px;margin-top:14px;border-radius:12px;background:radial-gradient(circle at 58% 42%,#f29d64 0 2%,#202a38 3% 7%,#0c1017 8% 100%);display:grid;place-items:center;color:#ffffff88;font-size:11px">匿名化影像预览 · DEMO</div>
       </template>
       <template v-else>
-        <div class="timeline-item"><span class="timeline-dot expert"></span><div><b>v1 初步意见</b><p>建议补充关键检查后进入MDT。</p><small>张建国 · 2026-06-20</small></div></div>
+        <div class="timeline-item"><span class="timeline-dot expert"></span><div><b>v1 初步意见</b><p>建议补充关键检查后进入MDT。</p><small>张建国 · 近期更新</small></div></div>
       </template>
     </SectionCard>
     <div>

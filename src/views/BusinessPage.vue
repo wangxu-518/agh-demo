@@ -8,6 +8,7 @@ import TaskList from '../components/TaskList.vue'
 import Timeline from '../components/Timeline.vue'
 import { schemaFor } from '../config/pageSchemas'
 import { formFor } from '../config/actionForms'
+import { canPerformAction } from '../config/permissions'
 import { useDemoStore } from '../stores/demo'
 import { formatDateTime, formatMoney, relativeDue } from '../utils/format'
 
@@ -18,6 +19,7 @@ const activeFilter = ref('全部')
 const search = ref('')
 const showModal = ref(false)
 const message = ref('')
+const messageOk = ref(true)
 const selectedTask = ref(null)
 const showTaskModal = ref(false)
 const actionPayload = ref({})
@@ -41,6 +43,8 @@ const extraActions = computed(() => {
   if (system.value === 'malaysia' && page.value === 'documents') return [['撤回授权', 'revokeConsent']]
   return []
 })
+const allowedExtraActions = computed(() => extraActions.value.filter(([, action]) => isActionAllowed(action)))
+const canRunPrimaryAction = computed(() => isActionAllowed(schema.value.primary?.[1]))
 const handoffChecklist = [
   ['患者身份与联系方式', 'identity'],
   ['双语病历及影像', 'records'],
@@ -98,6 +102,11 @@ function openRecord(row) {
 }
 function startAction(action = '', defaults = {}) {
   selectedAction.value = action
+  if (!isActionAllowed(effectiveAction.value)) {
+    message.value = '当前角色没有执行该操作的权限'
+    messageOk.value = false
+    return
+  }
   actionPayload.value = { ...defaults }
   if (effectiveAction.value === 'finishReview') actionPayload.value.recommendation = store.activeReview.recommendation
   if (effectiveAction.value === 'finishMdt') actionPayload.value.conclusion = mdtNotes.value
@@ -109,9 +118,14 @@ function startAction(action = '', defaults = {}) {
   showModal.value = true
 }
 
+function isActionAllowed(action) {
+  return canPerformAction(store.state.permissions, system.value, action)
+}
+
 function selectMatchingPatient(caseId) {
   store.setActiveCase(caseId)
   message.value = ''
+  messageOk.value = true
 }
 
 function requestCandidate(candidate) {
@@ -152,8 +166,10 @@ function confirmAction() {
       patientSigned: !!actionPayload.value.patientSigned,
     } }
     : actionPayload.value
+  payload.__system = system.value
   const result = store.performAction(effectiveAction.value, payload)
   message.value = result.message
+  messageOk.value = result.ok
   showModal.value = false
 }
 function beginTask(task) {
@@ -164,6 +180,7 @@ function beginTask(task) {
 function confirmTask() {
   const result = store.startTask(selectedTask.value.id, { comment: taskComment.value })
   message.value = result.message
+  messageOk.value = result.ok
   showTaskModal.value = false
 }
 </script>
@@ -171,10 +188,10 @@ function confirmTask() {
 <template>
   <div :class="{ 'patient-module-page': system === 'patient' }">
     <PageHeader :eyebrow="schema.eyebrow" :title="schema.title" :subtitle="schema.description">
-      <button v-for="[label,action] in extraActions" :key="action" class="secondary-button" @click="startAction(action)">{{ label }}</button>
-      <button v-if="!['comparison','case-list'].includes(schema.type)" class="primary-button" @click="startAction()">{{ schema.primary[0] }}</button>
+      <button v-for="[label,action] in allowedExtraActions" :key="action" class="secondary-button" @click="startAction(action)">{{ label }}</button>
+      <button v-if="!['comparison','case-list'].includes(schema.type) && canRunPrimaryAction" class="primary-button" @click="startAction()">{{ schema.primary[0] }}</button>
     </PageHeader>
-    <div v-if="message" class="action-success">✓ {{ message }}</div>
+    <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ messageOk ? '✓' : '!' }} {{ message }}</div>
 
     <div v-if="schema.metrics" class="stats-grid compact-stats">
       <StatCard v-for="([label,value], index) in schema.metrics" :key="label" :label="label" :value="value" :icon="String(index + 1)" />
@@ -297,7 +314,7 @@ function confirmTask() {
               <div v-if="candidate.constraints.length" class="match-constraints"><b>限制条件</b><span v-for="item in candidate.constraints" :key="item">{{ item }}</span></div>
               <footer>
                 <span>{{ candidate.status }}</span>
-                <button class="primary-button" :disabled="!canRequestHospital || candidate.status === 'rejected'" @click="requestCandidate(candidate)">
+                <button class="primary-button" :disabled="!canRequestHospital || candidate.status === 'rejected' || !isActionAllowed('requestHospital')" @click="requestCandidate(candidate)">
                   {{ candidateActionLabel(candidate) }}
                 </button>
               </footer>
@@ -336,7 +353,7 @@ function confirmTask() {
     </template>
 
     <template v-else-if="schema.type === 'quality'">
-      <div class="quality-grid"><article v-for="item in [['随访按时完成率','93','目标 ≥90'],['医疗资料归档率','98','目标 ≥95'],['高危预警响应率','100','目标 100'],['患者服务满意度','96','目标 ≥92'],['跨端任务SLA','94','目标 ≥90'],['用药依从率','91','目标 ≥90']]" :key="item[0]"><span>{{ item[0] }}</span><strong>{{ item[1] }}%</strong><div><i :style="{width:item[1]+'%'}"></i></div><small>{{ item[2] }}</small></article></div><SectionCard title="本月质控问题"><table class="data-table"><thead><tr><th>问题</th><th>涉及环节</th><th>责任人</th><th>整改期限</th><th>状态</th></tr></thead><tbody><tr><td>2例随访记录逾期归档</td><td>短期康复期</td><td>Farah</td><td>6月22日</td><td>整改中</td></tr><tr><td>1例出院资料缺英文版</td><td>医院交接</td><td>刘敏</td><td>今日</td><td>待复核</td></tr></tbody></table></SectionCard>
+      <div class="quality-grid"><article v-for="item in [['随访按时完成率','93','目标 ≥90'],['医疗资料归档率','98','目标 ≥95'],['高危预警响应率','100','目标 100'],['患者服务满意度','96','目标 ≥92'],['跨端任务SLA','94','目标 ≥90'],['用药依从率','91','目标 ≥90']]" :key="item[0]"><span>{{ item[0] }}</span><strong>{{ item[1] }}%</strong><div><i :style="{width:item[1]+'%'}"></i></div><small>{{ item[2] }}</small></article></div><SectionCard title="本月质控问题"><table class="data-table"><thead><tr><th>问题</th><th>涉及环节</th><th>责任人</th><th>整改期限</th><th>状态</th></tr></thead><tbody><tr><td>2例随访记录逾期归档</td><td>短期康复期</td><td>Farah</td><td>明天</td><td>整改中</td></tr><tr><td>1例出院资料缺英文版</td><td>医院交接</td><td>刘敏</td><td>今天</td><td>待复核</td></tr></tbody></table></SectionCard>
     </template>
 
     <div v-if="showModal" class="business-modal-backdrop" @click.self="showModal=false">

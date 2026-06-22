@@ -249,8 +249,8 @@ function exportRecord() {
         </SectionCard>
         <SectionCard :title="kind === 'lead' ? '跟进与转化' : kind === 'resource' ? '合作与预约能力' : kind === 'document' ? '文件处理状态' : '处理状态'">
           <div v-if="kind === 'lead'" class="info-list"><div class="info-row"><span>最近联系</span><b>今天 10:20 · WhatsApp</b></div><div class="info-row"><span>患者需求</span><b>希望获得中国专家第二诊疗意见</b></div><div class="info-row"><span>下一步</span><b>发送双语咨询表并预约视频沟通</b></div><div class="info-row"><span>转化概率</span><b>65%</b></div></div>
-          <div v-else-if="kind === 'resource'" class="info-list"><div class="info-row"><span>可预约时段</span><b>周一至周六 09:00–17:00</b></div><div class="info-row"><span>服务语言</span><b>中文 / 英文 / 马来文</b></div><div class="info-row"><span>结算方式</span><b>患者自费 / 合作月结</b></div><div class="info-row"><span>最近服务</span><b>2026-06-18 · 已完成</b></div></div>
-          <div v-else-if="kind === 'document'" class="info-list"><div class="info-row"><span>原始文件</span><b>已归档且不可覆盖</b></div><div class="info-row"><span>中文翻译</span><b>{{ document.status === 'translated' ? '已完成' : '无需翻译' }}</b></div><div class="info-row"><span>医学核验</span><b>李雯 · 2026-06-20</b></div><div class="info-row"><span>授权范围</span><b>运营、专家及接诊医院</b></div></div>
+          <div v-else-if="kind === 'resource'" class="info-list"><div class="info-row"><span>可预约时段</span><b>周一至周六 09:00–17:00</b></div><div class="info-row"><span>服务语言</span><b>中文 / 英文 / 马来文</b></div><div class="info-row"><span>结算方式</span><b>患者自费 / 合作月结</b></div><div class="info-row"><span>最近服务</span><b>近一周内 · 已完成</b></div></div>
+          <div v-else-if="kind === 'document'" class="info-list"><div class="info-row"><span>原始文件</span><b>已归档且不可覆盖</b></div><div class="info-row"><span>中文翻译</span><b>{{ document.status === 'translated' ? '已完成' : '无需翻译' }}</b></div><div class="info-row"><span>医学核验</span><b>李雯 · 当前版本已核验</b></div><div class="info-row"><span>授权范围</span><b>运营、专家及接诊医院</b></div></div>
           <div v-else class="notice">该业务记录已进入处理流程，可在下方补充备注和附件。</div>
         </SectionCard>
       </div>

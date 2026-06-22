@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { systems } from '../config/systems'
+import { canAccessPage } from '../config/permissions'
 import { useAuthStore } from '../stores/auth'
 import { useDemoStore } from '../stores/demo'
 
@@ -14,6 +15,7 @@ const system = computed(() => route.meta.system)
 const config = computed(() => systems[system.value])
 const prefix = computed(() => ({ china: 'china-ops', health: 'health-management' }[system.value] || system.value))
 const isPatient = computed(() => system.value === 'patient')
+const visibleNav = computed(() => config.value.nav.filter(([page]) => canAccessPage(demo.state.permissions, system.value, page)))
 
 function logout() {
   auth.logout(system.value)
@@ -26,7 +28,7 @@ function logout() {
     <aside v-if="!isPatient" class="system-sidebar">
       <div class="system-brand"><span>{{ config.icon }}</span><div><b>{{ config.name }}</b><small>{{ config.en }}</small></div></div>
       <nav>
-        <RouterLink v-for="[page, title, titleEn] in config.nav" :key="page" :to="`/${prefix}/${page}`">
+        <RouterLink v-for="[page, title, titleEn] in visibleNav" :key="page" :to="`/${prefix}/${page}`">
           <i>{{ page.slice(0, 1).toUpperCase() }}</i><span>{{ demo.state.language === 'zh' ? title : titleEn }}</span>
         </RouterLink>
       </nav>
@@ -44,7 +46,7 @@ function logout() {
       </header>
       <div class="system-content" :class="{ 'patient-system-content': isPatient }"><RouterView /></div>
       <nav v-if="isPatient" class="patient-bottom-nav">
-        <RouterLink v-for="[page, title, titleEn] in config.nav" :key="page" :to="`/${prefix}/${page}`"><i>{{ page === 'home' ? '⌂' : page === 'records' ? '▤' : page === 'plan' ? '✚' : page === 'travel' ? '✈' : '♥' }}</i><span>{{ demo.state.language === 'zh' ? title : titleEn }}</span></RouterLink>
+        <RouterLink v-for="[page, title, titleEn] in visibleNav" :key="page" :to="`/${prefix}/${page}`"><i>{{ page === 'home' ? '⌂' : page === 'records' ? '▤' : page === 'plan' ? '✚' : page === 'travel' ? '✈' : '♥' }}</i><span>{{ demo.state.language === 'zh' ? title : titleEn }}</span></RouterLink>
       </nav>
     </main>
   </div>

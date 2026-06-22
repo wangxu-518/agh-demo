@@ -13,7 +13,9 @@ import HealthWorkspace from './views/HealthWorkspace.vue'
 import BusinessPage from './views/BusinessPage.vue'
 import RecordDetail from './views/RecordDetail.vue'
 import { systems, systemFromPath } from './config/systems'
+import { canAccessPage } from './config/permissions'
 import { useAuthStore } from './stores/auth'
+import { useDemoStore } from './stores/demo'
 
 const prefixes = { patient: 'patient', malaysia: 'malaysia', china: 'china-ops', expert: 'expert', hospital: 'hospital', health: 'health-management' }
 const dashboards = { patient: PatientPortal, malaysia: MalaysiaWorkspace, china: ChinaOpsWorkspace, expert: ExpertWorkspace, hospital: HospitalWorkspace, health: HealthWorkspace }
@@ -35,12 +37,12 @@ for (const [system, config] of Object.entries(systems)) {
     meta: { system },
     children: [
       ...config.nav.map(([page, title]) => ({
-      path: page,
-      component: page === 'home' || page === 'dashboard' ? dashboards[system] : system === 'patient' ? PatientMobilePage : BusinessPage,
-      meta: { system, page, title },
+        path: page,
+        component: page === 'home' || page === 'dashboard' ? dashboards[system] : system === 'patient' ? PatientMobilePage : BusinessPage,
+        meta: { system, page, title },
       })),
-      { path: 'record/:id', component: RecordDetail, meta: { system, title: '业务详情' } },
-      ...(system === 'patient' ? [{ path: 'detail/:id', component: PatientMobileDetail, meta: { system, title: '详情' } }] : []),
+      { path: 'record/:id', component: RecordDetail, meta: { system, page: 'record', title: '业务详情' } },
+      ...(system === 'patient' ? [{ path: 'detail/:id', component: PatientMobileDetail, meta: { system, page: 'detail', title: '详情' } }] : []),
     ],
   })
 }
@@ -51,6 +53,8 @@ router.beforeEach((to) => {
   if (!system || to.meta.public) return true
   const auth = useAuthStore()
   if (!auth.isLoggedIn(system)) return `/${prefixes[system]}/login`
+  const demo = useDemoStore()
+  if (!canAccessPage(demo.state.permissions, system, to.meta.page)) return systems[system].home
   return true
 })
 export default router

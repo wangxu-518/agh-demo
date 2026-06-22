@@ -6,11 +6,27 @@ const followupStages = () => ([
   { id: 'long', name: '长期随访期', nameEn: 'Long-term care', period: '1年以上', frequency: '每3月随访／年度筛查', status: 'upcoming', owner: '健康管理中心', items: ['终身健康档案', '年度复盘', '生活质量', '安宁疗护预案'] },
 ])
 
-const scheduleFor = (start = '2026-06-28') => ([
-  { id: 'admission', date: start, title: '入院及基线检查', status: 'planned' },
-  { id: 'mdt', date: '2026-06-29', title: 'MDT复核与麻醉评估', status: 'planned' },
-  { id: 'operation', date: '2026-07-01', title: '胸腔镜手术（拟）', status: 'planned' },
-  { id: 'discharge', date: '2026-07-08', title: '出院评估与归国交接', status: 'planned' },
+const pad = (value) => String(value).padStart(2, '0')
+const addDays = (days) => {
+  const date = new Date()
+  date.setHours(9, 0, 0, 0)
+  date.setDate(date.getDate() + days)
+  return date
+}
+const dateOnly = (days) => {
+  const date = addDays(days)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+const dateTime = (days, hour = 10, minute = 0) => {
+  const date = addDays(days)
+  date.setHours(hour, minute, 0, 0)
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00+08:00`
+}
+const scheduleFor = (startOffset = 6) => ([
+  { id: 'admission', date: dateOnly(startOffset), title: '入院及基线检查', status: 'planned' },
+  { id: 'mdt', date: dateOnly(startOffset + 1), title: 'MDT复核与麻醉评估', status: 'planned' },
+  { id: 'operation', date: dateOnly(startOffset + 3), title: '胸腔镜手术（拟）', status: 'planned' },
+  { id: 'discharge', date: dateOnly(startOffset + 10), title: '出院评估与归国交接', status: 'planned' },
 ])
 
 const baseReview = (overrides = {}) => ({
@@ -63,11 +79,11 @@ const cases = {
     review: baseReview({
       status: 'in_review', expert: '张建国 主任', specialty: '胸外科',
       summary: '影像提示右上肺原发灶伴纵隔淋巴结转移，需结合分子检测和肺功能评估确定综合治疗路径。',
-      meetingAt: '2026-06-22T15:00:00+08:00', version: 1,
+      meetingAt: dateTime(1, 15), version: 1,
     }),
     treatment: baseTreatment({
       status: 'planning', hospital: '广州医科大学附属第一医院', department: '胸外科',
-      doctor: '张建国 主任', admissionDate: '2026-06-28', estimatedCost: '¥180,000–230,000',
+      doctor: '张建国 主任', admissionDate: dateOnly(6), estimatedCost: '¥180,000–230,000',
       schedule: scheduleFor(),
     }),
     billing: baseBilling({
@@ -81,12 +97,12 @@ const cases = {
     travel: baseTravel({
       status: 'planning', visaStatus: 'approved', flightStatus: 'held',
       hospitalConfirmed: false, itinerary: [
-        { id: 'FLIGHT', title: '吉隆坡 → 广州', date: '2026-06-27', status: 'held' },
-        { id: 'PICKUP', title: '白云机场专车接送', date: '2026-06-27', status: 'planned' },
+        { id: 'FLIGHT', title: '吉隆坡 → 广州', date: dateOnly(5), status: 'held' },
+        { id: 'PICKUP', title: '白云机场专车接送', date: dateOnly(5), status: 'planned' },
       ],
     }),
     followup: baseFollowup(),
-    consent: baseConsent({ status: 'active', signedAt: '2026-06-19T14:30:00+08:00', scopes: ['malaysia', 'china', 'expert', 'hospital'] }),
+    consent: baseConsent({ status: 'active', signedAt: dateTime(-3, 14, 30), scopes: ['malaysia', 'china', 'expert', 'hospital'] }),
     hospitalMatching: {
       status: 'ready', selectedHospitalId: null, requestedAt: null,
       candidates: [
@@ -137,14 +153,14 @@ const cases = {
   },
   'AGH-MY-2026-0012': {
     id: 'AGH-MY-2026-0012',
-    review: baseReview({ status: 'completed', expert: '周敏 教授', specialty: '乳腺肿瘤内科', recommendation: '维持内分泌治疗并按期复查。', version: 2, signedAt: '2026-05-20T16:00:00+08:00' }),
-    treatment: baseTreatment({ status: 'post_operation', hospital: '中山大学肿瘤防治中心', department: '乳腺科', doctor: '周敏 教授', admissionDate: '2026-05-25', bed: '已出院', estimatedCost: '¥120,000–150,000', schedule: scheduleFor('2026-05-25'), dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
-    billing: baseBilling({ estimatedMin: 120000, estimatedMax: 150000, paid: 145000, patientConfirmed: true, insuranceStatus: 'submitted', payments: [{ id: 'PAY-12-1', amount: 145000, method: 'bank_transfer', paidAt: '2026-05-24' }] }),
+    review: baseReview({ status: 'completed', expert: '周敏 教授', specialty: '乳腺肿瘤内科', recommendation: '维持内分泌治疗并按期复查。', version: 2, signedAt: dateTime(-18, 16) }),
+    treatment: baseTreatment({ status: 'post_operation', hospital: '中山大学肿瘤防治中心', department: '乳腺科', doctor: '周敏 教授', admissionDate: dateOnly(-13), bed: '已出院', estimatedCost: '¥120,000–150,000', schedule: scheduleFor(-13), dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
+    billing: baseBilling({ estimatedMin: 120000, estimatedMax: 150000, paid: 145000, patientConfirmed: true, insuranceStatus: 'submitted', payments: [{ id: 'PAY-12-1', amount: 145000, method: 'bank_transfer', paidAt: dateOnly(-14) }] }),
     travel: baseTravel({ status: 'completed', visaStatus: 'approved', flightStatus: 'completed', patientConfirmed: true, hospitalConfirmed: true }),
     followup: baseFollowup({ generated: true, status: 'active', stages: followupStages().map((stage, index) => ({ ...stage, status: index === 1 ? 'active' : index < 1 ? 'completed' : 'upcoming' })) }),
-    consent: baseConsent({ status: 'active', signedAt: '2026-05-10T10:00:00+08:00', scopes: ['malaysia', 'china', 'expert', 'hospital', 'health'] }),
+    consent: baseConsent({ status: 'active', signedAt: dateTime(-28, 10), scopes: ['malaysia', 'china', 'expert', 'hospital', 'health'] }),
     hospitalMatching: {
-      status: 'accepted', selectedHospitalId: 'HOS-SYSUCC', requestedAt: '2026-05-20T17:00:00+08:00',
+      status: 'accepted', selectedHospitalId: 'HOS-SYSUCC', requestedAt: dateTime(-18, 17),
       candidates: [
         hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', 96, 1, '乳腺科', '周敏 教授', {
           recommendation: '已选择', capability: ['乳腺癌专科', '术后辅助治疗', '精准分型'],
@@ -162,14 +178,14 @@ const cases = {
   },
   'AGH-MY-2026-0007': {
     id: 'AGH-MY-2026-0007',
-    review: baseReview({ status: 'completed', expert: '陈力 主任', specialty: '妇科肿瘤', recommendation: '归国后持续监测 CA-125，异常时复评。', version: 3, signedAt: '2025-12-08T10:00:00+08:00' }),
-    treatment: baseTreatment({ status: 'completed', hospital: '南方医科大学南方医院', department: '妇科肿瘤', doctor: '陈力 主任', admissionDate: '2025-12-12', bed: '已出院', estimatedCost: '¥160,000–190,000', dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
+    review: baseReview({ status: 'completed', expert: '陈力 主任', specialty: '妇科肿瘤', recommendation: '归国后持续监测 CA-125，异常时复评。', version: 3, signedAt: dateTime(-42, 10) }),
+    treatment: baseTreatment({ status: 'completed', hospital: '南方医科大学南方医院', department: '妇科肿瘤', doctor: '陈力 主任', admissionDate: dateOnly(-38), bed: '已出院', estimatedCost: '¥160,000–190,000', dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
     billing: baseBilling({ estimatedMin: 160000, estimatedMax: 190000, paid: 182000, patientConfirmed: true, insuranceStatus: 'approved' }),
     travel: baseTravel({ status: 'completed', visaStatus: 'approved', flightStatus: 'completed', patientConfirmed: true, hospitalConfirmed: true }),
     followup: baseFollowup({ generated: true, status: 'alert', stages: followupStages().map((stage, index) => ({ ...stage, status: index === 2 ? 'active' : index < 2 ? 'completed' : 'upcoming' })) }),
-    consent: baseConsent({ status: 'active', signedAt: '2025-11-28T10:00:00+08:00', scopes: ['malaysia', 'china', 'expert', 'hospital', 'health'] }),
+    consent: baseConsent({ status: 'active', signedAt: dateTime(-52, 10), scopes: ['malaysia', 'china', 'expert', 'hospital', 'health'] }),
     hospitalMatching: {
-      status: 'completed', selectedHospitalId: 'HOS-NFYY', requestedAt: '2025-12-08T15:00:00+08:00',
+      status: 'completed', selectedHospitalId: 'HOS-NFYY', requestedAt: dateTime(-42, 15),
       candidates: [
         hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', 92, 1, '妇科肿瘤', '陈力 主任', {
           recommendation: '已选择', capability: ['妇科肿瘤手术', '复发风险管理', '综合治疗'],
@@ -207,10 +223,10 @@ export const seedState = {
     health: ['view_discharge_case', 'manage_followup', 'manage_medication', 'manage_alert', 'close_alert'],
   },
   patients: [
-    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', source: 'Facebook', updatedAt: '2026-06-21T10:32:00+08:00' },
-    { id: 'P-0021', caseId: 'AGH-MY-2026-0021', name: '陈伟强', englishName: 'Tan Wei Keong', age: 61, gender: 'male', country: 'Malaysia', city: 'Penang', language: 'en', phone: '+60 12-*** 1120', diagnosis: '胃癌待分期', diagnosisEn: 'Gastric cancer, staging pending', phase: 'lead', phaseLabel: '新咨询', completeness: 35, owner: 'Nur', risk: 'normal', avatar: '陈', source: 'TikTok', updatedAt: '2026-06-21T09:10:00+08:00' },
-    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', source: 'Referral', updatedAt: '2026-06-20T18:22:00+08:00' },
-    { id: 'P-0007', caseId: 'AGH-MY-2026-0007', name: '黄丽珍', englishName: 'Wong Lai Zhen', age: 58, gender: 'female', country: 'Malaysia', city: 'Kuching', language: 'zh', phone: '+60 16-*** 8802', diagnosis: '卵巢癌复查异常', diagnosisEn: 'Ovarian cancer, abnormal follow-up', phase: 'followup', phaseLabel: '高危随访', completeness: 100, owner: 'Farah', risk: 'critical', avatar: '黄', source: 'Referral', updatedAt: '2026-06-21T08:45:00+08:00' },
+    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', source: 'Facebook', updatedAt: dateTime(0, 10, 32) },
+    { id: 'P-0021', caseId: 'AGH-MY-2026-0021', name: '陈伟强', englishName: 'Tan Wei Keong', age: 61, gender: 'male', country: 'Malaysia', city: 'Penang', language: 'en', phone: '+60 12-*** 1120', diagnosis: '胃癌待分期', diagnosisEn: 'Gastric cancer, staging pending', phase: 'lead', phaseLabel: '新咨询', completeness: 35, owner: 'Nur', risk: 'normal', avatar: '陈', source: 'TikTok', updatedAt: dateTime(0, 9, 10) },
+    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', source: 'Referral', updatedAt: dateTime(-1, 18, 22) },
+    { id: 'P-0007', caseId: 'AGH-MY-2026-0007', name: '黄丽珍', englishName: 'Wong Lai Zhen', age: 58, gender: 'female', country: 'Malaysia', city: 'Kuching', language: 'zh', phone: '+60 16-*** 8802', diagnosis: '卵巢癌复查异常', diagnosisEn: 'Ovarian cancer, abnormal follow-up', phase: 'followup', phaseLabel: '高危随访', completeness: 100, owner: 'Farah', risk: 'critical', avatar: '黄', source: 'Referral', updatedAt: dateTime(0, 8, 45) },
   ],
   leads: [
     { id: 'LEAD-260621-01', name: '陈伟强', source: 'TikTok', disease: '胃癌', phone: '+60 12-*** 1120', status: '待联系', owner: 'Nur', note: '' },
@@ -238,24 +254,24 @@ export const seedState = {
     { id: 'D5', caseId: 'AGH-MY-2026-0018', type: '授权书', name: '跨境数据授权书.pdf', language: 'bilingual', source: '患者签署', status: 'verified', version: 1, originalId: 'ORIG-D5', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 2, voidedAt: null },
   ],
   tasks: [
-    { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'china', to: 'malaysia', owner: 'Aisyah', dueAt: '2026-06-21T18:00:00+08:00', status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-102', caseId: 'AGH-MY-2026-0018', title: '完成中文病历摘要', from: 'malaysia', to: 'china', owner: '李雯', dueAt: '2026-06-22T10:00:00+08:00', status: 'done', priority: 'normal', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'china', to: 'expert', owner: '张主任', dueAt: '2026-06-22T18:00:00+08:00', status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-104', caseId: 'AGH-MY-2026-0018', title: '预留胸外科床位', from: 'china', to: 'hospital', owner: '刘协调员', dueAt: '2026-06-24T18:00:00+08:00', status: 'blocked', priority: 'normal', comments: [], attachments: [], slaPausedAt: '2026-06-21T11:00:00+08:00' },
+    { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'china', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(1, 18), status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-102', caseId: 'AGH-MY-2026-0018', title: '完成中文病历摘要', from: 'malaysia', to: 'china', owner: '李雯', dueAt: dateTime(0, 10), status: 'done', priority: 'normal', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'china', to: 'expert', owner: '张主任', dueAt: dateTime(1, 18), status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-104', caseId: 'AGH-MY-2026-0018', title: '预留胸外科床位', from: 'china', to: 'hospital', owner: '刘协调员', dueAt: dateTime(2, 18), status: 'blocked', priority: 'normal', comments: [], attachments: [], slaPausedAt: dateTime(0, 11) },
   ],
   alerts: [
-    { id: 'A-07', caseId: 'AGH-MY-2026-0007', patient: '黄丽珍', type: '复查异常', severity: 'critical', detail: 'CA-125 连续两次升高，需在12小时内发起专家复评', status: 'open', createdAt: '2026-06-21T08:45:00+08:00', resolution: '', assignedTo: 'Farah' },
-    { id: 'A-12', caseId: 'AGH-MY-2026-0012', patient: '王美玲', type: '用药提醒', severity: 'medium', detail: '连续2次未确认服药', status: 'open', createdAt: '2026-06-20T20:10:00+08:00', resolution: '', assignedTo: 'Aina' },
+    { id: 'A-07', caseId: 'AGH-MY-2026-0007', patient: '黄丽珍', type: '复查异常', severity: 'critical', detail: 'CA-125 连续两次升高，需在12小时内发起专家复评', status: 'open', createdAt: dateTime(0, 8, 45), resolution: '', assignedTo: 'Farah' },
+    { id: 'A-12', caseId: 'AGH-MY-2026-0012', patient: '王美玲', type: '用药提醒', severity: 'medium', detail: '连续2次未确认服药', status: 'open', createdAt: dateTime(-1, 20, 10), resolution: '', assignedTo: 'Aina' },
   ],
   notifications: [
-    { id: 'N-1', to: 'expert', title: '主案例评审即将到期', read: false, createdAt: '2026-06-21T10:30:00+08:00' },
-    { id: 'N-2', to: 'health', title: '高危预警待处置', read: false, createdAt: '2026-06-21T08:45:00+08:00' },
+    { id: 'N-1', to: 'expert', title: '主案例评审即将到期', read: false, createdAt: dateTime(0, 10, 30) },
+    { id: 'N-2', to: 'health', title: '高危预警待处置', read: false, createdAt: dateTime(0, 8, 45) },
   ],
   events: [
-    { id: 1, caseId: 'AGH-MY-2026-0018', at: '2026-06-18T09:12:00+08:00', actor: '患者', system: 'patient', title: '提交在线咨询', detail: '完成基础信息及病情描述' },
-    { id: 2, caseId: 'AGH-MY-2026-0018', at: '2026-06-18T10:05:00+08:00', actor: 'Aisyah', system: 'malaysia', title: '建立患者档案', detail: '生成 Case AGH-MY-2026-0018' },
-    { id: 3, caseId: 'AGH-MY-2026-0018', at: '2026-06-19T14:30:00+08:00', actor: '患者', system: 'patient', title: '签署数据授权', detail: '授权中马团队按角色访问资料' },
-    { id: 4, caseId: 'AGH-MY-2026-0018', at: '2026-06-20T11:20:00+08:00', actor: '李雯', system: 'china', title: '完成病历整理', detail: '形成中文结构化摘要 v1' },
-    { id: 5, caseId: 'AGH-MY-2026-0018', at: '2026-06-21T10:32:00+08:00', actor: '系统', system: 'expert', title: '进入专家评审', detail: '已分配张建国主任' },
+    { id: 1, caseId: 'AGH-MY-2026-0018', at: dateTime(-4, 9, 12), actor: '患者', system: 'patient', title: '提交在线咨询', detail: '完成基础信息及病情描述' },
+    { id: 2, caseId: 'AGH-MY-2026-0018', at: dateTime(-4, 10, 5), actor: 'Aisyah', system: 'malaysia', title: '建立患者档案', detail: '生成 Case AGH-MY-2026-0018' },
+    { id: 3, caseId: 'AGH-MY-2026-0018', at: dateTime(-3, 14, 30), actor: '患者', system: 'patient', title: '签署数据授权', detail: '授权中马团队按角色访问资料' },
+    { id: 4, caseId: 'AGH-MY-2026-0018', at: dateTime(-2, 11, 20), actor: '李雯', system: 'china', title: '完成病历整理', detail: '形成中文结构化摘要 v1' },
+    { id: 5, caseId: 'AGH-MY-2026-0018', at: dateTime(0, 10, 32), actor: '系统', system: 'expert', title: '进入专家评审', detail: '已分配张建国主任' },
   ],
 }

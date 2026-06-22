@@ -53,6 +53,21 @@ describe('business page schemas', () => {
     )
   })
 
+  it('derives P0 dashboard metrics from business data rather than static placeholders', () => {
+    const leads = schemaFor('malaysia', 'leads', seedState)
+    const records = schemaFor('china', 'records', seedState)
+    const billing = schemaFor('hospital', 'billing', seedState)
+    const quality = schemaFor('health', 'quality', seedState)
+
+    expect(leads.metrics[0]).toEqual(['线索总数', String(seedState.leads.length)])
+    expect(records.metrics[0]).toEqual(['原始文件', String(seedState.documents.length)])
+    expect(billing.metrics[3]).toEqual([
+      '付款笔数',
+      String(Object.values(seedState.cases).reduce((sum, item) => sum + item.billing.payments.length, 0)),
+    ])
+    expect(quality.metrics[1][1]).toMatch(/%$/)
+  })
+
   it('provides patient collections for every internal case-scoped menu', () => {
     const pages = [
       ['china', 'handoff'],

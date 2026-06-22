@@ -133,6 +133,40 @@ describe('case-isolated workflow store', () => {
     expect(store.state.rehabAssessments[0].conclusion).toContain('步行耐力')
   })
 
+  it('persists configured primary actions and rejects unhandled buttons', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+
+    expect(store.performAction('publishSummary', { summary: '中文摘要已结构化' }).ok).toBe(true)
+    expect(store.activeReview.summaryVersion).toBe(1)
+    expect(store.performAction('copyReview').ok).toBe(true)
+    expect(store.activeReview.copiedFrom).toBeTruthy()
+    expect(store.performAction('unknownAction').ok).toBe(false)
+    expect(store.performAction('unknownAction').code).toBe('UNHANDLED_ACTION')
+  })
+
+  it('blocks role-forbidden business actions when a system context is provided', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+
+    const forbidden = store.performAction('assignExpert', { __system: 'patient', expert: '张建国 主任' })
+    expect(forbidden.ok).toBe(false)
+    expect(forbidden.code).toBe('FORBIDDEN')
+
+    const allowed = store.performAction('assignExpert', { __system: 'china', expert: '张建国 主任' })
+    expect(allowed.ok).toBe(true)
+  })
+
+  it('keeps seed task due dates current for demo review', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    const openDueTimes = store.state.tasks
+      .filter((task) => task.status !== 'done')
+      .map((task) => new Date(task.dueAt).getTime())
+
+    expect(openDueTimes.every((time) => time >= Date.now() - 60000)).toBe(true)
+  })
+
   it('keeps hospital candidates and selections bound to the selected case', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()

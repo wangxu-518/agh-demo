@@ -28,6 +28,9 @@ pnpm dev
 3. **功能清单三元组**：每个功能必须有验证命令，不能跳过
 4. **无调试残留**：提交前清理 console.log/debugger/TODO
 5. **Baseline 先于优化**：先用最笨方法跑通，再谈优化
+6. **报价范围优先**：所有任务必须能追溯到客户三期报价方案，不得因原型优化自动扩大交付范围
+7. **A/B/C 范围治理**：A 类按期实施，B 类严格限深，C 类暂停并进入增购清单
+8. **开发前范围登记**：新增功能必须先在 `feature_list.json` 填写 `phase`、`quote_basis`、`scope_class`、`scope_status`
 
 ## 验证命令
 
@@ -43,6 +46,7 @@ make build         # 生产构建
 - PROGRESS.md - 进度记录
 - DECISIONS.md - 技术决策
 - REQUIREMENTS_MATRIX.md - 客户需求确认矩阵
+- SCOPE_MATRIX.md - 三期报价范围、限深规则与增购清单
 - docs/system_design.md - 系统方案
 
 ## 目录结构

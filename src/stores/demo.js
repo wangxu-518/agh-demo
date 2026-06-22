@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
+import { canPerformAction } from '../config/permissions'
 
 const KEY = 'agh-demo-v4'
 const clone = (value) => JSON.parse(JSON.stringify(value))
@@ -585,6 +586,10 @@ export const useDemoStore = defineStore('demo', () => {
   }
 
   function performAction(action, payload = {}, caseId = state.value.activeCaseId) {
+    const actorSystem = payload.__system
+    if (actorSystem && !canPerformAction(state.value.permissions, actorSystem, action)) {
+      return result(false, '当前角色没有执行该操作的权限', 'FORBIDDEN')
+    }
     const handlers = {
       submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, requestMoreDocuments,
       rejectReview, requestHospital, acceptHospital, rejectHospital, recordPayment, recordRefund,
@@ -597,13 +602,26 @@ export const useDemoStore = defineStore('demo', () => {
     const currentCase = caseById(caseId)
     const patient = patientByCase(caseId)
     if (action === 'lockDocuments') {
+      if (!patient || !currentCase) return result(false, '病例不存在')
+      const activeDocs = state.value.documents.filter((doc) => doc.caseId === caseId && !doc.voidedAt)
+      if (!activeDocs.length) return result(false, '当前病例暂无可锁定资料')
+      activeDocs.forEach((doc) => {
+        if (doc.status === 'pending_verification') doc.status = 'verified'
+        if (doc.medicalVerification === 'pending') doc.medicalVerification = 'verified'
+      })
       patient.completeness = 100
+      if (currentCase.consent.status === 'pending') currentCase.consent.status = 'active'
       addEvent('malaysia', payload.actor || 'Aisyah', '锁定资料版本', payload.note || '资料完整度达到100%', caseId)
       return result(true, '资料版本已锁定，中国运营端可接收')
     }
     if (action === 'publishSummary') {
-      currentCase.review.summary = payload.summary?.trim() || currentCase.review.summary
-      addEvent('china', payload.actor || '李雯', '发布病例摘要', `摘要版本 v${currentCase.review.version || 1}`, caseId)
+      if (!currentCase) return result(false, '病例不存在')
+      const summary = payload.summary?.trim() || currentCase.review.summary?.trim()
+      if (!summary) return result(false, '请填写中文结构化病例摘要')
+      currentCase.review.summary = summary
+      currentCase.review.summaryVersion = (currentCase.review.summaryVersion || 0) + 1
+      currentCase.review.summaryPublishedAt = nowIso()
+      addEvent('china', payload.actor || '李雯', '发布病例摘要', `摘要版本 v${currentCase.review.summaryVersion}`, caseId)
       return result(true, '中文结构化病例摘要已发布')
     }
     if (action === 'finishMdt') {
@@ -622,7 +640,8 @@ export const useDemoStore = defineStore('demo', () => {
     }
     if (action === 'createFollowupTask') {
       if (!payload.title?.trim()) return result(false, '请填写随访任务')
-      ensureTask(uid('T-FU'), { caseId, title: payload.title.trim(), from: 'health', to: payload.to || 'health', owner: payload.owner || 'Farah', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'normal' })
+      const task = ensureTask(uid('T-FU'), { caseId, title: payload.title.trim(), from: 'health', to: payload.to || 'health', owner: payload.owner || 'Farah', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'normal' })
+      addEvent('health', payload.actor || 'Farah', '创建随访任务', `${task.title} · ${task.owner}`, caseId)
       return result(true, '随访任务已创建')
     }
     if (action === 'completeMalaysiaTask') {
@@ -630,12 +649,24 @@ export const useDemoStore = defineStore('demo', () => {
       return task ? completeTask(task.id, payload) : result(false, '没有可完成的马来团队待办')
     }
     if (action === 'completeFollowup') {
+      if (!currentCase.followup.generated) return result(false, '五阶段计划尚未生成，不能完成随访')
       currentCase.followup.encounters.unshift({ id: uid('FU'), completedAt: nowIso(), note: payload.note || '患者完成本周随访' })
       addEvent('patient', payload.actor || '患者', '完成患者随访', payload.note || '本周随访已归档', caseId)
       return result(true, '本周随访已确认完成')
     }
-    addEvent(actionDefinitions[action]?.system || 'core', payload.actor || '当前用户', actionDefinitions[action]?.title || '完成业务操作', payload.note || '操作已完成', caseId)
-    return result(true, `${actionDefinitions[action]?.title || '操作'}已完成`)
+    if (action === 'copyReview') {
+      const completedReview = Object.entries(state.value.cases)
+        .map(([sourceCaseId, sourceCase]) => ({ sourceCaseId, review: sourceCase.review }))
+        .find((item) => item.sourceCaseId !== caseId && item.review.status === 'completed' && item.review.recommendation)
+      if (!completedReview) return result(false, '暂无可复制的历史评审')
+      currentCase.review.summary = currentCase.review.summary || completedReview.review.summary
+      currentCase.review.recommendation = completedReview.review.recommendation
+      currentCase.review.copiedFrom = completedReview.sourceCaseId
+      currentCase.review.revisions.push({ version: currentCase.review.version || 0, recommendation: currentCase.review.recommendation, savedAt: nowIso(), copiedFrom: completedReview.sourceCaseId })
+      addEvent('expert', payload.actor || '当前专家', '复制历史评审', `引用 ${completedReview.sourceCaseId} 的历史意见`, caseId)
+      return result(true, '历史评审已复制到当前病例草稿')
+    }
+    return result(false, `动作 ${action || 'unknown'} 尚未配置业务处理器`, 'UNHANDLED_ACTION')
   }
 
   function reset() {

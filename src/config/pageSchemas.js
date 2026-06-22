@@ -76,7 +76,7 @@ export const pageSchemas = {
       columns: ['专家','医院 / 科室','擅长领域','当前负载','最近可约','状态'],
       rows: [
         {id:'EXP-001',cells:['张建国 主任','广州医科大学附一院 · 胸外科','肺癌 / 胸腔镜','3例','明天 15:00','可分配']},
-        {id:'EXP-014',cells:['周敏 教授','中山大学肿瘤医院 · 内科','肺癌精准治疗','5例','6月24日','接近满载']},
+        {id:'EXP-014',cells:['周敏 教授','中山大学肿瘤医院 · 内科','肺癌精准治疗','5例','后天','接近满载']},
         {id:'EXP-021',cells:['陈力 主任','南方医院 · 放疗科','胸部肿瘤放疗','2例','明天 17:00','可分配']},
       ],
     },
@@ -124,9 +124,9 @@ export const pageSchemas = {
       filters: ['全部评审','初诊评审','MDT结论','复查解读'],
       columns: ['患者','评审类型','诊断','完成时间','意见版本','结论'],
       rows: [
-        {id:'REV-2026-081',cells:['刘佳明','初诊评审','肺鳞癌','2026-06-18','v1','建议先行新辅助治疗']},
-        {id:'REV-2026-076',cells:['王美玲','复查解读','乳腺癌术后','2026-06-16','v2','未见明确复发证据']},
-        {id:'REV-2026-069',cells:['黄丽珍','MDT结论','卵巢癌','2026-06-12','v1','建议补充PET-CT后复评']},
+        {id:'REV-2026-081',cells:['刘佳明','初诊评审','肺鳞癌','近一周','v1','建议先行新辅助治疗']},
+        {id:'REV-2026-076',cells:['王美玲','复查解读','乳腺癌术后','上周','v2','未见明确复发证据']},
+        {id:'REV-2026-069',cells:['黄丽珍','MDT结论','卵巢癌','近期历史','v1','建议补充PET-CT后复评']},
       ],
     },
   },
@@ -166,7 +166,7 @@ export const pageSchemas = {
     discharge: {
       eyebrow: 'DISCHARGE HANDOVER', title: '出院交接', description: '交付双语出院资料、带药、复查计划和归国任务',
       type: 'case-list', primary: ['完成出院交接', 'completeDischarge'],
-      metrics: [['预计出院','7月8日'],['资料完成度','62%'],['待签字文件','3'],['归国任务','未创建']],
+      metrics: [['预计出院','计划日程内'],['资料完成度','62%'],['待签字文件','3'],['归国任务','未创建']],
       filters: ['全部患者', '待准备', '待签收', '已交接'],
       columns: ['患者', 'Case ID', '治疗状态', '资料完成度', '患者签收', '健康任务', '交接状态'],
       rowSource: 'dischargeCases',
@@ -342,14 +342,90 @@ function rowsFromState(source, state) {
   return []
 }
 
+const count = (items, predicate = () => true) => items.filter(predicate).length
+const percent = (part, total) => `${Math.round((part / Math.max(total, 1)) * 100)}%`
+const dueWithinHours = (task, hours) => {
+  const due = new Date(task.dueAt).getTime()
+  if (Number.isNaN(due)) return false
+  const diff = due - Date.now()
+  return diff >= 0 && diff <= hours * 3600000
+}
+
 function metricsFromState(system, page, state, fallback) {
   if (!state) return fallback
+  const patients = state.patients || []
+  const cases = Object.values(state.cases || {})
+  const tasks = state.tasks || []
+  const documents = state.documents || []
+  const alerts = state.alerts || []
+  const openTasks = tasks.filter((task) => task.status !== 'done')
+  const activePatients = patients.filter((patient) => patient.phase !== 'closed')
+
+  if (system === 'malaysia' && page === 'leads') {
+    const leads = state.leads || []
+    return [
+      ['线索总数', String(leads.length)],
+      ['待首次联系', String(count(leads, (lead) => lead.status === '待联系'))],
+      ['已预约咨询', String(count(leads, (lead) => lead.status === '已预约'))],
+      ['转患者率', percent(count(leads, (lead) => lead.status === '已转患者'), leads.length)],
+    ]
+  }
   if (system === 'malaysia' && page === 'cases') {
     return [
-      ['服务中患者', String(state.patients.filter((patient) => patient.phase !== 'closed').length)],
-      ['待提交 Case', String(state.patients.filter((patient) => patient.phase === 'lead').length)],
-      ['中国评审中', String(state.patients.filter((patient) => patient.phase === 'review').length)],
-      ['本月赴华', String(state.patients.filter((patient) => ['travel', 'treatment'].includes(patient.phase)).length)],
+      ['服务中患者', String(activePatients.length)],
+      ['待提交 Case', String(count(patients, (patient) => patient.phase === 'lead'))],
+      ['中国评审中', String(count(patients, (patient) => patient.phase === 'review'))],
+      ['赴华/治疗中', String(count(patients, (patient) => ['travel', 'treatment'].includes(patient.phase)))],
+    ]
+  }
+  if (system === 'malaysia' && page === 'documents') {
+    return [
+      ['待补资料', String(count(patients, (patient) => patient.completeness < 100))],
+      ['授权待确认', String(count(cases, (item) => item.consent?.status !== 'active'))],
+      ['文件总数', String(documents.length)],
+      ['待医学核验', String(count(documents, (doc) => doc.medicalVerification === 'pending'))],
+    ]
+  }
+  if (system === 'malaysia' && page === 'tasks') {
+    const malaysiaTasks = tasks.filter((task) => task.to === 'malaysia')
+    return [
+      ['我的待办', String(count(malaysiaTasks, (task) => task.status !== 'done'))],
+      ['24h内到期', String(count(malaysiaTasks, (task) => task.status !== 'done' && dueWithinHours(task, 24)))],
+      ['等待中方', String(count(tasks, (task) => task.from === 'china' && task.to === 'malaysia' && task.status !== 'done'))],
+      ['已完成', String(count(malaysiaTasks, (task) => task.status === 'done'))],
+    ]
+  }
+  if (system === 'malaysia' && page === 'resources') {
+    const resources = state.resources || []
+    return [
+      ['合作机构', String(resources.length)],
+      ['覆盖城市', String(new Set(resources.map((item) => item.city)).size)],
+      ['可预约检验', String(count(resources, (item) => item.type === '检验中心'))],
+      ['预约记录', String((state.appointments || []).length)],
+    ]
+  }
+  if (system === 'china' && page === 'intake') {
+    return [
+      ['待接收病例', String(count(patients, (patient) => patient.phase === 'intake'))],
+      ['待核验文件', String(count(documents, (doc) => doc.medicalVerification === 'pending'))],
+      ['资料退回', String(count(tasks, (task) => task.to === 'malaysia' && task.status !== 'done'))],
+      ['高优先级', String(count(patients, (patient) => ['high', 'critical'].includes(patient.risk)))],
+    ]
+  }
+  if (system === 'china' && page === 'records') {
+    return [
+      ['原始文件', String(documents.length)],
+      ['待翻译', String(count(documents, (doc) => doc.translationStatus === 'pending'))],
+      ['待医学核验', String(count(documents, (doc) => doc.medicalVerification === 'pending'))],
+      ['访问记录', String(documents.reduce((sum, doc) => sum + (doc.downloadCount || 0), 0))],
+    ]
+  }
+  if (system === 'china' && page === 'experts') {
+    return [
+      ['待分配病例', String(count(cases, (item) => item.review?.status === 'unassigned'))],
+      ['24h内到期', String(count(tasks, (task) => task.to === 'expert' && task.status !== 'done' && dueWithinHours(task, 24)))],
+      ['评审中', String(count(cases, (item) => ['assigned', 'in_review', 'changes_requested'].includes(item.review?.status)))],
+      ['已完成评审', String(count(cases, (item) => item.review?.status === 'completed'))],
     ]
   }
   if (system === 'health' && page === 'alerts') {
@@ -361,13 +437,112 @@ function metricsFromState(system, page, state, fallback) {
     ]
   }
   if (system === 'china' && page === 'hospitals') {
-    const cases = Object.values(state.cases)
-    const candidates = cases.flatMap((item) => item.hospitalMatching?.candidates || [])
     return [
       ['当前患者候选', String(state.cases[state.activeCaseId]?.hospitalMatching?.candidates.length || 0)],
       ['待匹配患者', String(cases.filter((item) => ['ready', 'waiting_review'].includes(item.hospitalMatching?.status)).length)],
       ['已发送申请', String(cases.filter((item) => item.hospitalMatching?.status === 'requested').length)],
       ['已确认承接', String(cases.filter((item) => ['accepted', 'completed'].includes(item.hospitalMatching?.status)).length)],
+    ]
+  }
+  if (system === 'china' && page === 'handoff') {
+    return [
+      ['可交接病例', String(count(cases, (item) => item.review?.status === 'completed' || ['requested', 'accepted', 'completed'].includes(item.treatment?.status)))],
+      ['待确认事项', String(cases.reduce((sum, item) => sum + [item.billing?.patientConfirmed, item.travel?.patientConfirmed, item.travel?.hospitalConfirmed].filter((value) => !value).length, 0))],
+      ['已完成交接', String(count(cases, (item) => item.travel?.status === 'confirmed'))],
+      ['参与角色', '6'],
+    ]
+  }
+  if (system === 'expert' && page === 'queue') {
+    const expertTasks = tasks.filter((task) => task.to === 'expert' && task.status !== 'done')
+    return [
+      ['待评审', String(expertTasks.length)],
+      ['24h内到期', String(count(expertTasks, (task) => dueWithinHours(task, 24)))],
+      ['高优先级', String(count(expertTasks, (task) => ['high', 'urgent'].includes(task.priority)))],
+      ['资料待补', String(count(cases, (item) => item.review?.status === 'changes_requested'))],
+    ]
+  }
+  if (system === 'expert' && page === 'mdt') {
+    return [
+      ['待安排', String(count(cases, (item) => item.review?.version > 0 && !item.review?.meetingAt))],
+      ['待召开', String(count(cases, (item) => item.review?.meetingAt && !item.review?.mdtCompletedAt))],
+      ['已完成', String(count(cases, (item) => item.review?.mdtCompletedAt))],
+      ['评审病例', String(count(cases, (item) => item.review?.version > 0))],
+    ]
+  }
+  if (system === 'hospital' && page === 'intake') {
+    return [
+      ['待审核申请', String(count(cases, (item) => item.treatment?.status === 'requested'))],
+      ['协调中', String(count(cases, (item) => item.treatment?.status === 'planning'))],
+      ['已承接', String(count(cases, (item) => item.treatment?.status === 'accepted'))],
+      ['已拒绝', String(count(cases, (item) => item.treatment?.status === 'rejected'))],
+    ]
+  }
+  if (system === 'hospital' && page === 'schedule') {
+    const scheduledCases = cases.filter((item) => item.treatment?.schedule?.length)
+    return [
+      ['有日程病例', String(scheduledCases.length)],
+      ['已确认节点', String(scheduledCases.reduce((sum, item) => sum + count(item.treatment.schedule, (node) => ['confirmed', 'done'].includes(node.status)), 0))],
+      ['待确认节点', String(scheduledCases.reduce((sum, item) => sum + count(item.treatment.schedule, (node) => node.status === 'planned'), 0))],
+      ['已承接病例', String(count(cases, (item) => ['accepted', 'post_operation', 'completed'].includes(item.treatment?.status)))],
+    ]
+  }
+  if (system === 'hospital' && page === 'inpatient') {
+    return [
+      ['在院/治疗中', String(count(patients, (patient) => ['travel', 'treatment'].includes(patient.phase)))],
+      ['待入院', String(count(cases, (item) => ['requested', 'accepted'].includes(item.treatment?.status)))],
+      ['术后恢复', String(count(cases, (item) => item.treatment?.status === 'post_operation'))],
+      ['高风险患者', String(count(patients, (patient) => ['high', 'critical'].includes(patient.risk)))],
+    ]
+  }
+  if (system === 'hospital' && page === 'billing') {
+    const estimated = cases.filter((item) => item.billing?.estimatedMax > 0)
+    const paid = estimated.reduce((sum, item) => sum + (item.billing.paid || 0), 0)
+    return [
+      ['费用病例', String(estimated.length)],
+      ['已收预付款', `¥${Math.round(paid / 10000)}万`],
+      ['待确认预估', String(count(estimated, (item) => !item.billing.patientConfirmed))],
+      ['付款笔数', String(estimated.reduce((sum, item) => sum + item.billing.payments.length, 0))],
+    ]
+  }
+  if (system === 'hospital' && page === 'discharge') {
+    return [
+      ['待出院交接', String(count(cases, (item) => ['post_operation', 'completed'].includes(item.treatment?.status) && !item.treatment?.dischargeReady))],
+      ['已交接', String(count(cases, (item) => item.treatment?.dischargeReady))],
+      ['待签字文件', String(cases.reduce((sum, item) => sum + (item.treatment?.dischargeChecklist?.patientSigned ? 0 : 1), 0))],
+      ['健康任务', String(count(tasks, (task) => task.to === 'health'))],
+    ]
+  }
+  if (system === 'health' && page === 'followups') {
+    return [
+      ['管理中患者', String(count(cases, (item) => item.followup?.generated))],
+      ['待制定计划', String(count(cases, (item) => item.treatment?.dischargeReady && !item.followup?.generated))],
+      ['开放预警', String(count(alerts, (alert) => alert.status !== 'closed'))],
+      ['随访记录', String(cases.reduce((sum, item) => sum + (item.followup?.encounters?.length || 0), 0))],
+    ]
+  }
+  if (system === 'health' && page === 'medication') {
+    return [
+      ['用药日志', String(cases.reduce((sum, item) => sum + (item.followup?.medicationLogs?.length || 0), 0))],
+      ['用药预警', String(count(alerts, (alert) => alert.type === '用药提醒' && alert.status !== 'closed'))],
+      ['随访中', String(count(cases, (item) => item.followup?.status === 'active'))],
+      ['待处理预警', String(count(alerts, (alert) => alert.status === 'open'))],
+    ]
+  }
+  if (system === 'health' && page === 'rehab') {
+    return [
+      ['康复病例', String(count(cases, (item) => item.followup?.generated))],
+      ['评估记录', String((state.rehabAssessments || []).length)],
+      ['待评估', String(count(cases, (item) => item.followup?.generated && !(state.rehabAssessments || []).some((record) => record.caseId === item.id)))],
+      ['高危随访', String(count(patients, (patient) => patient.risk === 'critical'))],
+    ]
+  }
+  if (system === 'health' && page === 'quality') {
+    const closedAlerts = count(alerts, (alert) => alert.status === 'closed')
+    return [
+      ['随访完成率', percent(cases.reduce((sum, item) => sum + (item.followup?.encounters?.length || 0), 0), Math.max(count(cases, (item) => item.followup?.generated), 1))],
+      ['资料归档率', percent(count(documents, (doc) => doc.status === 'verified'), documents.length)],
+      ['预警闭环率', percent(closedAlerts, alerts.length)],
+      ['质控报告', String((state.qualityReports || []).length)],
     ]
   }
   return fallback
