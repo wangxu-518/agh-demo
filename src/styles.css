@@ -598,6 +598,20 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .patient-path b, .patient-path small { display: block; }
 .patient-path b { font-size: 10px; }
 .patient-path small { margin-top: 3px; color: #8794a6; font-size: 7px; }
+.patient-plan-path { display: grid; gap: 10px; padding: 2px 0 0; }
+.patient-plan-path > div { min-height: 72px; grid-template-columns: 38px 1fr; gap: 12px; padding: 12px; border: 1px solid #e5ecf6; border-radius: 15px; background: linear-gradient(180deg,#fff,#f8fbff); box-shadow: 0 8px 20px #173a6410; overflow: hidden; }
+.patient-plan-path > div:not(:last-child)::after { left: 30px; top: 50px; bottom: -12px; width: 2px; background: linear-gradient(180deg,#bfd6ff,#e7eef8); }
+.patient-plan-path > div.current { border-color: #b9d2ff; background: linear-gradient(135deg,#f7fbff,#eef6ff); }
+.patient-plan-path > div.current::before { content:''; position:absolute; inset: 0 auto 0 0; width: 4px; background: #2264e5; }
+.patient-plan-path span { width: 36px; height: 36px; background: #eef5ff; box-shadow: inset 0 0 0 1px #d7e6ff; }
+.patient-plan-path .current span { color: #fff; background: linear-gradient(135deg,#2264e5,#42a5ff); box-shadow: 0 7px 15px #2264e52b; }
+.patient-plan-path div div { min-width: 0; }
+.patient-plan-path b { font-size: 11px; color: #1f3149; }
+.patient-plan-path small { margin-top: 5px; color: #66788f; font-size: 8px; line-height: 1.45; }
+.patient-plan-path em { display: inline-flex; margin-top: 8px; padding: 4px 7px; border-radius: 999px; color: #2264e5; background: #eaf2ff; font-size: 7px; font-style: normal; font-weight: 700; }
+.patient-plan-path .current em { color: #0f7a5c; background: #e8f8f1; }
+.patient-plan-path .upcoming span { color: #8392a8; background: #f1f4f8; box-shadow: inset 0 0 0 1px #e1e7ef; }
+.patient-plan-path .upcoming em { color: #7d8a9c; background: #f0f3f7; }
 .patient-hospital-card > span { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 10px; color: #fff; background: #1593a3; font-weight: 700; }
 .patient-primary-action { width: 100%; margin-top: 15px; padding: 12px; border: 0; border-radius: 10px; color: #fff; background: #2264e5; font-size: 10px; font-weight: 700; box-shadow: 0 8px 18px #2264e530; }
 .patient-trip-card { background: linear-gradient(135deg,#2c4983,#624db2); }

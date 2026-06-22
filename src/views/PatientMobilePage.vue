@@ -48,7 +48,28 @@ function contactCoordinator() {
 
     <template v-else-if="page === 'plan'">
       <section class="patient-plan-status"><span>{{ store.activeReview.status === 'completed' ? '专家意见已完成' : '专家评审中' }}</span><h2>{{ store.activePatient.diagnosis }}</h2><p>评审专家：{{ store.activeReview.expert || '待分配' }}</p><div><i></i><b>预计 {{ store.activeReview.meetingAt || '待安排' }} 完成</b></div></section>
-      <section class="patient-mobile-section"><h2>推荐治疗路径</h2><div class="patient-path"><div v-for="(item,i) in ['补充关键检查','多学科专家会诊','确定治疗方案','医院接诊与入院']" :key="item"><span>{{ i+1 }}</span><b>{{ item }}</b><small>{{ i===0?'进行中':'待上一阶段完成' }}</small></div></div></section>
+      <section class="patient-mobile-section">
+        <div class="section-heading"><h2>推荐治疗路径</h2><button>专家建议</button></div>
+        <div class="patient-path patient-plan-path">
+          <div
+            v-for="(step,i) in [
+              ['补充关键检查', '完善分子检测、肺功能和影像复核', '进行中'],
+              ['多学科专家会诊', '胸外科、肿瘤内科和放疗科联合评估', '待安排'],
+              ['确认治疗方案', '形成手术/综合治疗路径与费用预估', '待确认'],
+              ['医院接诊与入院', '匹配接诊医院并完成赴华交接', '待启动'],
+            ]"
+            :key="step[0]"
+            :class="{ current: i === 0, upcoming: i > 0 }"
+          >
+            <span>{{ i+1 }}</span>
+            <div>
+              <b>{{ step[0] }}</b>
+              <small>{{ step[1] }}</small>
+              <em>{{ step[2] }}</em>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="patient-mobile-section"><h2>医院方案</h2><button class="patient-hospital-card" @click="router.push('/patient/detail/hospital-plan?type=plan')"><span>H</span><div><b>{{ store.activeTreatment.hospital || '待匹配医院' }}</b><small>{{ store.activeTreatment.department || '待确认科室' }} · {{ store.activeTreatment.doctor || '待确认医生' }}</small><em>费用预估 {{ store.activeTreatment.estimatedCost }}</em></div><i>›</i></button></section>
       <button class="patient-primary-action" @click="act('confirmPlan')">确认已阅读方案</button>
     </template>
