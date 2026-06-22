@@ -30,6 +30,10 @@ $pnpm='C:\Users\wangx\.cache\codex-runtimes\codex-primary-runtime\dependencies\n
 & $node $pnpm build
 ```
 
+## 正式开发讨论入口
+
+Demo 阶段之后的正式开发推进思路记录在 `FORMAL_DEVELOPMENT_PLAN.md`。后续讨论正式系统架构、主链路 MVP、数据模型、测试体系、部署运维和 PR 工作流时，优先以该文档为起点继续维护。
+
 ## 演示入口
 
 统一入口页：`/portal`
