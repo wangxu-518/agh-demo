@@ -29,7 +29,7 @@ for (const [system, config] of Object.entries(systems)) {
   routes.push({
     path: `/${prefix}/login`,
     component: LoginView,
-    meta: { system, public: true, title: `${config.short}登录` },
+    meta: { system, public: true, requiresPortal: true, title: `${config.short}登录` },
   })
   routes.push({
     path: `/${prefix}`,
@@ -50,8 +50,9 @@ for (const [system, config] of Object.entries(systems)) {
 const router = createRouter({ history: createWebHistory(), routes, scrollBehavior: () => ({ top: 0 }) })
 router.beforeEach((to) => {
   const system = to.meta.system || systemFromPath(to.path)
-  if (!system || to.meta.public) return true
   const auth = useAuthStore()
+  if (to.meta.requiresPortal && !auth.isPortalVerified()) return '/portal'
+  if (!system || to.meta.public) return true
   if (!auth.isLoggedIn(system)) return `/${prefixes[system]}/login`
   const demo = useDemoStore()
   if (!canAccessPage(demo.state.permissions, system, to.meta.page)) return systems[system].home
