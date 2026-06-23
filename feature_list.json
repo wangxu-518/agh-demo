@@ -170,6 +170,19 @@
       "scope_limit": "当前为前端格式校验和会话级访问控制；手机号真实性无法仅靠前端证明，正式上线如需强身份校验仍需短信、后端名单或人工审核"
     },
     {
+      "id": "FDB-001",
+      "module": "feedback",
+      "title": "Demo 意见反馈模块",
+      "behavior": "Portal 登录后在 Portal 和六个子系统页面显示固定反馈入口；客户只填写反馈类型、重要程度和意见内容，系统自动记录登录姓名、脱敏手机号、当前页面、子系统、提交时间和浏览器信息；admin 可在 Portal 查看反馈记录",
+      "verification": "登录 Portal 后可见右下角反馈按钮；普通用户可提交但看不到反馈记录；admin 手机号登录后可在 Portal 反馈记录模块查看提交内容；反馈保存到服务器 JSONL 文件",
+      "status": "implemented",
+      "phase": "演示确认",
+      "quote_basis": "客户 demo 反馈收集与需求确认闭环",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "仅保存当前 demo 服务器反馈记录；不接入短信、微信、邮件、第三方表单或正式工单流"
+    },
+    {
       "id": "CORE-001",
       "module": "core",
       "title": "独立子系统导航",

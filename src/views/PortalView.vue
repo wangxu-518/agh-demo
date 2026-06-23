@@ -1,15 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { systems } from '../config/systems'
 import { useAuthStore } from '../stores/auth'
+import { useFeedbackStore } from '../stores/feedback'
 
 const auth = useAuthStore()
+const feedback = useFeedbackStore()
 const visitorName = ref('')
 const visitorPhone = ref('')
 const error = ref('')
 const isVerified = computed(() => auth.isPortalVerified())
 const isAdmin = computed(() => auth.isPortalAdmin())
 const loginHistory = computed(() => auth.portalHistory.slice(0, 8))
+const feedbackItems = computed(() => feedback.items.slice(0, 20))
 
 const prefixes = {
   patient: 'patient',
@@ -47,6 +50,10 @@ function openSystem(key) {
   window.open(`/${prefixes[key]}/login`, '_blank', 'noopener,noreferrer')
 }
 
+function loadAdminFeedback() {
+  if (auth.isPortalAdmin()) feedback.loadFeedback(auth)
+}
+
 function formatTime(value) {
   return new Intl.DateTimeFormat('zh-CN', {
     month: '2-digit',
@@ -60,6 +67,10 @@ function historyLabel(item) {
   if (item.type === 'system_login') return `进入${item.systemName}`
   return '手机号登录 Portal'
 }
+onMounted(loadAdminFeedback)
+watch(isAdmin, (value) => {
+  if (value) loadAdminFeedback()
+})
 </script>
 
 <template>
@@ -132,6 +143,27 @@ function historyLabel(item) {
           </div>
         </div>
         <p v-else class="portal-history-empty">暂无登录记录</p>
+      </section>
+      <section v-if="isAdmin" class="portal-history portal-feedback">
+        <header>
+          <div><p class="eyebrow">FEEDBACK</p><h2>反馈记录</h2></div>
+          <button class="ghost-button" type="button" @click="loadAdminFeedback">{{ feedback.loading ? '读取中' : '刷新' }}</button>
+        </header>
+        <div v-if="feedbackItems.length" class="portal-feedback-list">
+          <article v-for="item in feedbackItems" :key="item.id || `${item.submittedAt}-${item.content}`" class="portal-feedback-row">
+            <div>
+              <span>{{ formatTime(item.submittedAt || item.receivedAt) }}</span>
+              <b>{{ item.name || '匿名用户' }}</b>
+              <em>{{ item.phoneMasked || item.phone || '-' }}</em>
+            </div>
+            <div>
+              <strong>{{ item.type }} · {{ item.priority }}</strong>
+              <span>{{ item.system || item.path }}</span>
+            </div>
+            <p>{{ item.content }}</p>
+          </article>
+        </div>
+        <p v-else class="portal-history-empty">{{ feedback.error || '暂无反馈记录' }}</p>
       </section>
       <footer class="portal-footer">
         <span>匿名化演示数据 · 不用于真实医疗诊断</span>

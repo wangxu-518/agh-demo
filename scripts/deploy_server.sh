@@ -3,7 +3,8 @@ set -euo pipefail
 
 release_tag="${RELEASE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 release="/opt/agh-demo-demo/releases/$release_tag"
-sudo mkdir -p "$release" /opt/agh-demo-demo/bin
+sudo mkdir -p "$release" /opt/agh-demo-demo/bin /opt/agh-demo-demo/data
+sudo chown -R ubuntu:ubuntu /opt/agh-demo-demo/data
 sudo tar -xzf /tmp/agh-demo-dist.tar.gz -C "$release"
 sudo install -m 755 /tmp/spa_server.py /opt/agh-demo-demo/bin/spa_server.py
 sudo ln -sfn "$release" /opt/agh-demo-demo/current
