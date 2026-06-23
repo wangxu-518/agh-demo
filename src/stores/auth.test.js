@@ -52,6 +52,18 @@ describe('independent demo authentication', () => {
     expect(auth.portalHistory[0].type).toBe('portal_login')
   })
 
+  it('shares portal login with newly opened pages', async () => {
+    const { useAuthStore } = await import('./auth')
+    const auth = useAuthStore()
+    auth.loginWithContact('李总', '13900139000')
+
+    setActivePinia(createPinia())
+    const newPageAuth = useAuthStore()
+
+    expect(newPageAuth.isPortalVerified()).toBe(true)
+    expect(newPageAuth.credentialsForSystem('malaysia')).toEqual({ account: 'malaysia@agh.demo', password: '123456' })
+  })
+
   it('validates mainland mobile phone format', async () => {
     const { useAuthStore } = await import('./auth')
     const auth = useAuthStore()
@@ -68,6 +80,20 @@ describe('independent demo authentication', () => {
     const { useAuthStore } = await import('./auth')
     const auth = useAuthStore()
     expect(auth.isPortalVerified()).toBe(false)
+  })
+
+  it('rejects expired portal sessions', async () => {
+    memory.set('agh-demo-portal-session-v4', JSON.stringify({
+      id: '13900139000',
+      name: '过期用户',
+      phone: '13900139000',
+      provider: 'contact',
+      expiresAt: Date.now() - 1,
+    }))
+    const { useAuthStore } = await import('./auth')
+    const auth = useAuthStore()
+    expect(auth.isPortalVerified()).toBe(false)
+    expect(memory.get('agh-demo-portal-session-v4')).toBeUndefined()
   })
 
   it('clears system sessions when portal access is revoked', async () => {

@@ -1,11 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { systems } from '../config/systems'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
-const router = useRouter()
 const visitorName = ref('')
 const visitorPhone = ref('')
 const error = ref('')
@@ -46,7 +44,7 @@ function logoutPortal() {
 }
 
 function openSystem(key) {
-  router.push(`/${prefixes[key]}/login`)
+  window.open(`/${prefixes[key]}/login`, '_blank', 'noopener,noreferrer')
 }
 
 function formatTime(value) {
