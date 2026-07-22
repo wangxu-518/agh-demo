@@ -489,6 +489,106 @@
       "quote_basis": "各期患者、Case、评审、治疗和随访中心的基础信息架构",
       "scope_class": "A",
       "scope_status": "continue"
+    },
+    {
+      "id": "MY-005",
+      "module": "malaysia",
+      "title": "患者资料采集与完整度工作台",
+      "behavior": "马来运营按患者Case采集原始资料、追踪缺失项、发起补充任务并维护资料准备状态",
+      "verification": "上传和补充资料后完整度、缺失清单与Case准备状态同步更新且不同患者互不影响",
+      "status": "planned",
+      "phase": "一期",
+      "quote_basis": "客户通话确认：咨询端承担患者资料采集、部分整理合并和初筛准备",
+      "scope_class": "A",
+      "scope_status": "continue"
+    },
+    {
+      "id": "MY-AI-001",
+      "module": "malaysia",
+      "title": "AI 病案整理与人工确认",
+      "behavior": "在马来运营端模拟资料分类、重复合并、病程时间轴、关键字段提取和置信度，并由运营人员人工确认",
+      "verification": "AI草稿未确认时不能转介，人工确认后生成结构化摘要并保留原始资料索引",
+      "status": "planned",
+      "phase": "三期",
+      "quote_basis": "客户通话确认：AI分析资料属于马来运营端逻辑和业务处理",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "Demo使用种子数据模拟AI结果和人工校对流程；不接真实OCR、大模型Token，不作临床诊断"
+    },
+    {
+      "id": "LINK-005",
+      "module": "workflow",
+      "title": "初筛转介包与面诊协同",
+      "behavior": "马来运营完成资料确认和初筛后生成标准转介包，中国协调接收并安排专家、医院与面诊",
+      "verification": "未确认资料不能转介；转介成功后中国端和专家端生成对应Case任务",
+      "status": "planned",
+      "phase": "一期/二期",
+      "quote_basis": "客户建议：初筛可安排面诊，面诊端口具有病案共享画面",
+      "scope_class": "A",
+      "scope_status": "continue"
+    },
+    {
+      "id": "EXP-003",
+      "module": "expert",
+      "title": "面诊共享病案工作台",
+      "behavior": "专家面诊时查看结构化摘要、病程时间轴、原始资料索引和待补事项，并记录面诊意见",
+      "verification": "专家提交面诊意见后中国协调端获得办理结果，患者端仅看到允许公开的结论",
+      "status": "planned",
+      "phase": "二期",
+      "quote_basis": "客户建议：面诊端口有病案共享画面",
+      "scope_class": "A",
+      "scope_status": "continue"
+    },
+    {
+      "id": "TRAVEL-002",
+      "module": "travel",
+      "title": "患者治疗行程",
+      "behavior": "中国协调维护面诊、检查、住院、治疗和复诊节点，患者端查看下一步事项与准备清单",
+      "verification": "协调端修改节点后患者端同步显示，行程确认状态参与治疗流程准入校验",
+      "status": "planned",
+      "phase": "二期",
+      "quote_basis": "客户建议：安排患者治疗行程",
+      "scope_class": "A",
+      "scope_status": "continue"
+    },
+    {
+      "id": "HOSP-003",
+      "module": "hospital",
+      "title": "治疗阶段资料上传",
+      "behavior": "医院、运营或患者上传资料时关联Case、治疗阶段、资料类型、上传人和审核状态，并追加到病程时间轴",
+      "verification": "治疗资料按阶段归档、保留版本且出院资料能够触发后续健康管理任务",
+      "status": "planned",
+      "phase": "二期",
+      "quote_basis": "客户建议：治疗阶段患者资料上传",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "仅做平台内文件归档、版本和流程联动；不接HIS、EMR、LIS、PACS或医院设备接口"
+    },
+    {
+      "id": "HLT-003",
+      "module": "health",
+      "title": "个性化后续治疗与健康方案",
+      "behavior": "健康管理人员依据患者标签和模板生成后续治疗、饮食、运动、监测及一至两个月推送计划",
+      "verification": "方案经健康管理人员确认后患者可见，症状和监测异常能够生成调整任务",
+      "status": "planned",
+      "phase": "三期",
+      "quote_basis": "客户通话及饮食运动模板：根据治疗结果提供后续治疗指引、慢病饮食运动建议和分阶段推送",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "按规则和模板生成演示方案并由人工确认；不提供自动诊断、处方或治疗决策"
+    },
+    {
+      "id": "HLT-004",
+      "module": "health",
+      "title": "Pad 家访执行模式",
+      "behavior": "家访人员从健康管理任务进入Pad专用分步页面，记录生命体征、状态、饮食运动执行、现场资料和处置结论",
+      "verification": "Pad横屏完成一次家访后生成记录；异常生命体征触发预警并同步患者健康档案",
+      "status": "planned",
+      "phase": "三期",
+      "quote_basis": "客户确认：家访作为健康管理一环，进入后适配Pad并提升现场操作友好度",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "实现响应式Web演示、媒体上传占位和自动暂存状态；不做原生App、真实离线同步、设备采集或视频AI识别"
     }
   ]
 }
