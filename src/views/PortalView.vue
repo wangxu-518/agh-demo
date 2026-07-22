@@ -46,8 +46,8 @@ function logoutPortal() {
   error.value = ''
 }
 
-function openSystem(key) {
-  window.open(`/${prefixes[key]}/login`, '_blank', 'noopener,noreferrer')
+function systemLoginPath(key) {
+  return `/${prefixes[key]}/login`
 }
 
 function loadAdminFeedback() {
@@ -109,13 +109,14 @@ watch(isAdmin, (value) => {
         <p><button class="ghost-button" type="button" @click="logoutPortal">退出入口验证</button></p>
       </div>
       <div class="portal-grid">
-        <button
+        <a
           v-for="(system, key) in systems"
           :key="key"
           class="portal-system-card"
           :style="{ '--portal-color': system.color }"
-          type="button"
-          @click="openSystem(key)"
+          :href="systemLoginPath(key)"
+          target="_blank"
+          rel="noopener"
         >
           <div class="portal-system-icon">{{ system.icon }}</div>
           <div class="portal-system-copy">
@@ -127,7 +128,7 @@ watch(isAdmin, (value) => {
             <span>账号由管理员分配</span>
             <b>进入登录 →</b>
           </div>
-        </button>
+        </a>
       </div>
       <section v-if="isAdmin" class="portal-history">
         <header>
