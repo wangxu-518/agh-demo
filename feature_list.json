@@ -1,6 +1,6 @@
 {
-  "version": "3.2.0",
-  "updated": "2026-07-22",
+  "version": "3.3.0",
+  "updated": "2026-07-23",
   "scope_governance": {
     "commercial_source": "参考资料/跨境肿瘤医疗协同平台建设方案.pptx",
     "classes": {
@@ -259,8 +259,8 @@
       "id": "CN-001",
       "module": "china_ops",
       "title": "中国病历资料展示",
-      "behavior": "只读展示患者在国内形成的检查、治疗阶段、住院和出院资料及病程时间轴",
-      "verification": "访问中国端可按患者查看国内资料，且不存在接收、专家分配、医院匹配、行程或交接操作",
+      "behavior": "接收医院上传并留存在中国数据域的检查、手术、治疗、康复和出院资料，只读展示病程时间轴",
+      "verification": "国内资料不进入马来数据域；中国端可按患者只读查看，且不存在接收、专家分配、医院匹配、行程或交接操作",
       "status": "needs_redesign",
       "phase": "二期",
       "quote_basis": "方案P13-P14：诊疗资料中心",
@@ -503,6 +503,18 @@
       "scope_status": "continue"
     },
     {
+      "id": "DATA-001",
+      "module": "data_security",
+      "title": "双域医疗数据隔离与受控查看",
+      "behavior": "医院诊疗资料保存在中国数据域，马来患者档案只保存最小状态引用，并通过授权、二次鉴权、短时效会话、水印和审计进行只读查看",
+      "verification": "测试证明国内病历正文和附件未写入马来数据域；授权失效或权限不足时拒绝查看；成功查看生成完整审计事件",
+      "status": "planned",
+      "phase": "二期",
+      "quote_basis": "客户确认医疗数据不得直接出境，马来运营需从患者档案受控查看国内手术资料和康复方案；方案双地独立部署与跨境授权",
+      "scope_class": "A",
+      "scope_status": "continue"
+    },
+    {
       "id": "MY-AI-001",
       "module": "malaysia",
       "title": "AI 病案整理与人工确认",
@@ -555,8 +567,8 @@
       "id": "HOSP-003",
       "module": "hospital",
       "title": "治疗阶段资料上传",
-      "behavior": "医院、运营或患者上传资料时关联Case、治疗阶段、资料类型、上传人和审核状态，并追加到病程时间轴",
-      "verification": "治疗资料按阶段归档、保留版本且出院资料能够触发后续健康管理任务",
+      "behavior": "医院上传资料时关联chinaCaseId、治疗阶段、资料类型、上传人和审核状态，保存到中国数据域并追加病程时间轴",
+      "verification": "治疗资料在中国数据域按阶段归档并保留版本，马来端只获得状态引用，出院资料能够触发后续健康管理任务",
       "status": "planned",
       "phase": "二期",
       "quote_basis": "客户建议：治疗阶段患者资料上传",
