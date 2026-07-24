@@ -216,3 +216,6 @@
 - Demo 仅模拟发送结果，不接入 WhatsApp 官方 API、邮件网关，也不在触达记录中保存消息正文。
 - Vitest：7个测试文件、55项测试全部通过；Vite生产构建成功，69 modules transformed。
 - 浏览器回归：桌面1440×900与窄屏390×844均无横向溢出；患者档案不出现中国资料入口；发送报告后推送记录由1条变为2条并显示WhatsApp与患者端，控制台无应用错误。
+- 服务器部署：患者触达闭环版已发布为release `20260724-222436`，发布包SHA256为`A641E01C286FC7C023C461929A78ADEDA6F16D5B9DCAB62B6ACFD39D574B07BA`。
+- 线上验证：`agh-demo.service`为active；公网Portal、马来患者档案及新版JS/CSS资源均返回HTTP 200。
+- 回滚点：上一版release `/opt/agh-demo-demo/releases/20260724-215655`继续保留。
