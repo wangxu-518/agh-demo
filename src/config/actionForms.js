@@ -15,12 +15,12 @@ export const actionForms = {
     fields: [field('reason', '撤回原因', 'textarea', { required: true, placeholder: '说明撤回范围和后续沟通要求' })],
   },
   submitCase: {
-    title: '提交中国运营审核',
+    title: '完成资料初筛',
     fields: [
-      field('owner', '中国运营负责人', 'select', { options: ['李雯', '王晨', '国际病例组'] }),
+      field('owner', '马来运营负责人', 'select', { options: ['Aisyah', 'Nur', '国际病例组'] }),
       field('priority', '优先级', 'select', { options: ['normal', 'high', 'urgent'] }),
       field('dueAt', '要求完成时间', 'datetime-local'),
-      field('note', '交接说明', 'textarea', { required: true, placeholder: '说明诊疗诉求、资料缺口与患者时间要求' }),
+      field('note', '初筛说明', 'textarea', { required: true, placeholder: '说明诊疗诉求、资料完整度与患者时间要求' }),
     ],
   },
   acceptChinaCase: {
@@ -30,7 +30,7 @@ export const actionForms = {
     ],
   },
   publishSummary: {
-    title: '发布中文结构化摘要',
+    title: '确认 AI 结构化病案',
     fields: [field('summary', '病例摘要', 'textarea', { required: true, placeholder: '主诉、现病史、病理、影像、分期和待解决问题' })],
   },
   assignExpert: {

@@ -202,22 +202,132 @@ const cases = {
   },
 }
 
+const baseAiStructuring = (overrides = {}) => ({
+  status: 'draft',
+  sourceCount: 5,
+  classifiedCount: 4,
+  duplicateCount: 1,
+  confidence: 92,
+  categories: ['病理', '影像', '检验', '授权'],
+  extractedFields: [
+    { label: '主要诊断', value: '肺腺癌 IIIB期', confidence: 96 },
+    { label: '病理类型', value: '腺癌', confidence: 94 },
+    { label: '分期依据', value: 'PET-CT + 穿刺病理', confidence: 89 },
+  ],
+  missingItems: ['近 7 日肿瘤标志物'],
+  timeline: [
+    { date: dateOnly(-32), title: '首次发现肺部占位', source: '影像报告' },
+    { date: dateOnly(-18), title: '穿刺病理确认腺癌', source: '病理报告' },
+    { date: dateOnly(-7), title: 'PET-CT 完成临床分期', source: '影像资料' },
+  ],
+  confirmedAt: null,
+  confirmedBy: '',
+  ...overrides,
+})
+
+const baseConsultation = (overrides = {}) => ({
+  status: 'scheduled',
+  date: dateTime(2, 15),
+  expert: '张建国 主任',
+  hospital: '广州医科大学附属第一医院',
+  mode: '视频面诊',
+  location: 'AGH 吉隆坡咨询中心 · 3F 远程诊室',
+  agenda: ['病案摘要核对', '治疗路径讨论', '医院与时间确认'],
+  notes: '',
+  options: [
+    { id: 'A', title: '赴华进一步分期及手术评估', recommended: true },
+    { id: 'B', title: '先在马来西亚完成补充检查', recommended: false },
+  ],
+  patientDecision: '',
+  ...overrides,
+})
+
+const baseHealthPlan = (overrides = {}) => ({
+  status: 'draft',
+  version: 1,
+  tags: ['乳腺癌术后', '内分泌治疗', '低强度康复'],
+  diet: [
+    { title: '优质蛋白', target: '每日 70-80g', note: '鱼、蛋、豆制品分散到三餐' },
+    { title: '蔬果摄入', target: '每日 5 份', note: '避免未经清洗的生食' },
+  ],
+  exercise: [
+    { title: '步行', target: '每日 30 分钟', intensity: '可交谈强度' },
+    { title: '上肢活动', target: '每日 2 组', intensity: '疼痛不超过 3 分' },
+  ],
+  monitoring: ['每日体温与伤口观察', '每周体重', '异常疼痛及时上报'],
+  pushBatches: [],
+  approvedBy: '',
+  approvedAt: null,
+  ...overrides,
+})
+
+for (const [caseId, currentCase] of Object.entries(cases)) {
+  const hasChinaRecords = ['AGH-MY-2026-0012', 'AGH-MY-2026-0007'].includes(caseId)
+  currentCase.domesticRecordReference = {
+    chinaCaseId: hasChinaRecords ? `CN-${caseId.slice(-4)}` : '',
+    status: hasChinaRecords ? 'available' : 'not_available',
+    treatmentStage: hasChinaRecords ? '术后康复' : '待赴华治疗',
+    updatedAt: hasChinaRecords ? dateTime(-1, 18) : null,
+    availableCount: hasChinaRecords ? 4 : 0,
+    accessStatus: hasChinaRecords ? '二次验证后查看' : '暂无境内诊疗资料',
+  }
+  currentCase.aiStructuring = baseAiStructuring({
+    status: caseId === 'AGH-MY-2026-0018' ? 'ready_to_confirm' : 'draft',
+  })
+  currentCase.consultation = baseConsultation({
+    status: caseId === 'AGH-MY-2026-0018' ? 'scheduled' : 'not_scheduled',
+  })
+  currentCase.healthPlan = baseHealthPlan({
+    status: hasChinaRecords ? 'ready_to_publish' : 'draft',
+  })
+  currentCase.homeVisits = hasChinaRecords ? [{
+    id: `HV-${caseId.slice(-4)}-01`,
+    scheduledAt: dateTime(1, 10),
+    visitor: 'Farah Lim',
+    status: 'scheduled',
+    location: '患者家中',
+    vitals: { bloodPressure: '128/78', heartRate: '76', oxygen: '98', temperature: '36.6', weight: '58.4' },
+    checklist: [
+      { id: 'vitals', label: '测量生命体征', done: false },
+      { id: 'wound', label: '检查伤口与疼痛', done: false },
+      { id: 'medication', label: '核对用药', done: false },
+      { id: 'rehab', label: '评估康复动作', done: false },
+    ],
+    observations: '',
+    riskLevel: 'normal',
+  }] : []
+}
+
+const chinaDomain = {
+  medicalRecords: [
+    { id: 'CN-R-1201', chinaCaseId: 'CN-0012', caseId: 'AGH-MY-2026-0012', type: '手术记录', title: '乳腺肿瘤切除术记录', hospital: '中山大学肿瘤防治中心', occurredAt: dateOnly(-12), uploadedAt: dateTime(-11, 16), stage: '手术完成', summary: '手术过程顺利，切缘送检阴性，术后生命体征平稳。', ownerDomain: 'china' },
+    { id: 'CN-R-1202', chinaCaseId: 'CN-0012', caseId: 'AGH-MY-2026-0012', type: '病理报告', title: '术后病理报告', hospital: '中山大学肿瘤防治中心', occurredAt: dateOnly(-9), uploadedAt: dateTime(-8, 11), stage: '病理确认', summary: '浸润性导管癌，相关免疫组化结果已归档。', ownerDomain: 'china' },
+    { id: 'CN-R-1203', chinaCaseId: 'CN-0012', caseId: 'AGH-MY-2026-0012', type: '出院小结', title: '住院诊疗及出院小结', hospital: '中山大学肿瘤防治中心', occurredAt: dateOnly(-3), uploadedAt: dateTime(-3, 15), stage: '已出院', summary: '伤口恢复良好，按计划继续内分泌治疗并进行上肢康复。', ownerDomain: 'china' },
+    { id: 'CN-R-1204', chinaCaseId: 'CN-0012', caseId: 'AGH-MY-2026-0012', type: '康复方案', title: '术后 30 天康复方案', hospital: '中山大学肿瘤防治中心', occurredAt: dateOnly(-2), uploadedAt: dateTime(-1, 18), stage: '康复中', summary: '分阶段开展肩关节活动、步行及营养支持，出现红肿发热需及时复诊。', ownerDomain: 'china' },
+    { id: 'CN-R-0701', chinaCaseId: 'CN-0007', caseId: 'AGH-MY-2026-0007', type: '复查报告', title: '肿瘤标志物复查报告', hospital: '南方医科大学南方医院', occurredAt: dateOnly(-2), uploadedAt: dateTime(-2, 15), stage: '复查预警', summary: 'CA-125 较前升高，建议结合影像并发起专家复评。', ownerDomain: 'china' },
+  ],
+  accessAudits: [
+    { id: 'AUD-1201', caseId: 'AGH-MY-2026-0012', chinaCaseId: 'CN-0012', actor: 'Farah Lim', purpose: '制定术后健康管理方案', action: '受控查看', result: '已关闭', at: dateTime(-1, 18, 20) },
+  ],
+  activeSessions: [],
+}
+
 export const seedState = {
-  schemaVersion: 4,
+  schemaVersion: 6,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {
     patient: { name: '林秀英', role: '患者', organization: 'AGH Patient Services' },
-    malaysia: { name: 'Aisyah Rahman', role: '患者服务顾问', organization: 'AGH Malaysia' },
-    china: { name: '李雯', role: '跨境诊疗协调员', organization: 'AGH China Operations' },
+    malaysia: { name: 'Aisyah Rahman', role: '患者运营负责人', organization: 'AGH Malaysia' },
+    china: { name: '资料访问账户', role: '国内诊疗资料查看', organization: 'AGH China Data Center' },
     expert: { name: '张建国', role: '胸外科主任医师', organization: '广州医科大学附属第一医院' },
     hospital: { name: '刘敏', role: '国际医疗协调员', organization: '国际医疗中心' },
     health: { name: 'Farah Lim', role: '归国健康管家', organization: 'AGH Health Management' },
   },
   permissions: {
     patient: ['view_own_case', 'upload_document', 'confirm_plan', 'confirm_travel', 'send_message'],
-    malaysia: ['create_patient', 'edit_patient', 'upload_document', 'submit_case', 'manage_consent', 'export_case'],
-    china: ['verify_document', 'publish_summary', 'assign_expert', 'request_hospital', 'manage_handoff', 'export_case'],
+    malaysia: ['create_patient', 'edit_patient', 'upload_document', 'submit_case', 'manage_consent', 'export_case', 'verify_document', 'publish_summary', 'assign_expert', 'request_hospital', 'manage_handoff'],
+    china: ['view_china_records', 'view_access_audit'],
     expert: ['view_clinical', 'request_document', 'edit_review', 'sign_review', 'create_mdt'],
     hospital: ['view_authorized_case', 'respond_intake', 'manage_schedule', 'manage_billing', 'complete_discharge'],
     health: ['view_discharge_case', 'manage_followup', 'manage_medication', 'manage_alert', 'close_alert'],
@@ -246,6 +356,7 @@ export const seedState = {
   rehabAssessments: [],
   qualityReports: [],
   cases,
+  chinaDomain,
   documents: [
     { id: 'D1', caseId: 'AGH-MY-2026-0018', type: '病理报告', name: '肺穿刺病理报告.pdf', language: 'zh', source: '患者上传', status: 'verified', version: 2, originalId: 'ORIG-D1', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 2, voidedAt: null },
     { id: 'D2', caseId: 'AGH-MY-2026-0018', type: '影像资料', name: 'PET-CT影像与报告.zip', language: 'en', source: '马来医院', status: 'verified', version: 1, originalId: 'ORIG-D2', translationStatus: 'completed', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 4, voidedAt: null },
@@ -254,10 +365,10 @@ export const seedState = {
     { id: 'D5', caseId: 'AGH-MY-2026-0018', type: '授权书', name: '跨境数据授权书.pdf', language: 'bilingual', source: '患者签署', status: 'verified', version: 1, originalId: 'ORIG-D5', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 2, voidedAt: null },
   ],
   tasks: [
-    { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'china', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(1, 18), status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-102', caseId: 'AGH-MY-2026-0018', title: '完成中文病历摘要', from: 'malaysia', to: 'china', owner: '李雯', dueAt: dateTime(0, 10), status: 'done', priority: 'normal', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'china', to: 'expert', owner: '张主任', dueAt: dateTime(1, 18), status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-104', caseId: 'AGH-MY-2026-0018', title: '预留胸外科床位', from: 'china', to: 'hospital', owner: '刘协调员', dueAt: dateTime(2, 18), status: 'blocked', priority: 'normal', comments: [], attachments: [], slaPausedAt: dateTime(0, 11) },
+    { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'expert', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(1, 18), status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-102', caseId: 'AGH-MY-2026-0018', title: '完成人工校对并锁定病案摘要', from: 'malaysia', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(0, 10), status: 'done', priority: 'normal', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'malaysia', to: 'expert', owner: '张主任', dueAt: dateTime(1, 18), status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-104', caseId: 'AGH-MY-2026-0018', title: '预留胸外科床位', from: 'malaysia', to: 'hospital', owner: '刘协调员', dueAt: dateTime(2, 18), status: 'blocked', priority: 'normal', comments: [], attachments: [], slaPausedAt: dateTime(0, 11) },
   ],
   alerts: [
     { id: 'A-07', caseId: 'AGH-MY-2026-0007', patient: '黄丽珍', type: '复查异常', severity: 'critical', detail: 'CA-125 连续两次升高，需在12小时内发起专家复评', status: 'open', createdAt: dateTime(0, 8, 45), resolution: '', assignedTo: 'Farah' },
@@ -271,7 +382,7 @@ export const seedState = {
     { id: 1, caseId: 'AGH-MY-2026-0018', at: dateTime(-4, 9, 12), actor: '患者', system: 'patient', title: '提交在线咨询', detail: '完成基础信息及病情描述' },
     { id: 2, caseId: 'AGH-MY-2026-0018', at: dateTime(-4, 10, 5), actor: 'Aisyah', system: 'malaysia', title: '建立患者档案', detail: '生成 Case AGH-MY-2026-0018' },
     { id: 3, caseId: 'AGH-MY-2026-0018', at: dateTime(-3, 14, 30), actor: '患者', system: 'patient', title: '签署数据授权', detail: '授权中马团队按角色访问资料' },
-    { id: 4, caseId: 'AGH-MY-2026-0018', at: dateTime(-2, 11, 20), actor: '李雯', system: 'china', title: '完成病历整理', detail: '形成中文结构化摘要 v1' },
+    { id: 4, caseId: 'AGH-MY-2026-0018', at: dateTime(-2, 11, 20), actor: 'Aisyah', system: 'malaysia', title: '完成病历整理', detail: 'AI形成草稿，运营人员完成人工校对 v1' },
     { id: 5, caseId: 'AGH-MY-2026-0018', at: dateTime(0, 10, 32), actor: '系统', system: 'expert', title: '进入专家评审', detail: '已分配张建国主任' },
   ],
 }

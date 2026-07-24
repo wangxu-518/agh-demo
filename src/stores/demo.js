@@ -3,14 +3,14 @@ import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v4'
+const KEY = 'agh-demo-v6'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
 const phaseLabels = {
   lead: '新咨询',
-  intake: '中国运营整理',
+  intake: '资料整理与初筛',
   review: '专家评审',
   planning: '医院承接',
   travel: '赴华准备',
@@ -21,12 +21,12 @@ const phaseLabels = {
 }
 
 export const actionDefinitions = {
-  submitCase: { system: 'malaysia', title: '提交中国运营审核' },
+  submitCase: { system: 'malaysia', title: '完成资料初筛' },
   acceptChinaCase: { system: 'china', title: '接收跨境病例' },
-  publishSummary: { system: 'china', title: '发布病例摘要' },
-  assignExpert: { system: 'china', title: '分配评审专家' },
-  requestHospital: { system: 'china', title: '发送医院承接申请' },
-  completeHandoff: { system: 'china', title: '完成赴华交接' },
+  publishSummary: { system: 'malaysia', title: '确认 AI 病案摘要' },
+  assignExpert: { system: 'malaysia', title: '分配评审专家' },
+  requestHospital: { system: 'malaysia', title: '发送医院承接申请' },
+  completeHandoff: { system: 'malaysia', title: '完成赴华交接' },
   claimReview: { system: 'expert', title: '专家接收病例' },
   finishReview: { system: 'expert', title: '提交专家评审意见' },
   requestMoreDocuments: { system: 'expert', title: '要求补充资料' },
@@ -73,6 +73,15 @@ export const useDemoStore = defineStore('demo', () => {
   const activeFollowup = computed(() => activeCase.value?.followup)
   const activeConsent = computed(() => activeCase.value?.consent)
   const activeHospitalMatching = computed(() => activeCase.value?.hospitalMatching)
+  const activeDomesticReference = computed(() => activeCase.value?.domesticRecordReference)
+  const activeAiStructuring = computed(() => activeCase.value?.aiStructuring)
+  const activeConsultation = computed(() => activeCase.value?.consultation)
+  const activeHealthPlan = computed(() => activeCase.value?.healthPlan)
+  const activeHomeVisits = computed(() => activeCase.value?.homeVisits || [])
+  const activeChinaRecords = computed(() => {
+    const chinaCaseId = activeDomesticReference.value?.chinaCaseId
+    return state.value.chinaDomain.medicalRecords.filter((record) => record.chinaCaseId === chinaCaseId)
+  })
   const activeTasks = computed(() => state.value.tasks.filter((t) => t.caseId === state.value.activeCaseId))
   const activeDocuments = computed(() => state.value.documents.filter((d) => d.caseId === state.value.activeCaseId && !d.voidedAt))
   const activeEvents = computed(() => state.value.events.filter((e) => e.caseId === state.value.activeCaseId))
@@ -183,10 +192,10 @@ export const useDemoStore = defineStore('demo', () => {
     if (currentCase.consent.status !== 'active') return result(false, '跨境数据授权未生效，不能提交')
     if (!['lead', 'intake'].includes(patient.phase)) return result(false, '当前阶段不能重复提交')
     setPhase(patient, 'intake')
-    ensureTask(`T-CN-${caseId}`, { caseId, title: '接收并核验跨境病例', from: 'malaysia', to: 'china', owner: payload.owner || '李雯', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
-    addEvent('malaysia', payload.actor || 'Aisyah', '提交中国运营审核', payload.note || '资料与授权符合提交条件', caseId)
-    notify('china', `${patient.name} 的跨境病例待接收`, caseId)
-    return result(true, 'Case 已提交，中国运营端已产生接收任务')
+    setPhase(patient, 'review')
+    ensureTask(`T-MY-${caseId}`, { caseId, title: '完成初筛并安排专家', from: 'malaysia', to: 'malaysia', owner: payload.owner || 'Aisyah', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
+    addEvent('malaysia', payload.actor || 'Aisyah', '完成资料初筛', payload.note || '资料与授权符合专家安排条件', caseId)
+    return result(true, '资料初筛完成，可由马来运营安排专家与面诊')
   }
 
   function acceptChinaCase(payload = {}, caseId = state.value.activeCaseId) {
@@ -209,8 +218,8 @@ export const useDemoStore = defineStore('demo', () => {
     currentCase.review.expert = payload.expert
     currentCase.review.specialty = payload.specialty || '肿瘤专科'
     currentCase.review.meetingAt = payload.meetingAt || ''
-    ensureTask(`T-EXP-${caseId}`, { caseId, title: `完成 ${patient.name} 专家评审`, from: 'china', to: 'expert', owner: payload.expert, dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
-    addEvent('china', payload.actor || '李雯', '分配评审专家', `${payload.expert} · ${currentCase.review.specialty}`, caseId)
+    ensureTask(`T-EXP-${caseId}`, { caseId, title: `完成 ${patient.name} 专家评审`, from: 'malaysia', to: 'expert', owner: payload.expert, dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
+    addEvent('malaysia', payload.actor || 'Aisyah', '分配评审专家', `${payload.expert} · ${currentCase.review.specialty}`, caseId)
     notify('expert', `${patient.name} 的病例待评审`, caseId)
     return result(true, `病例已分配给 ${payload.expert}`)
   }
@@ -239,8 +248,8 @@ export const useDemoStore = defineStore('demo', () => {
     const legacyTask = state.value.tasks.find((task) => task.id === 'T-103' && task.caseId === caseId)
     if (legacyTask) legacyTask.status = 'done'
     addEvent('expert', payload.actor || currentCase.review.expert, '完成专家评审', currentCase.review.recommendation, caseId)
-    notify('china', `${patient.name} 的专家意见已签署`, caseId)
-    return result(true, '专家评审已签署，中国运营可申请医院承接')
+    notify('malaysia', `${patient.name} 的专家意见已签署`, caseId)
+    return result(true, '专家评审已签署，马来运营可申请医院承接')
   }
 
   function requestMoreDocuments(payload = {}, caseId = state.value.activeCaseId) {
@@ -257,8 +266,8 @@ export const useDemoStore = defineStore('demo', () => {
     if (!payload.reason?.trim()) return result(false, '请填写拒接原因')
     currentCase.review.status = 'rejected'
     addEvent('expert', payload.actor || currentCase.review.expert, '拒绝评审任务', payload.reason.trim(), caseId)
-    notify('china', '专家拒绝评审，请重新分配', caseId)
-    return result(true, '评审任务已退回中国运营')
+    notify('malaysia', '专家拒绝评审，请重新分配', caseId)
+    return result(true, '评审任务已退回马来运营')
   }
 
   function requestHospital(payload = {}, caseId = state.value.activeCaseId) {
@@ -285,8 +294,8 @@ export const useDemoStore = defineStore('demo', () => {
     currentCase.hospitalMatching.candidates.forEach((item) => {
       item.status = item.id === candidate.id ? 'requested' : 'candidate'
     })
-    ensureTask(`T-HOS-${caseId}`, { caseId, title: `确认 ${patient.name} 国际患者承接申请`, from: 'china', to: 'hospital', owner: payload.owner || '国际医疗中心', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
-    addEvent('china', payload.actor || '李雯', '发送医院承接申请', `${candidate.name} · ${candidate.department} · 匹配分 ${candidate.score}`, caseId)
+    ensureTask(`T-HOS-${caseId}`, { caseId, title: `确认 ${patient.name} 国际患者承接申请`, from: 'malaysia', to: 'hospital', owner: payload.owner || '国际医疗中心', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
+    addEvent('malaysia', payload.actor || 'Aisyah', '发送医院承接申请', `${candidate.name} · ${candidate.department} · 匹配分 ${candidate.score}`, caseId)
     notify('hospital', `${patient.name} 的承接申请待处理`, caseId)
     return result(true, `${patient.name} 的承接申请已发送 ${candidate.name}`)
   }
@@ -308,7 +317,7 @@ export const useDemoStore = defineStore('demo', () => {
     const legacyTask = state.value.tasks.find((task) => task.id === 'T-104' && task.caseId === caseId)
     if (legacyTask) legacyTask.status = 'done'
     addEvent('hospital', payload.actor || '刘敏', '医院确认承接', `${currentCase.treatment.bed} · ${currentCase.treatment.admissionDate}`, caseId)
-    notify('china', `${patient.name} 已获医院承接`, caseId)
+    notify('malaysia', `${patient.name} 已获医院承接`, caseId)
     return result(true, '医院已确认承接并同步床位信息')
   }
 
@@ -326,8 +335,8 @@ export const useDemoStore = defineStore('demo', () => {
     }
     currentCase.hospitalMatching.selectedHospitalId = null
     addEvent('hospital', payload.actor || '刘敏', '医院拒绝承接', payload.reason.trim(), caseId)
-    notify('china', '医院无法承接，请重新匹配', caseId)
-    return result(true, '承接申请已退回中国运营')
+    notify('malaysia', '医院无法承接，请重新匹配', caseId)
+    return result(true, '承接申请已退回马来运营')
   }
 
   function recordPayment(payload = {}, caseId = state.value.activeCaseId) {
@@ -368,7 +377,7 @@ export const useDemoStore = defineStore('demo', () => {
     if (!currentCase.travel.patientConfirmed || !currentCase.travel.hospitalConfirmed) return result(false, '患者或医院尚未确认行程')
     currentCase.travel.status = 'confirmed'
     setPhase(patient, 'travel')
-    addEvent('china', payload.actor || '李雯', '完成赴华交接', payload.note || '资料、费用、医院与行程均已确认', caseId)
+    addEvent('malaysia', payload.actor || 'Aisyah', '完成赴华交接', payload.note || '资料、费用、医院与行程均已确认', caseId)
     return result(true, '赴华交接已完成')
   }
 
@@ -669,6 +678,149 @@ export const useDemoStore = defineStore('demo', () => {
     return result(false, `动作 ${action || 'unknown'} 尚未配置业务处理器`, 'UNHANDLED_ACTION')
   }
 
+  function requestDomesticAccess(payload = {}, caseId = state.value.activeCaseId) {
+    const currentCase = caseById(caseId)
+    const patient = patientByCase(caseId)
+    const reference = currentCase?.domesticRecordReference
+    if (!reference?.chinaCaseId) return result(false, '该患者暂无中国境内诊疗资料', 'NO_DOMESTIC_RECORD')
+    if (currentCase.consent?.status !== 'active' || !currentCase.consent.scopes.includes('china')) {
+      return result(false, '患者授权未生效，不能发起受控查看', 'CONSENT_REQUIRED')
+    }
+    if (!payload.purpose?.trim() || !payload.secondFactor?.trim()) {
+      return result(false, '请填写查看用途并完成二次验证', 'SECOND_FACTOR_REQUIRED')
+    }
+    const createdAt = new Date()
+    const session = {
+      id: uid('CN-SESSION'),
+      caseId,
+      chinaCaseId: reference.chinaCaseId,
+      actor: payload.actor || state.value.currentUsers.malaysia.name,
+      purpose: payload.purpose.trim(),
+      createdAt: createdAt.toISOString(),
+      expiresAt: new Date(createdAt.getTime() + 10 * 60 * 1000).toISOString(),
+      watermark: `${payload.actor || state.value.currentUsers.malaysia.name} · ${patient?.id || caseId} · 仅限受控查看`,
+      status: 'active',
+    }
+    state.value.chinaDomain.activeSessions.unshift(session)
+    state.value.chinaDomain.accessAudits.unshift({
+      id: uid('AUD'), caseId, chinaCaseId: reference.chinaCaseId, actor: session.actor,
+      purpose: session.purpose, action: '受控查看', result: '会话已开启', at: session.createdAt,
+    })
+    addEvent('malaysia', session.actor, '开启境内资料受控查看', `${session.purpose} · 10 分钟演示会话`, caseId)
+    return { ...result(true, '已通过二次验证，受控查看会话已开启'), session }
+  }
+
+  function closeDomesticAccess(sessionId, actor = state.value.currentUsers.malaysia.name) {
+    const session = state.value.chinaDomain.activeSessions.find((item) => item.id === sessionId && item.status === 'active')
+    if (!session) return result(false, '受控查看会话不存在或已关闭', 'SESSION_NOT_FOUND')
+    session.status = 'closed'
+    session.closedAt = nowIso()
+    state.value.chinaDomain.accessAudits.unshift({
+      id: uid('AUD'), caseId: session.caseId, chinaCaseId: session.chinaCaseId, actor,
+      purpose: session.purpose, action: '关闭查看', result: '已关闭', at: session.closedAt,
+    })
+    return result(true, '受控查看会话已关闭')
+  }
+
+  function uploadChinaRecord(payload = {}, caseId = state.value.activeCaseId) {
+    const currentCase = caseById(caseId)
+    const chinaCaseId = currentCase?.domesticRecordReference?.chinaCaseId || `CN-${caseId.slice(-4)}`
+    if (!payload.title?.trim() || !payload.type?.trim()) return result(false, '请填写资料名称和类型')
+    const record = {
+      id: uid('CN-R'), chinaCaseId, caseId, type: payload.type.trim(), title: payload.title.trim(),
+      hospital: payload.hospital || '国内合作医院', occurredAt: payload.occurredAt || nowIso().slice(0, 10),
+      uploadedAt: nowIso(), stage: payload.stage || '治疗中',
+      summary: payload.summary || '资料已由医院端上传至中国境内资料库。', ownerDomain: 'china',
+    }
+    state.value.chinaDomain.medicalRecords.unshift(record)
+    currentCase.domesticRecordReference = {
+      chinaCaseId, status: 'available', treatmentStage: record.stage, updatedAt: record.uploadedAt,
+      availableCount: state.value.chinaDomain.medicalRecords.filter((item) => item.chinaCaseId === chinaCaseId).length,
+      accessStatus: '二次验证后查看',
+    }
+    addEvent('hospital', payload.actor || '医院协调员', '上传国内诊疗资料', record.title, caseId)
+    return result(true, '资料已保存至中国境内资料库')
+  }
+
+  function confirmAiStructuring(payload = {}, caseId = state.value.activeCaseId) {
+    const structuring = caseById(caseId)?.aiStructuring
+    if (!structuring) return result(false, '尚未生成 AI 病案草稿')
+    structuring.status = 'confirmed'
+    structuring.confirmedAt = nowIso()
+    structuring.confirmedBy = payload.actor || state.value.currentUsers.malaysia.name
+    addEvent('malaysia', structuring.confirmedBy, '确认 AI 结构化病案', `置信度 ${structuring.confidence}% · 人工校对完成`, caseId)
+    return result(true, 'AI 病案草稿已人工确认')
+  }
+
+  function scheduleConsultation(payload = {}, caseId = state.value.activeCaseId) {
+    const currentCase = caseById(caseId)
+    const consultation = currentCase?.consultation
+    if (!consultation) return result(false, '面诊信息不存在')
+    if (currentCase.aiStructuring?.status !== 'confirmed') {
+      return result(false, '请先完成人工校对并确认结构化病案', 'AI_CONFIRMATION_REQUIRED')
+    }
+    Object.assign(consultation, {
+      status: 'scheduled', date: payload.date || consultation.date, expert: payload.expert || consultation.expert,
+      hospital: payload.hospital || consultation.hospital, mode: payload.mode || consultation.mode,
+      location: payload.location || consultation.location,
+    })
+    addEvent('malaysia', payload.actor || 'Aisyah', '安排专家面诊', `${consultation.date} · ${consultation.expert}`, caseId)
+    return result(true, '专家面诊已安排')
+  }
+
+  function recordConsultationDecision(payload = {}, caseId = state.value.activeCaseId) {
+    const consultation = caseById(caseId)?.consultation
+    if (!consultation || !payload.decision?.trim()) return result(false, '请记录患者确认的治疗选择')
+    consultation.status = 'completed'
+    consultation.patientDecision = payload.decision.trim()
+    consultation.notes = payload.notes || ''
+    consultation.completedAt = nowIso()
+    addEvent('malaysia', payload.actor || 'Aisyah', '确认面诊结论', consultation.patientDecision, caseId)
+    return result(true, '面诊结论和患者选择已记录')
+  }
+
+  function updateJourneyItem(payload = {}, caseId = state.value.activeCaseId) {
+    const item = caseById(caseId)?.travel?.itinerary.find((entry) => entry.id === payload.id)
+    if (!item) return result(false, '行程节点不存在')
+    item.status = payload.status || item.status
+    item.note = payload.note || item.note || ''
+    item.updatedAt = nowIso()
+    addEvent('malaysia', payload.actor || 'Aisyah', `更新行程：${item.title}`, item.status, caseId)
+    return result(true, '治疗行程已更新')
+  }
+
+  function publishHealthPlan(payload = {}, caseId = state.value.activeCaseId) {
+    const plan = caseById(caseId)?.healthPlan
+    if (!plan) return result(false, '健康方案不存在')
+    plan.status = 'published'
+    plan.version += 1
+    plan.approvedBy = payload.actor || state.value.currentUsers.health.name
+    plan.approvedAt = nowIso()
+    plan.pushBatches.unshift({ id: uid('PUSH'), at: plan.approvedAt, channels: ['患者端', '家访 Pad'], status: '已推送' })
+    addEvent('health', plan.approvedBy, '发布个性化健康方案', `v${plan.version} 已推送患者端和家访 Pad`, caseId)
+    return result(true, '健康方案已发布并推送')
+  }
+
+  function saveHomeVisit(payload = {}, caseId = state.value.activeCaseId) {
+    const visit = caseById(caseId)?.homeVisits?.find((item) => item.id === payload.id)
+    if (!visit) return result(false, '家访任务不存在')
+    if (payload.checklist) visit.checklist = payload.checklist
+    if (payload.vitals) visit.vitals = { ...visit.vitals, ...payload.vitals }
+    visit.observations = payload.observations ?? visit.observations
+    visit.riskLevel = payload.riskLevel || visit.riskLevel
+    visit.status = payload.submit ? 'completed' : 'in_progress'
+    visit.updatedAt = nowIso()
+    if (payload.submit && visit.riskLevel === 'high') {
+      state.value.alerts.unshift({
+        id: uid('A-HV'), caseId, patient: patientByCase(caseId)?.name, type: '家访异常',
+        severity: 'high', detail: visit.observations || '家访发现高风险情况', status: 'open',
+        createdAt: visit.updatedAt, resolution: '', assignedTo: state.value.currentUsers.health.name,
+      })
+    }
+    addEvent('health', payload.actor || visit.visitor, payload.submit ? '提交家访记录' : '保存家访草稿', visit.observations || '检查项已更新', caseId)
+    return result(true, payload.submit ? '家访记录已提交' : '家访草稿已保存')
+  }
+
   function reset() {
     state.value = clone(seedState)
     localStorage.removeItem(KEY)
@@ -676,7 +828,9 @@ export const useDemoStore = defineStore('demo', () => {
 
   return {
     state, activePatient, activeCase, activeReview, activeTreatment, activeBilling, activeTravel,
-    activeFollowup, activeConsent, activeHospitalMatching, activeTasks, activeDocuments, activeEvents, progress,
+    activeFollowup, activeConsent, activeHospitalMatching, activeDomesticReference, activeAiStructuring,
+    activeConsultation, activeHealthPlan, activeHomeVisits, activeChinaRecords,
+    activeTasks, activeDocuments, activeEvents, progress,
     toggleLanguage, setActiveCase, completeTask, startTask, addTaskComment, reassignTask, pauseTaskSla,
     submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, requestMoreDocuments,
     rejectReview, requestHospital, acceptHospital, rejectHospital, recordPayment, recordRefund,
@@ -684,6 +838,8 @@ export const useDemoStore = defineStore('demo', () => {
     escalateAlert, closeAlert, uploadDocument, saveCaseNote, addAttachment, updatePatient,
     confirmPlan, confirmTravel, revokeConsent, createPatient, createLead, bookLocalResource,
     completeRehab, generateQuality, sendMessage, accessDocument,
+    requestDomesticAccess, closeDomesticAccess, uploadChinaRecord, confirmAiStructuring,
+    scheduleConsultation, recordConsultationDecision, updateJourneyItem, publishHealthPlan, saveHomeVisit,
     performAction, reset, caseById, patientByCase,
   }
 })

@@ -38,7 +38,8 @@ describe('case-isolated workflow store', () => {
     expect(store.submitCase().ok).toBe(false)
     store.activeConsent.status = 'active'
     expect(store.submitCase({ note: '资料齐全' }).ok).toBe(true)
-    expect(store.activePatient.phase).toBe('intake')
+    expect(store.activePatient.phase).toBe('review')
+    expect(store.state.tasks.some((task) => task.id === `T-MY-${store.activePatient.caseId}`)).toBe(true)
   })
 
   it('requires a completed expert review before requesting a hospital', async () => {
@@ -86,6 +87,61 @@ describe('case-isolated workflow store', () => {
     expect(store.generateFollowup().ok).toBe(true)
     expect(store.activeFollowup.stages).toHaveLength(5)
     expect(store.activePatient.phase).toBe('followup')
+  })
+
+  it('keeps China medical content outside the Malaysia case reference', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.setActiveCase('AGH-MY-2026-0012')
+
+    expect(store.activeDomesticReference.chinaCaseId).toBe('CN-0012')
+    expect(store.activeDomesticReference.availableCount).toBe(4)
+    expect(store.activeDomesticReference).not.toHaveProperty('summary')
+    expect(store.activeDomesticReference).not.toHaveProperty('attachments')
+    expect(store.activeChinaRecords).toHaveLength(4)
+    expect(store.activeChinaRecords.every((record) => record.ownerDomain === 'china')).toBe(true)
+  })
+
+  it('requires purpose and second factor before controlled domestic access', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.setActiveCase('AGH-MY-2026-0012')
+
+    expect(store.requestDomesticAccess({ purpose: '制定康复方案' }).ok).toBe(false)
+    const opened = store.requestDomesticAccess({
+      purpose: '制定康复方案',
+      secondFactor: '889102',
+      actor: 'Farah Lim',
+    })
+
+    expect(opened.ok).toBe(true)
+    expect(opened.session.watermark).toContain('仅限受控查看')
+    expect(store.state.chinaDomain.accessAudits[0].result).toBe('会话已开启')
+    expect(store.closeDomesticAccess(opened.session.id).ok).toBe(true)
+    expect(opened.session.status).toBe('closed')
+  })
+
+  it('supports the demo case model from AI structuring through home visit', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    expect(store.scheduleConsultation().code).toBe('AI_CONFIRMATION_REQUIRED')
+    expect(store.confirmAiStructuring({ actor: 'Aisyah' }).ok).toBe(true)
+    expect(store.activeAiStructuring.status).toBe('confirmed')
+    expect(store.scheduleConsultation().ok).toBe(true)
+    expect(store.recordConsultationDecision({ decision: '选择方案 A，赴华评估' }).ok).toBe(true)
+
+    store.setActiveCase('AGH-MY-2026-0012')
+    expect(store.publishHealthPlan({ actor: 'Farah Lim' }).ok).toBe(true)
+    const visit = store.activeHomeVisits[0]
+    expect(store.saveHomeVisit({
+      id: visit.id,
+      checklist: visit.checklist.map((item) => ({ ...item, done: true })),
+      observations: '伤口轻微红肿，建议当日复诊',
+      riskLevel: 'high',
+      submit: true,
+    }).ok).toBe(true)
+    expect(visit.status).toBe('completed')
+    expect(store.state.alerts[0].type).toBe('家访异常')
   })
 
   it('creates versioned documents instead of overwriting duplicates', async () => {
@@ -153,7 +209,10 @@ describe('case-isolated workflow store', () => {
     expect(forbidden.ok).toBe(false)
     expect(forbidden.code).toBe('FORBIDDEN')
 
-    const allowed = store.performAction('assignExpert', { __system: 'china', expert: '张建国 主任' })
+    const chinaForbidden = store.performAction('assignExpert', { __system: 'china', expert: '张建国 主任' })
+    expect(chinaForbidden.ok).toBe(false)
+
+    const allowed = store.performAction('assignExpert', { __system: 'malaysia', expert: '张建国 主任' })
     expect(allowed.ok).toBe(true)
   })
 

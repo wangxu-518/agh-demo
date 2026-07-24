@@ -25,7 +25,8 @@ describe('role permissions', () => {
   })
 
   it('allows each role to perform its own actions and blocks unrelated roles', () => {
-    expect(canPerformAction(seedState.permissions, 'china', 'assignExpert')).toBe(true)
+    expect(canPerformAction(seedState.permissions, 'malaysia', 'assignExpert')).toBe(true)
+    expect(canPerformAction(seedState.permissions, 'china', 'assignExpert')).toBe(false)
     expect(canPerformAction(seedState.permissions, 'patient', 'assignExpert')).toBe(false)
     expect(canPerformAction(seedState.permissions, 'hospital', 'recordPayment')).toBe(true)
     expect(canPerformAction(seedState.permissions, 'expert', 'recordPayment')).toBe(false)

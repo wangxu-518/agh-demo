@@ -13,7 +13,8 @@ describe('business page schemas', () => {
         expect(schema.title).toBeTruthy()
         expect(schema.description).toBeTruthy()
         expect(schema.type).toBeTruthy()
-        expect(schema.primary).toHaveLength(2)
+        if (schema.readOnly) expect(schema.primary).toBeUndefined()
+        else expect(schema.primary).toHaveLength(2)
       }
     }
   })
@@ -27,13 +28,9 @@ describe('business page schemas', () => {
     expect(new Set(titles).size).toBe(titles.length)
   })
 
-  it('provides records for every Malaysia lead and resource filter', () => {
-    for (const page of ['leads', 'resources']) {
-      const schema = schemaFor('malaysia', page, seedState)
-      for (const filter of schema.filters.slice(1)) {
-        expect(schema.rows.some((row) => row.filter === filter), `${page}/${filter}`).toBe(true)
-      }
-    }
+  it('maps repurposed Malaysia pages to journey and coordination workspaces', () => {
+    expect(schemaFor('malaysia', 'leads', seedState).type).toBe('journey')
+    expect(schemaFor('malaysia', 'resources', seedState).type).toBe('comparison')
   })
 
   it('derives patient workflow queues from the unified case state', () => {
@@ -70,7 +67,6 @@ describe('business page schemas', () => {
 
   it('provides patient collections for every internal case-scoped menu', () => {
     const pages = [
-      ['china', 'handoff'],
       ['expert', 'case'],
       ['expert', 'mdt'],
       ['hospital', 'schedule'],

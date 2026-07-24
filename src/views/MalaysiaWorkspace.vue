@@ -21,9 +21,9 @@ function createPatient() {
 }
 </script>
 <template>
-  <PageHeader eyebrow="Malaysia service workspace" title="马来服务团队工作台" subtitle="从广告线索到签约、资料收集和中国团队交接">
+  <PageHeader eyebrow="Malaysia operations workspace" title="马来患者运营工作台" subtitle="从资料采集、AI整理到专家医院安排、行程和术后健康管理">
     <button class="secondary-button" @click="showPatientForm=true">＋ 新建患者</button>
-    <button class="primary-button" @click="formMessage=store.submitCase().message">提交中国运营审核</button>
+    <button class="primary-button" @click="formMessage=store.submitCase({ note: '资料已完成人工核验，可进入专家协调' }).message">完成资料初筛</button>
   </PageHeader>
   <div v-if="formMessage" class="action-success">{{ formMessage }}</div>
   <div class="stats-grid">
@@ -48,7 +48,7 @@ function createPatient() {
     </SectionCard>
     <SectionCard title="我的跨端待办" subtitle="完成后自动同步其他工作台"><TaskList system="malaysia" /></SectionCard>
   </div>
-  <SectionCard title="主案例交接检查清单" subtitle="满足交接门槛后方可进入中国运营">
+  <SectionCard title="主案例初筛检查清单" subtitle="满足门槛后由马来运营直接安排专家、面诊和医院">
     <div class="grid-3">
       <div class="check-list">
         <div class="check-item"><span class="check-mark">✓</span>双语癌症咨询表</div>
@@ -60,7 +60,7 @@ function createPatient() {
         <div class="check-item"><span class="check-mark">✓</span>既往治疗记录</div>
         <div class="check-item"><span class="check-mark">!</span>最新肿瘤标志物待补</div>
       </div>
-      <div class="notice">系统会在提交时生成中国运营任务，并锁定当前资料版本。后续补充资料以新版本追加，不覆盖原始医疗记录。</div>
+      <div class="notice">系统会锁定当前资料版本并进入马来运营协同流程。后续补充资料以新版本追加，不覆盖原始医疗记录。</div>
     </div>
   </SectionCard>
   <div v-if="showPatientForm" class="business-modal-backdrop" @click.self="showPatientForm=false">

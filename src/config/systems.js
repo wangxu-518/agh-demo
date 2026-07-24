@@ -9,21 +9,20 @@ export const systems = {
     ],
   },
   malaysia: {
-    name: '马来西亚患者服务系统', en: 'Malaysia Patient Service', short: '马来服务端', icon: 'MY',
+    name: '马来西亚患者运营系统', en: 'Malaysia Patient Operations', short: '马来运营端', icon: 'MY',
     color: '#7554c7', home: '/malaysia/dashboard', account: 'malaysia@agh.demo', password: '123456',
     nav: [
-      ['dashboard', '工作台', 'Dashboard'], ['leads', '线索管理', 'Leads'],
-      ['cases', '患者与Case', 'Patients & Cases'], ['documents', '资料与签约', 'Documents'],
-      ['tasks', '跨国协同', 'Collaboration'], ['resources', '本地资源', 'Local Resources'],
+      ['dashboard', '运营工作台', 'Dashboard'], ['cases', '患者档案', 'Patient Records'],
+      ['documents', '资料采集', 'Collection'], ['tasks', 'AI病案整理', 'AI Structuring'],
+      ['resources', '初筛与协同', 'Coordination'], ['leads', '治疗行程', 'Treatment Journey'],
     ],
   },
   china: {
-    name: '中国诊疗运营系统', en: 'China Medical Operations', short: '中国运营端', icon: 'CN',
+    name: '中国诊疗资料中心', en: 'China Medical Records', short: '中国资料端', icon: 'CN',
     color: '#e18332', home: '/china-ops/dashboard', account: 'china@agh.demo', password: '123456',
     nav: [
-      ['dashboard', '工作台', 'Dashboard'], ['intake', '病例接收', 'Case Intake'],
-      ['records', '诊疗资料中心', 'Medical Records'], ['experts', '专家协调', 'Expert Coordination'],
-      ['hospitals', '医院匹配', 'Hospital Matching'], ['handoff', '跨国交接', 'Handover'],
+      ['dashboard', '资料总览', 'Overview'], ['records', '国内诊疗资料', 'Medical Records'],
+      ['intake', '治疗时间轴', 'Treatment Timeline'], ['handoff', '访问审计', 'Access Audit'],
     ],
   },
   expert: {
@@ -50,7 +49,8 @@ export const systems = {
     nav: [
       ['dashboard', '健康管理工作台', 'Dashboard'], ['followups', '随访计划', 'Follow-up Plans'],
       ['medication', '用药管理', 'Medication'], ['rehab', '康复与护理', 'Rehabilitation'],
-      ['alerts', '预警与应急', 'Alerts'], ['quality', '服务质控', 'Quality'],
+      ['home-visits', '家访执行', 'Home Visits'], ['alerts', '预警与应急', 'Alerts'],
+      ['quality', '服务质控', 'Quality'],
     ],
   },
 }

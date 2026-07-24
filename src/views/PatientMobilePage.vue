@@ -88,6 +88,14 @@ function contactCoordinator() {
       <section class="patient-mobile-section"><h2>五阶段随访计划</h2><div class="patient-stage-list">
         <button v-for="(stage,i) in store.activeFollowup.stages" :key="stage.id" @click="router.push(`/patient/detail/${stage.id}?type=followup`)"><span>{{ i+1 }}</span><div><b>{{ stage.name }}</b><small>{{ stage.period }} · {{ stage.frequency }}</small><em>{{ stage.owner }}</em></div><i>›</i></button>
       </div></section>
+      <section v-if="store.activeHealthPlan.status === 'published'" class="patient-mobile-section">
+        <div class="section-heading"><h2>我的健康方案</h2><button>v{{ store.activeHealthPlan.version }}</button></div>
+        <div class="patient-health-plan">
+          <article><span>饮食</span><div><b>{{ store.activeHealthPlan.diet[0].title }} · {{ store.activeHealthPlan.diet[0].target }}</b><small>{{ store.activeHealthPlan.diet[0].note }}</small></div></article>
+          <article><span>运动</span><div><b>{{ store.activeHealthPlan.exercise[0].title }} · {{ store.activeHealthPlan.exercise[0].target }}</b><small>{{ store.activeHealthPlan.exercise[0].intensity }}</small></div></article>
+          <article><span>监测</span><div><b>{{ store.activeHealthPlan.monitoring[0] }}</b><small>异常情况可直接联系健康管家</small></div></article>
+        </div>
+      </section>
       <section class="patient-reminder"><span>Rx</span><div><b>今日用药提醒</b><small>请在晚餐后确认服药</small></div><button @click="act('confirmMedication')">确认</button></section>
       <button class="patient-primary-action" @click="act('completeFollowup')">确认本周随访</button>
     </template>

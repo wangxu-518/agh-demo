@@ -12,6 +12,11 @@ import HospitalWorkspace from './views/HospitalWorkspace.vue'
 import HealthWorkspace from './views/HealthWorkspace.vue'
 import BusinessPage from './views/BusinessPage.vue'
 import RecordDetail from './views/RecordDetail.vue'
+import MalaysiaOperationsPage from './views/MalaysiaOperationsPage.vue'
+import ChinaRecordsPage from './views/ChinaRecordsPage.vue'
+import ExpertSharedCasePage from './views/ExpertSharedCasePage.vue'
+import HospitalTreatmentDocumentsPage from './views/HospitalTreatmentDocumentsPage.vue'
+import HealthCarePage from './views/HealthCarePage.vue'
 import { systems, systemFromPath } from './config/systems'
 import { canAccessPage } from './config/permissions'
 import { useAuthStore } from './stores/auth'
@@ -19,6 +24,16 @@ import { useDemoStore } from './stores/demo'
 
 const prefixes = { patient: 'patient', malaysia: 'malaysia', china: 'china-ops', expert: 'expert', hospital: 'hospital', health: 'health-management' }
 const dashboards = { patient: PatientPortal, malaysia: MalaysiaWorkspace, china: ChinaOpsWorkspace, expert: ExpertWorkspace, hospital: HospitalWorkspace, health: HealthWorkspace }
+const pageComponent = (system, page) => {
+  if (page === 'home' || page === 'dashboard') return dashboards[system]
+  if (system === 'patient') return PatientMobilePage
+  if (system === 'malaysia') return MalaysiaOperationsPage
+  if (system === 'china') return ChinaRecordsPage
+  if (system === 'expert' && ['case', 'mdt'].includes(page)) return ExpertSharedCasePage
+  if (system === 'hospital' && page === 'inpatient') return HospitalTreatmentDocumentsPage
+  if (system === 'health' && ['followups', 'rehab', 'home-visits'].includes(page)) return HealthCarePage
+  return BusinessPage
+}
 
 const routes = [
   { path: '/', redirect: '/portal' },
@@ -38,7 +53,7 @@ for (const [system, config] of Object.entries(systems)) {
     children: [
       ...config.nav.map(([page, title]) => ({
         path: page,
-        component: page === 'home' || page === 'dashboard' ? dashboards[system] : system === 'patient' ? PatientMobilePage : BusinessPage,
+        component: pageComponent(system, page),
         meta: { system, page, title },
       })),
       { path: 'record/:id', component: RecordDetail, meta: { system, page: 'record', title: '业务详情' } },
