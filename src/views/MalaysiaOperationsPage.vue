@@ -19,6 +19,8 @@ const messageOk = ref(true)
 const reportEditing = ref(false)
 const reportSummary = ref(store.activeAiStructuring?.reportSummary || '')
 const consultationDate = ref(store.activeConsultation?.date?.slice(0, 16) || '')
+const contactChannels = computed(() => store.activePatient?.contactChannels || [])
+const deliveryRecords = computed(() => store.activeCommunications.deliveries || [])
 
 const pageCopy = computed(() => ({
   cases: ['Patient record', '患者全景档案', '统一查看咨询、病案、协同、行程与术后状态'],
@@ -50,7 +52,7 @@ const confirmationCopy = computed(() => ({
 
 const bodyMarkers = computed(() => {
   if (store.activePatient.caseId === 'AGH-MY-2026-0012') return [
-    { position: 'chest-left', tone: 'diagnosis', label: '乳腺术后', detail: '手术资料在中国域' },
+    { position: 'chest-left', tone: 'diagnosis', label: '乳腺术后', detail: '当前处于归国恢复期' },
     { position: 'shoulder-right', tone: 'rehab', label: '上肢康复', detail: '活动度持续改善' },
     { position: 'waist-left', tone: 'record', label: '健康方案', detail: '饮食与运动已制定' },
   ]
@@ -60,6 +62,14 @@ const bodyMarkers = computed(() => {
     { position: 'waist-right', tone: 'missing', label: '缺少 1 项', detail: store.activeAiStructuring.missingItems[0] },
   ]
 })
+
+function channelInitial(channel) {
+  return { whatsapp: 'W', patient: 'P', email: '@' }[channel.id] || channel.label.slice(0, 1)
+}
+
+function deliveryTypeLabel(type) {
+  return { report: '病案报告', care_plan: '饮食运动', followup: '随访计划' }[type] || '患者通知'
+}
 
 watch(() => store.state.activeCaseId, () => {
   reportSummary.value = store.activeAiStructuring?.reportSummary || ''
@@ -228,11 +238,33 @@ function markJourney(item) {
         <SectionCard title="最近业务动态" subtitle="所有端的动作统一回到患者时间线">
           <div class="ops-timeline"><div v-for="event in store.activeEvents.slice(0, 5)" :key="event.id"><i></i><div><b>{{ event.title }}</b><p>{{ event.detail }}</p><small>{{ event.actor }} · {{ formatDateTime(event.at) }}</small></div></div></div>
         </SectionCard>
-        <SectionCard title="中国诊疗资料" subtitle="仅保存境内病例引用">
-          <div v-if="store.activeDomesticReference.chinaCaseId" class="china-link-teaser">
-            <span>CN</span><div><b>{{ store.activeDomesticReference.chinaCaseId }}</b><p>{{ store.activeDomesticReference.availableCount }} 份资料 · {{ store.activeDomesticReference.treatmentStage }}</p></div><button>受控查看</button>
+        <SectionCard title="联系与患者触达" subtitle="已核验渠道用于报告、方案与随访消息">
+          <div class="patient-contact-summary">
+            <div class="contact-channel-list">
+              <article v-for="channel in contactChannels" :key="channel.id" class="contact-channel-row">
+                <span :class="`channel-${channel.id}`">{{ channelInitial(channel) }}</span>
+                <div>
+                  <b>{{ channel.label }} <em v-if="channel.preferred">首选</em></b>
+                  <small>{{ channel.value }}</small>
+                </div>
+                <i :class="{ pending: channel.status.includes('待') }">{{ channel.status }}</i>
+              </article>
+            </div>
+            <div class="contact-preference">
+              <span>适合联系时段</span>
+              <b>{{ store.activePatient.preferredContactWindow }}</b>
+              <small>{{ store.activePatient.language === 'zh' ? '中文沟通' : 'English preferred' }}</small>
+            </div>
+            <div class="delivery-history">
+              <header><div><b>最近推送</b><small>发送结果自动回写患者档案</small></div><span>{{ deliveryRecords.length }} 条</span></header>
+              <article v-for="delivery in deliveryRecords.slice(0, 3)" :key="delivery.id" class="delivery-record">
+                <span>{{ deliveryTypeLabel(delivery.type) }}</span>
+                <div><b>{{ delivery.title }}</b><small>{{ delivery.channels.join(' · ') }} · {{ formatDateTime(delivery.sentAt) }}</small></div>
+                <i>{{ delivery.status }}</i>
+              </article>
+              <div v-if="!deliveryRecords.length" class="empty-state">尚无推送记录，发送报告、方案或随访计划后将在此回写。</div>
+            </div>
           </div>
-          <div v-else class="empty-state">患者赴华治疗后，将在这里显示中国域资料入口</div>
         </SectionCard>
       </div>
     </template>

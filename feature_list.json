@@ -1,5 +1,5 @@
 {
-  "version": "3.5.0",
+  "version": "3.6.0",
   "updated": "2026-07-24",
   "scope_governance": {
     "commercial_source": "参考资料/跨境肿瘤医疗协同平台建设方案.pptx",
@@ -24,6 +24,19 @@
     ]
   },
   "features": [
+    {
+      "id": "MY-007",
+      "module": "malaysia",
+      "title": "患者联系渠道与业务触达闭环",
+      "behavior": "马来患者档案不展示中国诊疗资料入口，改为维护WhatsApp、患者端和Email的核验状态、首选渠道与联系时段；病案报告、饮食运动方案和随访计划按首选渠道推送并回写发送记录",
+      "verification": "患者档案中不出现中国病例编号、资料数量或受控入口；4位患者均有WhatsApp和患者端渠道；发送报告、发布饮食运动方案、生成随访计划后，档案最近推送显示业务类型、渠道、时间和状态",
+      "status": "implemented",
+      "phase": "Demo改版",
+      "quote_basis": "客户反馈：马来患者档案不展示敏感中国诊疗资料，并通过WhatsApp等联系方式连接报告、方案和随访推送",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "使用匿名化种子数据模拟渠道核验和发送回执，不接入WhatsApp官方API、邮件网关或真实消息内容"
+    },
     {
       "id": "CORE-007",
       "module": "core",

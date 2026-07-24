@@ -4,7 +4,7 @@ import { seedState } from '../data/seed'
 import { createBreastCancerMonthlyPlan, createGeneralCancerMonthlyPlan } from '../data/breastCancerCarePlan'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v11'
+const KEY = 'agh-demo-v12'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -79,6 +79,7 @@ export const useDemoStore = defineStore('demo', () => {
   const activeConsultation = computed(() => activeCase.value?.consultation)
   const activeHealthPlan = computed(() => activeCase.value?.healthPlan)
   const activeHomeVisits = computed(() => activeCase.value?.homeVisits || [])
+  const activeCommunications = computed(() => activeCase.value?.communications || { deliveries: [] })
   const activeChinaRecords = computed(() => {
     const chinaCaseId = activeDomesticReference.value?.chinaCaseId
     return state.value.chinaDomain.medicalRecords.filter((record) => record.chinaCaseId === chinaCaseId)
@@ -114,6 +115,30 @@ export const useDemoStore = defineStore('demo', () => {
 
   function notify(to, title, caseId = state.value.activeCaseId) {
     state.value.notifications.unshift({ id: uid('N'), caseId, to, title, read: false, createdAt: nowIso() })
+  }
+
+  function patientDeliveryChannels(caseId = state.value.activeCaseId) {
+    const channels = patientByCase(caseId)?.contactChannels
+      ?.filter((channel) => channel.preferred && ['已验证', '可接收'].includes(channel.status))
+      .map((channel) => channel.label)
+    return channels?.length ? channels : ['患者端']
+  }
+
+  function recordPatientDelivery(type, title, caseId = state.value.activeCaseId) {
+    const currentCase = caseById(caseId)
+    const patient = patientByCase(caseId)
+    const channels = patientDeliveryChannels(caseId)
+    currentCase.communications ||= { deliveries: [] }
+    currentCase.communications.deliveries.unshift({
+      id: uid('DEL'),
+      type,
+      title,
+      channels,
+      status: '已发送',
+      sentAt: nowIso(),
+      recipient: patient?.name || '患者',
+    })
+    return channels
   }
 
   function ensureTask(id, task) {
@@ -420,8 +445,9 @@ export const useDemoStore = defineStore('demo', () => {
     currentCase.followup.stages = currentCase.followup.stages.map((stage, index) => ({ ...stage, status: index === 0 ? 'active' : 'upcoming' }))
     setPhase(patient, 'followup')
     completeTask(`T-HLT-${caseId}`, { actor: payload.actor || 'Farah' })
-    addEvent('health', payload.actor || 'Farah', '生成五阶段随访计划', payload.note || '计划已同步患者和服务团队', caseId)
-    return result(true, '五阶段随访计划已生成')
+    const channels = recordPatientDelivery('followup', '五阶段归国随访计划', caseId)
+    addEvent('health', payload.actor || 'Farah', '生成五阶段随访计划', payload.note || `已通过 ${channels.join(' + ')} 推送患者`, caseId)
+    return result(true, `五阶段随访计划已生成并通过 ${channels.join(' + ')} 推送患者`)
   }
 
   function escalateAlert(payload = {}, caseId = state.value.activeCaseId) {
@@ -787,8 +813,9 @@ export const useDemoStore = defineStore('demo', () => {
       note: payload.note || '请患者确认基本信息、病程时间和资料出处。',
     }
     notify('patient', `结构化病案报告 v${structuring.reportVersion} 待确认`, caseId)
-    addEvent('malaysia', payload.actor || 'Aisyah', '发送患者确认', `结构化病案报告 v${structuring.reportVersion}`, caseId)
-    return result(true, '报告已发送患者确认')
+    const channels = recordPatientDelivery('report', `结构化病案报告 v${structuring.reportVersion}`, caseId)
+    addEvent('malaysia', payload.actor || 'Aisyah', '发送患者确认', `结构化病案报告 v${structuring.reportVersion} · ${channels.join(' + ')}`, caseId)
+    return result(true, `报告已通过 ${channels.join(' + ')} 发送患者确认`)
   }
 
   function confirmAiReportByPatient(payload = {}, caseId = state.value.activeCaseId) {
@@ -945,9 +972,10 @@ export const useDemoStore = defineStore('demo', () => {
       plan.monthlyPlan.publishedAt = plan.approvedAt
       plan.monthlyPlan.publishedBy = plan.approvedBy
     }
-    plan.pushBatches.unshift({ id: uid('PUSH'), at: plan.approvedAt, channels: ['患者端', '家访 Pad'], status: '已推送' })
-    addEvent('health', plan.approvedBy, '发布月度饮食运动方案', `${plan.monthlyPlan?.month || ''} · v${plan.monthlyPlan?.version || plan.version} 已推送患者端和家访 Pad`, caseId)
-    return result(true, '月度饮食运动方案已推送患者')
+    const channels = recordPatientDelivery('care_plan', `${plan.monthlyPlan?.month || ''} 饮食运动方案 v${plan.monthlyPlan?.version || plan.version}`, caseId)
+    plan.pushBatches.unshift({ id: uid('PUSH'), at: plan.approvedAt, channels: [...channels, '家访 Pad'], status: '已推送' })
+    addEvent('health', plan.approvedBy, '发布月度饮食运动方案', `${plan.monthlyPlan?.month || ''} · v${plan.monthlyPlan?.version || plan.version} 已通过 ${channels.join(' + ')} 推送患者，并同步家访 Pad`, caseId)
+    return result(true, `月度饮食运动方案已通过 ${channels.join(' + ')} 推送患者`)
   }
 
   function generateMonthlyHealthPlan(payload = {}, caseId = state.value.activeCaseId) {
@@ -1048,7 +1076,7 @@ export const useDemoStore = defineStore('demo', () => {
   return {
     state, activePatient, activeCase, activeReview, activeTreatment, activeBilling, activeTravel,
     activeFollowup, activeConsent, activeHospitalMatching, activeDomesticReference, activeAiStructuring,
-    activeConsultation, activeHealthPlan, activeHomeVisits, activeChinaRecords,
+    activeConsultation, activeHealthPlan, activeHomeVisits, activeCommunications, activeChinaRecords,
     activeTasks, activeDocuments, activeEvents, progress,
     toggleLanguage, setActiveCase, completeTask, startTask, addTaskComment, reassignTask, pauseTaskSla,
     submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, requestMoreDocuments,

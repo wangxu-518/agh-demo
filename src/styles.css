@@ -1127,11 +1127,36 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .profile-flow b { margin-top:6px; display:block; font-size:8px; }
 .profile-flow .done span { color:#fff; background:#087d73; }
 .profile-flow .active span { color:#fff; background:#e46756; box-shadow:0 0 0 5px #e4675620; }
-.china-link-teaser { min-height:92px; display:grid; grid-template-columns:46px 1fr auto; gap:12px; align-items:center; }
-.china-link-teaser > span { width:44px; height:44px; display:grid; place-items:center; border-radius:7px; color:#fff; background:#e18332; font-size:10px; font-weight:700; }
-.china-link-teaser b,.china-link-teaser p { margin:0; }
-.china-link-teaser p { margin-top:5px; color:#7b899b; font-size:8px; }
-.china-link-teaser button { border:0; color:#b56420; background:#fff0e2; padding:8px 10px; border-radius:6px; font-size:8px; }
+.patient-contact-summary { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:12px; }
+.contact-channel-list { display:grid; gap:7px; }
+.contact-channel-row { min-height:48px; padding:8px 9px; display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:9px; align-items:center; border:1px solid #e0e8ea; background:#fbfcfc; }
+.contact-channel-row > span { width:30px; height:30px; display:grid; place-items:center; border-radius:6px; color:#fff; background:#65798d; font-size:9px; font-style:normal; font-weight:700; }
+.contact-channel-row > span.channel-whatsapp { background:#169b67; }
+.contact-channel-row > span.channel-patient { background:#167a8c; }
+.contact-channel-row > span.channel-email { color:#426077; background:#e5edf1; }
+.contact-channel-row b,.contact-channel-row small { display:block; min-width:0; }
+.contact-channel-row b { font-size:8px; }
+.contact-channel-row b em { margin-left:4px; padding:2px 4px; border-radius:3px; color:#087d73; background:#e4f4f1; font-size:6px; font-style:normal; }
+.contact-channel-row small { margin-top:3px; overflow:hidden; color:#7b899a; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
+.contact-channel-row > i { color:#087d73; font-size:7px; font-style:normal; white-space:nowrap; }
+.contact-channel-row > i.pending { color:#b26b28; }
+.contact-preference { min-height:100%; padding:12px; display:flex; flex-direction:column; justify-content:center; border-left:3px solid #167a8c; background:#edf6f5; }
+.contact-preference span,.contact-preference b,.contact-preference small { display:block; }
+.contact-preference span { color:#6e7e8d; font-size:7px; }
+.contact-preference b { margin:7px 0 4px; color:#17334a; font-size:11px; }
+.contact-preference small { color:#087d73; font-size:7px; }
+.delivery-history { grid-column:1/-1; margin-top:2px; padding-top:10px; border-top:1px solid #e2e9eb; }
+.delivery-history > header { margin-bottom:7px; display:flex; align-items:end; justify-content:space-between; gap:8px; }
+.delivery-history > header b,.delivery-history > header small { display:block; }
+.delivery-history > header b { font-size:9px; }
+.delivery-history > header small { margin-top:3px; color:#8090a0; font-size:7px; }
+.delivery-history > header > span { color:#087d73; font-size:8px; font-weight:700; }
+.delivery-record { min-height:44px; padding:7px 0; display:grid; grid-template-columns:54px minmax(0,1fr) auto; gap:8px; align-items:center; border-top:1px dashed #e0e6e9; }
+.delivery-record > span { padding:4px 5px; border-radius:4px; color:#4d6578; background:#edf1f3; font-size:7px; text-align:center; }
+.delivery-record b,.delivery-record small { display:block; min-width:0; }
+.delivery-record b { overflow:hidden; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+.delivery-record small { margin-top:3px; color:#8290a0; font-size:7px; }
+.delivery-record > i { color:#087d73; font-size:7px; font-style:normal; white-space:nowrap; }
 
 .report-studio { display:grid; grid-template-columns:220px minmax(540px,1fr) 245px; gap:14px; align-items:start; }
 .report-rail,.confirmation-panel { position:sticky; top:85px; border:1px solid #dce4e8; background:#fff; }
@@ -1711,6 +1736,8 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
   .segmented-filter button { white-space:nowrap; }
   .patient-card-portrait { height:230px; }
   .patient-facts,.record-constellation > div,.report-field-grid,.report-overview,.care-vitals { grid-template-columns:repeat(2,1fr); }
+  .patient-contact-summary { grid-template-columns:1fr; }
+  .contact-preference,.delivery-history { grid-column:1; }
   .profile-flow { grid-template-columns:1fr; gap:7px; }
   .profile-flow div { min-height:30px; display:flex; align-items:center; gap:8px; text-align:left; }
   .profile-flow div:not(:last-child)::after { display:none; }

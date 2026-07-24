@@ -87,6 +87,8 @@ describe('case-isolated workflow store', () => {
     expect(store.generateFollowup().ok).toBe(true)
     expect(store.activeFollowup.stages).toHaveLength(5)
     expect(store.activePatient.phase).toBe('followup')
+    expect(store.activeCommunications.deliveries[0].type).toBe('followup')
+    expect(store.activeCommunications.deliveries[0].channels).toContain('WhatsApp')
   })
 
   it('keeps China medical content outside the Malaysia case reference', async () => {
@@ -130,6 +132,8 @@ describe('case-isolated workflow store', () => {
     expect(store.scheduleConsultation().code).toBe('PATIENT_CONFIRMATION_REQUIRED')
     expect(store.sendAiReportToPatient({ actor: 'Aisyah' }).ok).toBe(true)
     expect(store.activeAiStructuring.patientConfirmation.status).toBe('pending')
+    expect(store.activeCommunications.deliveries[0].type).toBe('report')
+    expect(store.activeCommunications.deliveries[0].channels).toEqual(['WhatsApp', '患者端'])
     expect(store.confirmAiReportByPatient({ actor: '林秀英' }).ok).toBe(true)
     expect(store.activeAiStructuring.status).toBe('patient_confirmed')
     expect(store.scheduleConsultation().ok).toBe(true)
@@ -146,6 +150,8 @@ describe('case-isolated workflow store', () => {
 
     store.setActiveCase('AGH-MY-2026-0012')
     expect(store.publishHealthPlan({ actor: 'Farah Lim' }).ok).toBe(true)
+    expect(store.activeCommunications.deliveries[0].type).toBe('care_plan')
+    expect(store.activeCommunications.deliveries[0].channels).toEqual(['WhatsApp', '患者端'])
     const visit = store.activeHomeVisits[0]
     expect(store.saveHomeVisit({
       id: visit.id,
@@ -195,7 +201,18 @@ describe('case-isolated workflow store', () => {
     expect(store.publishHealthPlan({ actor: 'Farah Lim' }).ok).toBe(true)
     expect(store.activeHealthPlan.monthlyPlan.status).toBe('published')
     expect(store.activeHealthPlan.monthlyPlan.publishedBy).toBe('Farah Lim')
-    expect(store.activeHealthPlan.pushBatches[0].channels).toEqual(['患者端', '家访 Pad'])
+    expect(store.activeHealthPlan.pushBatches[0].channels).toEqual(['WhatsApp', '患者端', '家访 Pad'])
+  })
+
+  it('provides verified patient contact channels for downstream delivery', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+
+    for (const patient of store.state.patients) {
+      expect(patient.contactChannels.some((channel) => channel.id === 'whatsapp' && channel.status === '已验证')).toBe(true)
+      expect(patient.contactChannels.some((channel) => channel.id === 'patient')).toBe(true)
+      expect(patient.preferredContactWindow).toBeTruthy()
+    }
   })
 
   it('stores video and all four home visit capture sections', async () => {

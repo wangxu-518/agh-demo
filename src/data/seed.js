@@ -380,6 +380,17 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     availableCount: hasChinaRecords ? 4 : 0,
     accessStatus: hasChinaRecords ? '二次验证后查看' : '暂无境内诊疗资料',
   }
+  currentCase.communications = {
+    deliveries: caseId === 'AGH-MY-2026-0012' ? [{
+      id: 'DEL-0012-01',
+      type: 'followup',
+      title: '归国适应期随访提醒',
+      channels: ['WhatsApp', '患者端'],
+      status: '已送达',
+      sentAt: dateTime(-1, 19),
+      recipient: '王美玲',
+    }] : [],
+  }
   currentCase.aiStructuring = baseAiStructuring({
     status: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? 'operator_confirmed' : 'draft',
     confirmedAt: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? dateTime(0, 9, 30) : null,
@@ -457,7 +468,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 11,
+  schemaVersion: 12,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {
@@ -477,10 +488,10 @@ export const seedState = {
     health: ['view_discharge_case', 'manage_followup', 'manage_medication', 'manage_alert', 'close_alert'],
   },
   patients: [
-    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', portrait: '/patients/lim-siew-eng.png', source: 'Facebook', updatedAt: dateTime(0, 10, 32) },
-    { id: 'P-0021', caseId: 'AGH-MY-2026-0021', name: '陈伟强', englishName: 'Tan Wei Keong', age: 61, gender: 'male', country: 'Malaysia', city: 'Penang', language: 'en', phone: '+60 12-*** 1120', diagnosis: '胃癌待分期', diagnosisEn: 'Gastric cancer, staging pending', phase: 'lead', phaseLabel: '新咨询', completeness: 35, owner: 'Nur', risk: 'normal', avatar: '陈', source: 'TikTok', updatedAt: dateTime(0, 9, 10) },
-    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', portrait: '/patients/ong-mei-ling.png', source: 'Referral', updatedAt: dateTime(-1, 18, 22) },
-    { id: 'P-0007', caseId: 'AGH-MY-2026-0007', name: '黄丽珍', englishName: 'Wong Lai Zhen', age: 58, gender: 'female', country: 'Malaysia', city: 'Kuching', language: 'zh', phone: '+60 16-*** 8802', diagnosis: '卵巢癌复查异常', diagnosisEn: 'Ovarian cancer, abnormal follow-up', phase: 'followup', phaseLabel: '高危随访', completeness: 100, owner: 'Farah', risk: 'critical', avatar: '黄', source: 'Referral', updatedAt: dateTime(0, 8, 45) },
+    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', portrait: '/patients/lim-siew-eng.png', source: 'Facebook', preferredContactWindow: '09:00-20:00', contactChannels: [{ id: 'whatsapp', label: 'WhatsApp', value: '+60 12-*** 8861', status: '已验证', preferred: true }, { id: 'patient', label: '患者端', value: '账号已开通', status: '可接收', preferred: true }, { id: 'email', label: 'Email', value: 'sieweng.lim@example.my', status: '已验证', preferred: false }], updatedAt: dateTime(0, 10, 32) },
+    { id: 'P-0021', caseId: 'AGH-MY-2026-0021', name: '陈伟强', englishName: 'Tan Wei Keong', age: 61, gender: 'male', country: 'Malaysia', city: 'Penang', language: 'en', phone: '+60 12-*** 1120', diagnosis: '胃癌待分期', diagnosisEn: 'Gastric cancer, staging pending', phase: 'lead', phaseLabel: '新咨询', completeness: 35, owner: 'Nur', risk: 'normal', avatar: '陈', source: 'TikTok', preferredContactWindow: '10:00-18:00', contactChannels: [{ id: 'whatsapp', label: 'WhatsApp', value: '+60 12-*** 1120', status: '已验证', preferred: true }, { id: 'patient', label: '患者端', value: '邀请待接受', status: '待开通', preferred: false }, { id: 'email', label: 'Email', value: 'weikeong.tan@example.my', status: '已验证', preferred: true }], updatedAt: dateTime(0, 9, 10) },
+    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', portrait: '/patients/ong-mei-ling.png', source: 'Referral', preferredContactWindow: '09:00-20:00', contactChannels: [{ id: 'whatsapp', label: 'WhatsApp', value: '+60 17-*** 2291', status: '已验证', preferred: true }, { id: 'patient', label: '患者端', value: '账号已开通', status: '可接收', preferred: true }, { id: 'email', label: 'Email', value: 'meiling.ong@example.my', status: '已验证', preferred: false }], updatedAt: dateTime(-1, 18, 22) },
+    { id: 'P-0007', caseId: 'AGH-MY-2026-0007', name: '黄丽珍', englishName: 'Wong Lai Zhen', age: 58, gender: 'female', country: 'Malaysia', city: 'Kuching', language: 'zh', phone: '+60 16-*** 8802', diagnosis: '卵巢癌复查异常', diagnosisEn: 'Ovarian cancer, abnormal follow-up', phase: 'followup', phaseLabel: '高危随访', completeness: 100, owner: 'Farah', risk: 'critical', avatar: '黄', source: 'Referral', preferredContactWindow: '08:00-21:00', contactChannels: [{ id: 'whatsapp', label: 'WhatsApp', value: '+60 16-*** 8802', status: '已验证', preferred: true }, { id: 'patient', label: '患者端', value: '账号已开通', status: '可接收', preferred: true }, { id: 'email', label: 'Email', value: 'laizhen.wong@example.my', status: '待验证', preferred: false }], updatedAt: dateTime(0, 8, 45) },
   ],
   leads: [
     { id: 'LEAD-260621-01', name: '陈伟强', source: 'TikTok', disease: '胃癌', phone: '+60 12-*** 1120', status: '待联系', owner: 'Nur', note: '' },
