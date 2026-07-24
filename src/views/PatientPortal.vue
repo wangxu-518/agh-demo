@@ -2,13 +2,16 @@
 import { useRouter } from 'vue-router'
 import PwaInstallPrompt from '../components/PwaInstallPrompt.vue'
 import { useAuthStore } from '../stores/auth'
+import { useDemoStore } from '../stores/demo'
 
 const props = defineProps({ entryMode: { type: Boolean, default: false } })
 const router = useRouter()
 const auth = useAuthStore()
+const demo = useDemoStore()
 
 function enterService() {
   if (props.entryMode) auth.demoLogin('patient')
+  demo.setActiveCase('AGH-MY-2026-0012')
   router.push('/patient/records')
 }
 

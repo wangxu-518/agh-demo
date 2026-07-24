@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { seedState } from '../data/seed'
 
 const root = resolve(import.meta.dirname, '../..')
 const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.webmanifest'), 'utf8'))
@@ -101,5 +102,14 @@ describe('AGH Care PWA', () => {
     expect(page).toContain('专家视频面诊邀请')
     expect(page).toContain('饮食运动方案')
     expect(page).toContain('AGH SERVICE UPDATES')
+  })
+
+  it('opens the patient demo on Wang Meiling with pushed services seeded', () => {
+    const home = readFileSync(resolve(root, 'src/views/PatientPortal.vue'), 'utf8')
+    const caseData = seedState.cases['AGH-MY-2026-0012']
+    expect(home).toContain("setActiveCase('AGH-MY-2026-0012')")
+    expect(caseData.aiStructuring.patientConfirmation.status).toBe('confirmed')
+    expect(caseData.consultation.meeting.status).toBe('booked')
+    expect(caseData.healthPlan.status).toBe('published')
   })
 })

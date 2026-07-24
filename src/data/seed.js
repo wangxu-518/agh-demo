@@ -412,12 +412,45 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     confirmedAt: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? dateTime(0, 9, 30) : null,
     confirmedBy: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? 'Aisyah Rahman' : '',
     ...(aiProfiles[caseId] || {}),
+    ...(caseId === 'AGH-MY-2026-0012' ? {
+      status: 'patient_confirmed',
+      patientConfirmation: {
+        status: 'confirmed',
+        sentAt: dateTime(-2, 15),
+        confirmedAt: dateTime(-2, 16),
+        confirmedBy: '王美玲',
+        note: '患者已确认结构化病案信息无误。',
+      },
+    } : {}),
   })
   currentCase.consultation = baseConsultation({
     status: caseId === 'AGH-MY-2026-0018' ? 'time_confirmed' : 'not_scheduled',
     ...(caseId === 'AGH-MY-2026-0012' ? {
+      status: 'scheduled',
+      date: dateTime(0, 15, 30),
       expert: '郑慧敏 首席医学顾问',
       hospital: 'AGH 医学顾问委员会',
+      meeting: {
+        provider: 'Zoom',
+        status: 'booked',
+        meetingId: '812 5076 2607',
+        joinUrl: 'https://zoom.us/j/81250762607',
+        passcode: 'AGHCARE',
+        host: 'AGH Malaysia',
+        createdAt: dateTime(-1, 10),
+      },
+      invitations: [
+        { recipient: '患者', channel: '患者端 + WhatsApp', status: 'sent', sentAt: dateTime(-1, 10, 5) },
+        { recipient: '专家', channel: '专家端 + Email', status: 'sent', sentAt: dateTime(-1, 10, 6) },
+      ],
+      recording: {
+        consentStatus: 'requested',
+        status: 'not_started',
+        cloudRecording: true,
+        transcriptStatus: 'not_started',
+        recordingUrl: '',
+        transcriptSource: '',
+      },
       agenda: ['术后病理核对', '内分泌治疗随访', '复查与康复计划'],
     } : {}),
     ...(caseId === 'AGH-MY-2026-0007' ? {
@@ -427,7 +460,7 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     } : {}),
   })
   currentCase.healthPlan = baseHealthPlan({
-    status: hasChinaRecords ? 'ready_to_publish' : 'draft',
+    status: caseId === 'AGH-MY-2026-0012' ? 'published' : hasChinaRecords ? 'ready_to_publish' : 'draft',
     tags: caseId === 'AGH-MY-2026-0012'
       ? ['乳腺癌术后', '内分泌治疗', '低强度康复']
       : ['治疗后康复', '营养支持', '活动耐力'],
@@ -439,6 +472,20 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
         diagnosis: caseId === 'AGH-MY-2026-0007' ? '卵巢癌治疗后 · 高危随访' : '肿瘤治疗前后健康准备',
       }),
   })
+  if (caseId === 'AGH-MY-2026-0012') {
+    currentCase.healthPlan.version = 2
+    currentCase.healthPlan.approvedBy = 'Farah Lim'
+    currentCase.healthPlan.approvedAt = dateTime(-1, 19)
+    currentCase.healthPlan.monthlyPlan.status = 'published'
+    currentCase.healthPlan.monthlyPlan.publishedAt = dateTime(-1, 19)
+    currentCase.healthPlan.monthlyPlan.publishedBy = 'Farah Lim'
+    currentCase.healthPlan.pushBatches.unshift({
+      id: 'PUSH-0012-CARE',
+      at: dateTime(-1, 19),
+      channels: ['WhatsApp', '患者端', '家访 Pad'],
+      status: '已推送',
+    })
+  }
   currentCase.homeVisits = hasChinaRecords ? [{
     id: `HV-${caseId.slice(-4)}-01`,
     scheduledAt: dateTime(1, 10),
@@ -484,7 +531,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 13,
+  schemaVersion: 14,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   aghExperts,
