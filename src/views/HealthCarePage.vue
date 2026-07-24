@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
@@ -9,6 +9,8 @@ const route = useRoute()
 const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
+const isFollowup = computed(() => page.value === 'followups')
+const isRehab = computed(() => page.value === 'rehab')
 const isVisit = computed(() => page.value === 'home-visits')
 const message = ref('')
 const messageOk = ref(true)
@@ -16,14 +18,48 @@ const accessOpen = ref(false)
 const accessPurpose = ref('制定术后健康管理方案')
 const secondFactor = ref('889102')
 const session = ref(null)
-const observations = ref('')
-const riskLevel = ref('normal')
-const vitals = ref({})
 
 if (!store.activeDomesticReference?.chinaCaseId) store.setActiveCase('AGH-MY-2026-0012')
 
 const visit = computed(() => store.activeHomeVisits[0])
-vitals.value = { ...visit.value.vitals }
+const activeCapture = ref('vitals')
+const observations = ref(visit.value.observations || '')
+const riskLevel = ref(visit.value.riskLevel || 'normal')
+const vitals = ref({ ...visit.value.vitals })
+const woundPain = ref({ ...visit.value.woundPain })
+const medicationReview = ref({ ...visit.value.medicationReview })
+const rehabAssessment = ref({ ...visit.value.rehabAssessment })
+
+const monthlyGoal = ref('')
+const monthlyDiet = ref([])
+const monthlyExercise = ref([])
+const monthlyMonth = ref('')
+
+const recordingStatus = ref('idle')
+const recordingSeconds = ref(0)
+let recordingTimer = null
+
+const recordingTime = computed(() => {
+  const minutes = String(Math.floor(recordingSeconds.value / 60)).padStart(2, '0')
+  const seconds = String(recordingSeconds.value % 60).padStart(2, '0')
+  return `${minutes}:${seconds}`
+})
+
+const captureCopy = {
+  vitals: ['生命体征采集', '记录血压、心率、血氧、体温和体重'],
+  wound: ['伤口与疼痛评估', '记录伤口状态、红肿渗液和疼痛评分'],
+  medication: ['用药核对', '核对药品、今日服药、依从性和副作用'],
+  rehab: ['康复动作评估', '记录关节活动、步行时长和动作完成质量'],
+}
+
+function loadMonthlyPlan() {
+  const monthly = store.activeHealthPlan.monthlyPlan
+  monthlyGoal.value = monthly.goal
+  monthlyDiet.value = JSON.parse(JSON.stringify(monthly.diet))
+  monthlyExercise.value = JSON.parse(JSON.stringify(monthly.exercise))
+  monthlyMonth.value = monthly.month
+}
+loadMonthlyPlan()
 
 function show(result) {
   message.value = result.message
@@ -49,10 +85,72 @@ function closeRecords() {
   session.value = null
 }
 
-function toggleCheck(id) {
-  const item = visit.value.checklist.find((entry) => entry.id === id)
-  item.done = !item.done
-  store.saveHomeVisit({ id: visit.value.id, checklist: visit.value.checklist })
+function generateMonthlyPlan() {
+  show(store.generateMonthlyHealthPlan({ month: monthlyMonth.value, actor: 'Farah Lim' }))
+  loadMonthlyPlan()
+}
+
+function saveMonthlyPlan() {
+  show(store.reviseMonthlyHealthPlan({
+    goal: monthlyGoal.value,
+    diet: monthlyDiet.value,
+    exercise: monthlyExercise.value,
+    actor: 'Farah Lim',
+  }))
+  loadMonthlyPlan()
+}
+
+function publishMonthlyPlan() {
+  show(store.publishHealthPlan({ actor: 'Farah Lim' }))
+}
+
+function selectCapture(id) {
+  activeCapture.value = id
+}
+
+function saveCapture(id = activeCapture.value) {
+  const checklist = visit.value.checklist.map((item) => ({ ...item, done: item.id === id ? true : item.done }))
+  const result = store.saveHomeVisit({
+    id: visit.value.id,
+    checklist,
+    vitals: vitals.value,
+    woundPain: woundPain.value,
+    medicationReview: medicationReview.value,
+    rehabAssessment: rehabAssessment.value,
+    observations: observations.value,
+    riskLevel: riskLevel.value,
+    actor: 'Farah Lim',
+  })
+  show(result)
+}
+
+function startRecording() {
+  recordingStatus.value = 'recording'
+  recordingSeconds.value = 0
+  clearInterval(recordingTimer)
+  recordingTimer = setInterval(() => { recordingSeconds.value += 1 }, 1000)
+  message.value = '家访视频开始录制（Demo 模拟）'
+  messageOk.value = true
+}
+
+function stopRecording() {
+  clearInterval(recordingTimer)
+  recordingTimer = null
+  recordingStatus.value = 'recorded'
+  const duration = Math.max(recordingSeconds.value, 8)
+  recordingSeconds.value = duration
+  show(store.saveHomeVisit({
+    id: visit.value.id,
+    videoRecording: {
+      id: `HVR-${Date.now()}`,
+      name: `家访现场视频-${new Date().toISOString().slice(0, 10)}.mp4`,
+      duration,
+      createdAt: new Date().toISOString(),
+      recordedBy: 'Farah Lim',
+      status: 'ready',
+    },
+    actor: 'Farah Lim',
+  }))
 }
 
 function submitVisit() {
@@ -60,72 +158,144 @@ function submitVisit() {
     id: visit.value.id,
     checklist: visit.value.checklist,
     vitals: vitals.value,
+    woundPain: woundPain.value,
+    medicationReview: medicationReview.value,
+    rehabAssessment: rehabAssessment.value,
     observations: observations.value,
     riskLevel: riskLevel.value,
     submit: true,
     actor: 'Farah Lim',
   }))
 }
+
+onBeforeUnmount(() => clearInterval(recordingTimer))
 </script>
 
 <template>
   <div :class="['health-care-page', { 'pad-visit-mode': isVisit }]">
-    <template v-if="!isVisit">
-      <PageHeader eyebrow="Personalized care plan" title="个性化健康方案" subtitle="受控参考国内诊疗资料后，由健康管理团队人工制定并推送患者">
-        <button class="secondary-button" @click="openRecords">受控查看国内资料</button>
-        <button class="primary-button" @click="show(store.publishHealthPlan({ actor: 'Farah Lim' }))">审核并发布方案</button>
+    <template v-if="isFollowup">
+      <PageHeader eyebrow="AI monthly care plan" title="随访计划与月度方案" subtitle="根据患者康复阶段，由AI生成月度饮食运动方案，健康管家修改后推送患者">
+        <button class="secondary-button" @click="openRecords">查看方案依据</button>
+        <button class="secondary-button" @click="generateMonthlyPlan">AI重新生成</button>
+        <button class="primary-button" @click="publishMonthlyPlan">推送给患者</button>
+      </PageHeader>
+      <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
+
+      <section class="followup-stage-ribbon">
+        <div v-for="(stage, index) in store.activeFollowup.stages" :key="stage.id" :class="{ active: stage.status === 'active', done: stage.status === 'completed' }">
+          <span>{{ stage.status === 'completed' ? '✓' : index + 1 }}</span>
+          <div><b>{{ stage.name }}</b><small>{{ stage.period }}</small></div>
+        </div>
+      </section>
+
+      <section class="monthly-plan-hero">
+        <div class="monthly-patient">
+          <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
+          <div><span>MONTHLY RECOVERY PLAN</span><h2>{{ store.activePatient.name }} · {{ monthlyMonth }} 月度方案</h2><p>{{ store.activePatient.diagnosis }} · 当前处于归国适应期</p></div>
+        </div>
+        <div class="monthly-ai-state"><span>AI</span><div><b>AGH Care AI 已生成</b><small>{{ store.activeHealthPlan.monthlyPlan.generatedAt.slice(0, 10) }} · v{{ store.activeHealthPlan.monthlyPlan.version }}</small></div></div>
+        <div class="monthly-status"><small>当前状态</small><b>{{ store.activeHealthPlan.monthlyPlan.status === 'published' ? '已推送患者' : store.activeHealthPlan.monthlyPlan.status === 'edited' ? '人工已修改' : '等待审核' }}</b></div>
+      </section>
+
+      <div class="monthly-plan-layout">
+        <main class="monthly-plan-editor">
+          <section class="monthly-goal">
+            <header><div><span>01</span><h3>本月康复目标</h3></div><em>支持二次修改</em></header>
+            <textarea v-model="monthlyGoal" rows="2"></textarea>
+          </section>
+
+          <section class="monthly-editor-section diet">
+            <header><div><span>02</span><h3>月度饮食方案</h3></div><small>AI结合手术资料、体重与恢复阶段生成</small></header>
+            <div class="monthly-editor-table">
+              <div class="editor-table-head"><span>餐次/主题</span><span>月度目标</span><span>执行建议</span></div>
+              <label v-for="(item, index) in monthlyDiet" :key="index">
+                <input v-model="item.title" />
+                <input v-model="item.target" />
+                <textarea v-model="item.note" rows="2"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="monthly-editor-section exercise">
+            <header><div><span>03</span><h3>月度运动方案</h3></div><small>按频次、时长和安全强度执行</small></header>
+            <div class="monthly-editor-table">
+              <div class="editor-table-head"><span>运动类型</span><span>频次目标</span><span>安全强度</span></div>
+              <label v-for="(item, index) in monthlyExercise" :key="index">
+                <input v-model="item.title" />
+                <input v-model="item.target" />
+                <textarea v-model="item.intensity" rows="2"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <footer class="monthly-editor-actions">
+            <span>修改后将生成新版本，需再次审核才能推送患者。</span>
+            <button class="primary-button" @click="saveMonthlyPlan">保存为新版本</button>
+          </footer>
+        </main>
+
+        <aside class="monthly-plan-aside">
+          <SectionCard title="AI生成依据" subtitle="来源与人工修改均留痕">
+            <div class="ai-source-stack">
+              <div v-for="record in store.activeChinaRecords.slice(0, 3)" :key="record.id"><span>{{ record.type.slice(0, 1) }}</span><div><b>{{ record.title }}</b><small>{{ record.occurredAt }} · 中国诊疗资料中心</small></div></div>
+              <div><span>访</span><div><b>最近家访记录</b><small>疼痛 2/10 · 活动度 78%</small></div></div>
+            </div>
+          </SectionCard>
+          <SectionCard title="版本与推送">
+            <div class="monthly-version">
+              <strong>v{{ store.activeHealthPlan.monthlyPlan.version }}</strong>
+              <div><b>{{ store.activeHealthPlan.monthlyPlan.status === 'published' ? '患者已收到' : '待推送' }}</b><small>{{ store.activeHealthPlan.monthlyPlan.revisions.length }} 个历史版本</small></div>
+            </div>
+            <div v-if="store.activeHealthPlan.pushBatches.length" class="push-status"><b>已推送患者端与家访 Pad</b><small>{{ store.activeHealthPlan.approvedAt }}</small></div>
+            <button class="primary-button full-button" @click="publishMonthlyPlan">审核并推送患者</button>
+          </SectionCard>
+          <SectionCard title="本月监测">
+            <div class="monitor-list"><span v-for="item in store.activeHealthPlan.monitoring" :key="item">✓ {{ item }}</span></div>
+          </SectionCard>
+        </aside>
+      </div>
+    </template>
+
+    <template v-else-if="isRehab">
+      <PageHeader eyebrow="Rehabilitation & nursing" title="康复与护理" subtitle="围绕伤口、疼痛、活动度和日常功能进行独立康复评估">
+        <button class="secondary-button" @click="openRecords">调用中国康复资料</button>
+        <button class="primary-button" @click="router.push('/health-management/home-visits')">安排家访评估</button>
       </PageHeader>
       <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
       <section class="health-visual-dashboard">
         <div class="health-human-panel">
-          <header><span>RECOVERY BODY MAP</span><h2>术后恢复人体图</h2><p>把方案放回患者身体上，而不是只看表格。</p></header>
+          <header><span>RECOVERY BODY MAP</span><h2>术后恢复人体图</h2><p>按身体区域查看恢复状态和康复动作。</p></header>
           <div class="health-portrait-stage">
             <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
             <button class="health-hotspot breast"><i></i><span><b>手术区域</b><small>伤口恢复良好</small></span></button>
-            <button class="health-hotspot shoulder"><i></i><span><b>上肢活动</b><small>每日 2 组训练</small></span></button>
-            <button class="health-hotspot nutrition"><i></i><span><b>营养状态</b><small>蛋白 70-80g/日</small></span></button>
+            <button class="health-hotspot shoulder"><i></i><span><b>上肢活动</b><small>前屈 135°</small></span></button>
+            <button class="health-hotspot nutrition"><i></i><span><b>耐力状态</b><small>步行 25 分钟</small></span></button>
           </div>
           <footer><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.age }}岁 · {{ store.activePatient.diagnosis }}</small></div><span class="status-pill done">恢复稳定</span></footer>
         </div>
-        <div class="health-overview">
-          <header><div><span>PERSONALIZED CARE</span><h2>{{ store.activePatient.name }}的健康管理方案</h2><p>根据中国手术资料与康复方案，由 Farah Lim 人工制定。</p></div><div class="care-score"><strong>82</strong><small>恢复指数</small></div></header>
+        <div class="health-overview rehab-overview">
+          <header><div><span>REHAB ASSESSMENT</span><h2>本周康复进度</h2><p>最近评估来自家访记录与患者每日打卡。</p></div><div class="care-score"><strong>82</strong><small>恢复指数</small></div></header>
           <section class="care-vitals">
-            <article><span>伤口</span><b>恢复良好</b><small>无渗液、轻微牵拉感</small></article>
-            <article><span>疼痛</span><b>2 / 10</b><small>活动后轻微</small></article>
-            <article><span>活动度</span><b>78%</b><small>较上周 +9%</small></article>
-            <article><span>营养</span><b>稳定</b><small>体重 58.4kg</small></article>
+            <article><span>伤口</span><b>恢复良好</b><small>无红肿渗液</small></article>
+            <article><span>疼痛</span><b>2 / 10</b><small>较上周 -1</small></article>
+            <article><span>肩关节前屈</span><b>135°</b><small>目标 150°</small></article>
+            <article><span>连续步行</span><b>25 分钟</b><small>目标 30 分钟</small></article>
           </section>
+          <div class="rehab-progress-list">
+            <div><span>伤口与疼痛护理</span><b>90%</b><i><em style="width:90%"></em></i><small>继续观察牵拉感和局部温度</small></div>
+            <div><span>上肢活动训练</span><b>78%</b><i><em style="width:78%"></em></i><small>每日 2 组，疼痛不超过 3 分</small></div>
+            <div><span>步行与耐力恢复</span><b>72%</b><i><em style="width:72%"></em></i><small>本周逐步增加至每日 30 分钟</small></div>
+          </div>
           <button class="china-surgery-entry" @click="openRecords">
-            <span>CN</span><div><small>中国诊疗资料中心</small><b>调用手术资料与康复方案</b><p>{{ store.activeDomesticReference.chinaCaseId }} · {{ store.activeDomesticReference.availableCount }} 份境内资料</p></div><i>受控打开 →</i>
+            <span>CN</span><div><small>中国诊疗资料中心</small><b>调用手术资料与30天康复方案</b><p>{{ store.activeDomesticReference.chinaCaseId }} · {{ store.activeDomesticReference.availableCount }} 份境内资料</p></div><i>受控打开 →</i>
           </button>
-          <section class="care-next-action"><span>下一次家访</span><b>{{ visit.scheduledAt.slice(0,10) }} · {{ visit.visitor }}</b><button @click="router.push('/health-management/home-visits')">进入 Pad 模式</button></section>
         </div>
       </section>
-      <div class="health-plan-layout enhanced">
-        <main>
-          <section class="plan-band">
-            <header><div><span>01</span><h2>饮食建议</h2></div><b>根据术后恢复阶段</b></header>
-            <div class="plan-items"><article v-for="item in store.activeHealthPlan.diet" :key="item.title"><h3>{{ item.title }}</h3><strong>{{ item.target }}</strong><p>{{ item.note }}</p></article></div>
-          </section>
-          <section class="plan-band">
-            <header><div><span>02</span><h2>运动与康复</h2></div><b>循序渐进，症状优先</b></header>
-            <div class="plan-items"><article v-for="item in store.activeHealthPlan.exercise" :key="item.title"><h3>{{ item.title }}</h3><strong>{{ item.target }}</strong><p>{{ item.intensity }}</p></article></div>
-          </section>
-          <section class="plan-band">
-            <header><div><span>03</span><h2>监测与复查</h2></div><b>异常自动进入预警</b></header>
-            <div class="monitor-list"><span v-for="item in store.activeHealthPlan.monitoring" :key="item">✓ {{ item }}</span></div>
-          </section>
-        </main>
-        <aside>
-          <SectionCard title="方案来源" subtitle="人工参考资料留痕">
-            <div class="plan-source-list"><div v-for="record in store.activeChinaRecords.slice(0,3)" :key="record.id"><span>{{ record.type.slice(0,1) }}</span><div><b>{{ record.title }}</b><small>{{ record.occurredAt }} · {{ record.hospital }}</small></div></div></div>
-          </SectionCard>
-          <SectionCard title="推送状态">
-            <div v-if="store.activeHealthPlan.pushBatches.length" class="push-status"><b>已推送患者端与家访 Pad</b><small>{{ store.activeHealthPlan.approvedAt }}</small></div>
-            <div v-else class="empty-state">方案审核发布后显示推送结果</div>
-          </SectionCard>
-        </aside>
-      </div>
+      <section class="rehab-protocol-grid">
+        <article><span>01</span><div><h3>伤口与疼痛护理</h3><p>每日观察红肿、渗液、温度和牵拉感；疼痛超过 4 分进入预警。</p></div><b>每日</b></article>
+        <article><span>02</span><div><h3>上肢活动训练</h3><p>爬墙、钟摆和肩关节前屈训练，每日 2 组，每组 10 次。</p></div><b>2组/日</b></article>
+        <article><span>03</span><div><h3>步行与呼吸训练</h3><p>以可交谈强度步行并配合缓慢深呼吸，疲劳时分段完成。</p></div><b>30分钟</b></article>
+      </section>
     </template>
 
     <template v-else>
@@ -135,34 +305,91 @@ function submitVisit() {
         <button class="secondary-button" @click="openRecords">查看国内资料</button>
       </header>
       <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
+
+      <section class="visit-video-recorder">
+        <div :class="['video-visit-preview', recordingStatus]">
+          <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}家访录制演示`" />
+          <div class="video-grid-overlay"></div>
+          <span v-if="recordingStatus === 'recording'" class="recording-indicator"><i></i> REC {{ recordingTime }}</span>
+          <span v-else class="camera-ready">VIDEO VISIT RECORD</span>
+          <footer><b>{{ store.activePatient.name }} · 家访现场</b><small>仅在患者知情同意后录制</small></footer>
+        </div>
+        <div class="video-recorder-control">
+          <span>VIDEO EVIDENCE</span><h2>家访视频记录</h2><p>用于记录伤口观察、用药核对和康复动作。正式系统需取得患者授权并加密保存。</p>
+          <div class="video-consent"><i>✓</i><div><b>患者已同意本次录制</b><small>用途：术后健康管理与医疗质控</small></div></div>
+          <button v-if="recordingStatus !== 'recording'" class="record-button" @click="startRecording"><i></i>{{ recordingStatus === 'recorded' ? '重新录制' : '开始录制' }}</button>
+          <button v-else class="stop-record-button" @click="stopRecording"><i></i>停止并保存 {{ recordingTime }}</button>
+          <div v-if="visit.videoRecordings.length" class="recorded-file"><span>MP4</span><div><b>{{ visit.videoRecordings[0].name }}</b><small>{{ visit.videoRecordings[0].duration }}秒 · 已保存到患者档案</small></div><em>✓</em></div>
+        </div>
+      </section>
+
       <div class="pad-progress"><div><span :style="{ width: `${visit.checklist.filter(item => item.done).length / visit.checklist.length * 100}%` }"></span></div><b>{{ visit.checklist.filter(item => item.done).length }}/{{ visit.checklist.length }} 已完成</b></div>
-      <main class="pad-visit-grid">
+      <main class="pad-visit-grid enhanced">
         <section class="pad-checklist">
-          <h2>现场检查</h2>
-          <button v-for="(item,index) in visit.checklist" :key="item.id" :class="{ done: item.done }" @click="toggleCheck(item.id)">
-            <span>{{ item.done ? '✓' : index + 1 }}</span><b>{{ item.label }}</b><small>{{ item.done ? '已完成' : '点击记录完成' }}</small>
+          <h2>现场采集项目</h2>
+          <button v-for="(item,index) in visit.checklist" :key="item.id" :class="{ done: item.done, active: activeCapture === item.id }" @click="selectCapture(item.id)">
+            <span>{{ item.done ? '✓' : index + 1 }}</span><b>{{ item.label }}</b><small>{{ item.done ? '已保存采集结果' : '点击进入采集' }}</small>
           </button>
         </section>
-        <section class="pad-notes">
-          <h2>生命体征</h2>
-          <div class="vitals-grid">
-            <label>血压 mmHg<input v-model="vitals.bloodPressure" inputmode="numeric" /></label>
-            <label>心率 bpm<input v-model="vitals.heartRate" inputmode="numeric" /></label>
-            <label>血氧 %<input v-model="vitals.oxygen" inputmode="numeric" /></label>
-            <label>体温 ℃<input v-model="vitals.temperature" inputmode="decimal" /></label>
+
+        <section class="pad-capture-panel">
+          <header><div><span>{{ activeCapture.toUpperCase() }} COLLECTION</span><h2>{{ captureCopy[activeCapture][0] }}</h2><p>{{ captureCopy[activeCapture][1] }}</p></div><em>{{ visit.checklist.find(item => item.id === activeCapture)?.done ? '已完成' : '待采集' }}</em></header>
+
+          <div v-if="activeCapture === 'vitals'" class="capture-form">
+            <div class="vitals-grid">
+              <label>血压 mmHg<input v-model="vitals.bloodPressure" inputmode="numeric" /></label>
+              <label>心率 bpm<input v-model="vitals.heartRate" inputmode="numeric" /></label>
+              <label>血氧 %<input v-model="vitals.oxygen" inputmode="numeric" /></label>
+              <label>体温 ℃<input v-model="vitals.temperature" inputmode="decimal" /></label>
+              <label>体重 kg<input v-model="vitals.weight" inputmode="decimal" /></label>
+            </div>
           </div>
-          <h2>观察记录</h2>
-          <textarea v-model="observations" rows="7" placeholder="记录生命体征、伤口、疼痛、用药和康复动作情况"></textarea>
-          <h2>风险分级</h2>
-          <div class="risk-segments">
-            <button :class="{ active: riskLevel === 'normal' }" @click="riskLevel='normal'">正常</button>
-            <button :class="{ active: riskLevel === 'medium' }" @click="riskLevel='medium'">需关注</button>
-            <button :class="{ active: riskLevel === 'high' }" @click="riskLevel='high'">高风险</button>
+
+          <div v-else-if="activeCapture === 'wound'" class="capture-form">
+            <div class="capture-grid">
+              <label>伤口状态<select v-model="woundPain.woundStatus"><option>愈合良好</option><option>轻微红肿</option><option>疑似感染</option></select></label>
+              <label>红肿<select v-model="woundPain.redness"><option>无</option><option>轻微</option><option>明显</option></select></label>
+              <label>渗液<select v-model="woundPain.exudate"><option>无</option><option>少量</option><option>较多</option></select></label>
+              <label class="pain-range">疼痛评分 <b>{{ woundPain.painScore }}/10</b><input v-model.number="woundPain.painScore" type="range" min="0" max="10" /></label>
+            </div>
+            <label class="capture-notes">伤口与疼痛备注<textarea v-model="woundPain.notes" rows="4" placeholder="记录伤口颜色、温度、牵拉感及疼痛发生场景"></textarea></label>
+            <button class="capture-photo-button">＋ 拍摄伤口照片（Demo）</button>
           </div>
-          <button class="primary-button pad-submit" @click="submitVisit">提交家访记录</button>
-          <p>高风险记录提交后会自动进入健康管理预警中心。</p>
+
+          <div v-else-if="activeCapture === 'medication'" class="capture-form">
+            <div class="capture-grid">
+              <label>当前药物<input v-model="medicationReview.medication" /></label>
+              <label>依从性<select v-model="medicationReview.adherence"><option>良好</option><option>偶尔漏服</option><option>依从性较差</option></select></label>
+              <label>副作用<input v-model="medicationReview.sideEffects" /></label>
+              <label class="capture-checkbox"><input v-model="medicationReview.takenToday" type="checkbox" /> 今日已按时服药</label>
+            </div>
+            <label class="capture-notes">用药核对备注<textarea v-model="medicationReview.notes" rows="4" placeholder="记录药盒数量、服药时间、漏服原因及处理建议"></textarea></label>
+          </div>
+
+          <div v-else class="capture-form">
+            <div class="capture-grid">
+              <label>肩关节前屈 °<input v-model="rehabAssessment.shoulderFlexion" inputmode="numeric" /></label>
+              <label>连续步行 分钟<input v-model="rehabAssessment.walkMinutes" inputmode="numeric" /></label>
+              <label>完成组数<input v-model="rehabAssessment.completedSets" inputmode="numeric" /></label>
+              <label>动作质量<select v-model="rehabAssessment.movementQuality"><option>动作顺畅</option><option>轻微受限</option><option>明显受限</option></select></label>
+            </div>
+            <label class="capture-notes">康复动作观察<textarea v-model="rehabAssessment.notes" rows="4" placeholder="记录动作代偿、疼痛、疲劳程度及下阶段调整建议"></textarea></label>
+            <button class="capture-photo-button">▶ 录制康复动作片段（Demo）</button>
+          </div>
+
+          <button class="primary-button save-capture-button" @click="saveCapture()">保存并完成本项</button>
         </section>
       </main>
+
+      <section class="visit-submit-panel">
+        <label>综合观察记录<textarea v-model="observations" rows="4" placeholder="汇总本次家访发现、患者主诉和后续安排"></textarea></label>
+        <div><span>风险分级</span><div class="risk-segments">
+          <button :class="{ active: riskLevel === 'normal' }" @click="riskLevel='normal'">正常</button>
+          <button :class="{ active: riskLevel === 'medium' }" @click="riskLevel='medium'">需关注</button>
+          <button :class="{ active: riskLevel === 'high' }" @click="riskLevel='high'">高风险</button>
+        </div></div>
+        <button class="primary-button pad-submit" @click="submitVisit">提交完整家访记录</button>
+      </section>
     </template>
 
     <div v-if="accessOpen" class="controlled-view-overlay">

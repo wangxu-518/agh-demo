@@ -300,6 +300,25 @@ const baseHealthPlan = (overrides = {}) => ({
     { title: '上肢活动', target: '每日 2 组', intensity: '疼痛不超过 3 分' },
   ],
   monitoring: ['每日体温与伤口观察', '每周体重', '异常疼痛及时上报'],
+  monthlyPlan: {
+    month: dateOnly(0).slice(0, 7),
+    status: 'ai_generated',
+    version: 1,
+    generatedAt: dateTime(-1, 9),
+    generatedBy: 'AGH Care AI',
+    goal: '促进伤口恢复、维持体重并逐步改善上肢活动度',
+    diet: [
+      { title: '早餐', target: '蛋白质 20g', note: '鸡蛋 1 个、无糖豆浆 250ml、全麦主食' },
+      { title: '午晚餐', target: '蛋白质 50-60g', note: '鱼禽瘦肉与豆制品轮换，蔬菜不少于 400g' },
+      { title: '加餐与饮水', target: '每日 1-2 次', note: '低糖水果或酸奶，饮水 1500-1800ml' },
+    ],
+    exercise: [
+      { title: '步行', target: '每周 5 天 · 30 分钟', intensity: '可交谈强度，心率不超过 110 次/分' },
+      { title: '上肢康复', target: '每日 2 组 · 每组 10 次', intensity: '肩关节活动疼痛不超过 3 分' },
+      { title: '呼吸训练', target: '每日 2 次 · 每次 5 分钟', intensity: '缓慢深呼吸，出现头晕立即停止' },
+    ],
+    revisions: [],
+  },
   pushBatches: [],
   approvedBy: '',
   approvedAt: null,
@@ -342,6 +361,16 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     ],
     observations: '',
     riskLevel: 'normal',
+    woundPain: {
+      woundStatus: '愈合良好', redness: '无', exudate: '无', painScore: 2, notes: '',
+    },
+    medicationReview: {
+      medication: '来曲唑 2.5mg', takenToday: true, adherence: '良好', sideEffects: '无明显不适', notes: '',
+    },
+    rehabAssessment: {
+      shoulderFlexion: '135', walkMinutes: '25', movementQuality: '动作顺畅', completedSets: '2', notes: '',
+    },
+    videoRecordings: [],
   }] : []
 }
 
@@ -360,7 +389,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {

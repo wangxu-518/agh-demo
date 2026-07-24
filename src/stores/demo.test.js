@@ -158,6 +158,69 @@ describe('case-isolated workflow store', () => {
     expect(store.state.alerts[0].type).toBe('家访异常')
   })
 
+  it('generates, revises and publishes a versioned monthly recovery plan', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.setActiveCase('AGH-MY-2026-0012')
+    const startingVersion = store.activeHealthPlan.monthlyPlan.version
+
+    expect(store.generateMonthlyHealthPlan({
+      month: '2026-08',
+      actor: 'Farah Lim',
+    }).ok).toBe(true)
+    expect(store.activeHealthPlan.monthlyPlan.version).toBe(startingVersion + 1)
+    expect(store.activeHealthPlan.monthlyPlan.status).toBe('ai_generated')
+    expect(store.activeHealthPlan.monthlyPlan.revisions).toHaveLength(1)
+
+    const revisedDiet = JSON.parse(JSON.stringify(store.activeHealthPlan.monthlyPlan.diet))
+    revisedDiet[0].target = '蛋白质 25g'
+    expect(store.reviseMonthlyHealthPlan({
+      goal: '本月恢复连续步行 30 分钟并维持稳定体重',
+      diet: revisedDiet,
+      exercise: JSON.parse(JSON.stringify(store.activeHealthPlan.monthlyPlan.exercise)),
+      actor: 'Farah Lim',
+    }).ok).toBe(true)
+    expect(store.activeHealthPlan.monthlyPlan.version).toBe(startingVersion + 2)
+    expect(store.activeHealthPlan.monthlyPlan.status).toBe('edited')
+    expect(store.activeHealthPlan.monthlyPlan.revisions).toHaveLength(2)
+    expect(store.activeHealthPlan.diet[0].target).toBe('蛋白质 25g')
+
+    expect(store.publishHealthPlan({ actor: 'Farah Lim' }).ok).toBe(true)
+    expect(store.activeHealthPlan.monthlyPlan.status).toBe('published')
+    expect(store.activeHealthPlan.monthlyPlan.publishedBy).toBe('Farah Lim')
+    expect(store.activeHealthPlan.pushBatches[0].channels).toEqual(['患者端', '家访 Pad'])
+  })
+
+  it('stores video and all four home visit capture sections', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.setActiveCase('AGH-MY-2026-0012')
+    const visit = store.activeHomeVisits[0]
+
+    expect(store.saveHomeVisit({
+      id: visit.id,
+      checklist: visit.checklist.map((item) => ({ ...item, done: true })),
+      vitals: { bloodPressure: '126/76', oxygen: '99' },
+      woundPain: { woundStatus: '轻微红肿', painScore: 3, notes: '换药后继续观察' },
+      medicationReview: { adherence: '偶尔漏服', notes: '已设置服药提醒' },
+      rehabAssessment: { shoulderFlexion: '142', movementQuality: '轻微受限' },
+      videoRecording: {
+        id: 'HVR-TEST',
+        name: '家访现场视频-2026-07-24.mp4',
+        duration: 42,
+        status: 'ready',
+      },
+      actor: 'Farah Lim',
+    }).ok).toBe(true)
+
+    expect(visit.checklist.every((item) => item.done)).toBe(true)
+    expect(visit.vitals.oxygen).toBe('99')
+    expect(visit.woundPain.painScore).toBe(3)
+    expect(visit.medicationReview.adherence).toBe('偶尔漏服')
+    expect(visit.rehabAssessment.shoulderFlexion).toBe('142')
+    expect(visit.videoRecordings[0].name).toContain('家访现场视频')
+  })
+
   it('creates a new AI report version and requires patient reconfirmation', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
