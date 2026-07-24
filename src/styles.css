@@ -1979,3 +1979,492 @@ body:has(.care-entry) .feedback-widget { display: none; }
   .pad-checklist { grid-template-columns:1fr; }
   .pad-capture-panel { padding:16px 12px; }
 }
+
+/* AGH Care promotional home */
+.care-public-home {
+  min-height: 720px;
+  padding-bottom: 90px;
+  color: #20344e;
+  background: #f4f7fb;
+}
+.care-brand-hero {
+  min-height: 376px;
+  padding: 48px 22px 28px;
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background-color: #17344f;
+  background-image: url('/agh-care-hero.webp');
+  background-position: 62% center;
+  background-size: cover;
+}
+.care-brand-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #0b243bc2;
+}
+.care-hero-copy {
+  width: min(100%, 340px);
+  position: relative;
+  z-index: 1;
+}
+.care-hero-copy > span,
+.care-home-band > header small,
+.care-home-service small {
+  color: #78d7c4;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.care-hero-copy h1 {
+  margin: 10px 0 12px;
+  max-width: 290px;
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+.care-hero-copy p {
+  max-width: 330px;
+  color: #e3edf3;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.care-hero-copy > div {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 9px;
+}
+.care-hero-copy button,
+.care-hero-copy a {
+  min-height: 46px;
+  padding: 0 13px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff99;
+  border-radius: 7px;
+  color: #fff;
+  background: #ffffff16;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+.care-hero-copy button {
+  border-color: #fff;
+  color: #17416b;
+  background: #fff;
+}
+.care-trust-strip {
+  min-height: 82px;
+  padding: 14px 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  border-bottom: 1px solid #dfe7ef;
+  background: #fff;
+}
+.care-trust-strip > div {
+  min-width: 0;
+  text-align: center;
+  border-right: 1px solid #e5ebf1;
+}
+.care-trust-strip > div:last-child { border-right: 0; }
+.care-trust-strip strong,
+.care-trust-strip span {
+  display: block;
+}
+.care-trust-strip strong {
+  color: #1f5d96;
+  font-size: 19px;
+}
+.care-trust-strip span {
+  margin-top: 4px;
+  color: #6f7e8f;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.care-home-band {
+  padding: 30px 18px;
+  border-bottom: 1px solid #e0e7ee;
+}
+.care-home-band > header h2,
+.care-home-service h2 {
+  margin: 6px 0 8px;
+  color: #1f344e;
+  font-size: 23px;
+  line-height: 1.3;
+}
+.care-home-band > header p,
+.care-home-service p {
+  color: #6a7b8f;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.care-value-band,
+.care-expert-band { background: #fff; }
+.care-value-list {
+  margin-top: 20px;
+  display: grid;
+}
+.care-value-list article {
+  padding: 16px 0;
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  border-top: 1px solid #e8edf2;
+}
+.care-value-list article > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #fff;
+  background: #1a6e67;
+  font-size: 12px;
+  font-weight: 800;
+}
+.care-value-list article:nth-child(2) > span { background: #245e9b; }
+.care-value-list article:nth-child(3) > span { background: #b65a50; }
+.care-value-list b {
+  color: #233b55;
+  font-size: 15px;
+}
+.care-value-list p {
+  margin-top: 5px;
+  color: #6f7f91;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.care-hospital-list,
+.care-expert-list {
+  margin-top: 18px;
+  display: grid;
+  gap: 9px;
+}
+.care-hospital-list article,
+.care-expert-list article {
+  min-height: 72px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 11px;
+  align-items: center;
+  border: 1px solid #dce5ed;
+  border-radius: 7px;
+  background: #fff;
+}
+.care-hospital-list article > span,
+.care-expert-list article > span {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #1f5d96;
+  background: #e9f1f8;
+  font-size: 11px;
+  font-weight: 800;
+}
+.care-hospital-list b,
+.care-expert-list b {
+  display: block;
+  color: #253b54;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.care-hospital-list p,
+.care-expert-list p {
+  margin-top: 4px;
+  color: #728194;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.care-hospital-list em,
+.care-expert-list em {
+  color: #1a756d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+.care-expert-list article > span.blue { color: #fff; background: #245e9b; }
+.care-expert-list article > span.red { color: #fff; background: #b65a50; }
+.care-expert-list article > span.green { color: #fff; background: #1a756d; }
+.care-expert-list b small {
+  display: block;
+  margin-top: 3px;
+  color: #63778e;
+  font-size: 11px;
+  font-weight: 500;
+}
+.care-flow-band {
+  color: #fff;
+  background: #17344f;
+}
+.care-flow-band > header h2 { color: #fff; }
+.care-flow-band > div {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.care-flow-band article {
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid #ffffff24;
+  border-radius: 7px;
+  background: #ffffff0a;
+}
+.care-flow-band article span,
+.care-flow-band article b,
+.care-flow-band article small { display: block; }
+.care-flow-band article span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #17344f;
+  background: #78d7c4;
+  font-size: 12px;
+  font-weight: 800;
+}
+.care-flow-band article b {
+  margin-top: 11px;
+  font-size: 14px;
+}
+.care-flow-band article small {
+  margin-top: 5px;
+  color: #bdcfdb;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.care-home-service {
+  padding: 28px 18px;
+  display: grid;
+  gap: 18px;
+  border-bottom: 1px solid #e0e7ee;
+  background: #f8f3ef;
+}
+.care-home-service button {
+  min-height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #b65a50;
+  font-size: 14px;
+  font-weight: 700;
+}
+.care-home-service button span { font-size: 24px; }
+.care-home-service .care-entry-install {
+  min-height: 48px;
+  margin-top: -9px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+.care-public-entry {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #f4f7fb;
+  box-shadow: 0 22px 70px #173a6424;
+}
+.care-home-footer {
+  padding: 20px 18px;
+  color: #7f8d9c;
+  background: #fff;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* Patient mobile readability baseline */
+.patient-system-shell * { letter-spacing: 0; }
+.patient-system-shell .system-topbar {
+  min-height: calc(64px + env(safe-area-inset-top));
+  padding-right: 12px;
+  padding-left: 14px;
+}
+.patient-top-brand img { width: 34px; height: 34px; }
+.patient-top-brand b { font-size: 14px; }
+.patient-top-brand small { font-size: 10px; line-height: 1.2; }
+.patient-system-shell .ghost-button {
+  min-height: 34px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.patient-system-shell .pwa-install-icon {
+  width: 34px;
+  height: 34px;
+}
+.patient-system-shell .pwa-connection { font-size: 10px; }
+.patient-bottom-nav {
+  height: calc(74px + env(safe-area-inset-bottom));
+}
+.patient-bottom-nav a {
+  gap: 3px;
+  font-size: 11px;
+}
+.patient-bottom-nav a i { font-size: 19px; }
+.patient-system-content { padding-bottom: 78px; }
+.patient-page-heading { padding-top: 23px; padding-bottom: 18px; }
+.patient-page-heading p { font-size: 13px; line-height: 1.45; }
+.patient-page-heading h1 { margin-top: 6px; font-size: 27px; line-height: 1.25; }
+.patient-toast { padding: 12px; font-size: 13px; line-height: 1.5; }
+.patient-summary-card small { font-size: 12px; }
+.patient-summary-card strong { font-size: 26px; }
+.patient-ring small { font-size: 11px; }
+.patient-mobile-section > h2,
+.section-heading h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+.section-heading button { min-height: 34px; font-size: 13px; }
+.patient-file-card,
+.patient-hospital-card,
+.patient-stage-list button,
+.patient-journey button {
+  min-height: 72px;
+  padding: 14px 12px;
+  border-radius: 8px;
+}
+.patient-file-card b,
+.patient-hospital-card b,
+.patient-journey b,
+.patient-stage-list b {
+  font-size: 14px;
+  line-height: 1.35;
+}
+.patient-file-card small,
+.patient-hospital-card small,
+.patient-journey small,
+.patient-stage-list small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.patient-file-card em,
+.patient-hospital-card em,
+.patient-journey em,
+.patient-stage-list em {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.patient-help-card,
+.mobile-detail-note { border-radius: 8px; }
+.patient-help-card b,
+.mobile-detail-note b { font-size: 14px; }
+.patient-help-card p,
+.mobile-detail-note p { font-size: 12px; }
+.patient-plan-status > span,
+.patient-followup-hero > span { font-size: 11px; }
+.patient-plan-status h2,
+.patient-trip-card h2,
+.patient-followup-hero h2 { font-size: 21px; }
+.patient-plan-status p,
+.patient-trip-card p,
+.patient-followup-hero p { font-size: 12px; line-height: 1.55; }
+.patient-plan-status > div { font-size: 12px; }
+.patient-path > div { min-height: 72px; }
+.patient-path b,
+.patient-plan-path b { font-size: 14px; }
+.patient-path small,
+.patient-plan-path small { font-size: 12px; }
+.patient-plan-path em { font-size: 11px; }
+.patient-primary-action {
+  min-height: 48px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.patient-contact-strip,
+.patient-reminder {
+  min-height: 70px;
+  border-radius: 8px;
+}
+.patient-contact-strip b,
+.patient-reminder b { font-size: 13px; }
+.patient-contact-strip small,
+.patient-reminder small { font-size: 11px; line-height: 1.4; }
+.patient-contact-strip button,
+.patient-reminder button {
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+.patient-plan-goal span { font-size: 11px; }
+.patient-plan-goal p { font-size: 13px; }
+.patient-plan-group header b { font-size: 14px; }
+.patient-plan-group header small { font-size: 11px; }
+.patient-health-plan article { min-height: 70px; }
+.patient-health-plan b { font-size: 13px; }
+.patient-health-plan small { font-size: 11px; }
+.patient-mobile-detail > header {
+  min-height: 58px;
+  font-size: 14px;
+}
+.patient-mobile-detail main > h1 { font-size: 22px; }
+.patient-mobile-detail main > p { font-size: 12px; }
+.patient-mobile-detail section { border-radius: 8px; }
+.patient-mobile-detail section h2 { font-size: 16px; }
+.mobile-detail-row,
+.mobile-service-item { font-size: 13px; line-height: 1.45; }
+.patient-report-confirm {
+  border-radius: 8px;
+}
+.patient-report-confirm header span,
+.patient-report-confirm header small { font-size: 11px; }
+.patient-report-confirm h2 { font-size: 18px; }
+.patient-report-confirm p,
+.patient-report-confirm > div span { font-size: 12px; }
+.patient-report-confirm > button {
+  min-height: 46px;
+  font-size: 14px;
+}
+.patient-zoom-invite { border-radius: 8px; }
+.patient-zoom-invite header small { font-size: 10px; }
+.patient-zoom-invite header h2 { font-size: 17px; }
+.patient-zoom-invite header em { font-size: 11px; }
+.patient-zoom-invite > div span { font-size: 12px; }
+.patient-zoom-invite > div b { font-size: 13px; }
+.patient-zoom-invite > p { font-size: 12px; }
+.patient-zoom-invite > button {
+  min-height: 46px;
+  font-size: 14px;
+}
+.pwa-install-sheet > header small { font-size: 11px; }
+.pwa-install-sheet > header h2 { font-size: 18px; }
+.pwa-browser-note { font-size: 12px; }
+.pwa-install-steps b { font-size: 14px; }
+.pwa-install-steps small,
+.pwa-privacy-note { font-size: 12px; }
+.pwa-copy-link { min-height: 46px; font-size: 14px; }
+
+@media (max-width: 380px) {
+  .care-brand-hero {
+    min-height: 360px;
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+  .care-hero-copy h1 { font-size: 29px; }
+  .care-home-band { padding-right: 15px; padding-left: 15px; }
+  .care-hospital-list article,
+  .care-expert-list article {
+    grid-template-columns: 44px 1fr;
+  }
+  .care-hospital-list article > span,
+  .care-expert-list article > span {
+    width: 42px;
+    height: 42px;
+  }
+  .care-hospital-list em,
+  .care-expert-list em {
+    grid-column: 2;
+  }
+}

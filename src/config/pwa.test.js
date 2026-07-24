@@ -43,4 +43,23 @@ describe('AGH Care PWA', () => {
     expect(router).toContain("path: '/care'")
     expect(router).toContain('component: CareEntry')
   })
+
+  it('uses the patient home as an AGH trust and service entry', () => {
+    const home = readFileSync(resolve(root, 'src/views/PatientPortal.vue'), 'utf8')
+    const entry = readFileSync(resolve(root, 'src/views/CareEntry.vue'), 'utf8')
+    expect(home).toContain('AGH International Care')
+    expect(home).toContain('合作医疗机构')
+    expect(home).toContain('AGH肿瘤专家团队')
+    expect(home).toContain('查看我的服务')
+    expect(entry).toContain('<PatientPortal entry-mode />')
+    expect(entry).not.toContain('standalone) enterCare')
+  })
+
+  it('defines a real-phone readability baseline for patient pages', () => {
+    const styles = readFileSync(resolve(root, 'src/styles.css'), 'utf8')
+    expect(styles).toContain('/* Patient mobile readability baseline */')
+    expect(styles).toContain('.patient-page-heading p { font-size: 13px;')
+    expect(styles).toContain('.patient-bottom-nav a {')
+    expect(styles).toContain('min-height: 46px;')
+  })
 })
