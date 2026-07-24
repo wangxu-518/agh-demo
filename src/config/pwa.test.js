@@ -93,4 +93,13 @@ describe('AGH Care PWA', () => {
     expect(styles).toContain('.patient-bottom-nav a {')
     expect(styles).toContain('min-height: 46px;')
   })
+
+  it('keeps Malaysia-pushed service items visible in the patient app', () => {
+    const page = readFileSync(resolve(root, 'src/views/PatientMobilePage.vue'), 'utf8')
+    expect(page).toContain('serviceMessages')
+    expect(page).toContain('结构化病案报告')
+    expect(page).toContain('专家视频面诊邀请')
+    expect(page).toContain('饮食运动方案')
+    expect(page).toContain('AGH SERVICE UPDATES')
+  })
 })

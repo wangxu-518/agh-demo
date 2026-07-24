@@ -14,6 +14,61 @@ const titles = {
   travel: ['赴华行程','从出发到入院的每一步安排'],
   followup: ['归国随访','五阶段健康管理与复查提醒'],
 }
+const serviceMessages = computed(() => {
+  const items = []
+  const report = store.activeAiStructuring
+  const zoom = store.activeConsultation
+  const healthPlan = store.activeHealthPlan
+  if (report?.patientConfirmation?.status === 'pending') {
+    items.push({
+      id: 'report-confirm',
+      type: '患者确认',
+      title: `结构化病案报告 v${report.reportVersion}`,
+      desc: '马来运营团队已完成AI整理和人工校对，请核对资料时间、出处和病情摘要。',
+      action: '去确认',
+      target: '/patient/records',
+      status: '待处理',
+    })
+  } else if (report?.patientConfirmation?.status === 'confirmed') {
+    items.push({
+      id: 'report-confirmed',
+      type: '患者档案',
+      title: `结构化病案报告 v${report.reportVersion}`,
+      desc: '您已确认报告内容，运营团队可继续安排专家面诊和后续流程。',
+      action: '查看报告',
+      target: '/patient/records',
+      status: '已确认',
+    })
+  }
+  if (zoom?.meeting?.status !== 'not_booked') {
+    items.push({
+      id: 'zoom',
+      type: 'Zoom面诊',
+      title: '专家视频面诊邀请',
+      desc: `${new Date(zoom.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${zoom.expert}`,
+      action: '查看会议',
+      target: '/patient/plan',
+      status: zoom.meeting.status === 'completed' ? '已完成' : '已安排',
+    })
+  }
+  if (healthPlan?.status === 'published') {
+    items.push({
+      id: 'health-plan',
+      type: '健康管理',
+      title: `${healthPlan.monthlyPlan?.month || '本月'} 饮食运动方案`,
+      desc: `健康管理团队已推送 v${healthPlan.monthlyPlan?.version || healthPlan.version}，包含饮食、运动和监测任务。`,
+      action: '查看方案',
+      target: '/patient/followup',
+      status: '已推送',
+    })
+  }
+  return items
+})
+
+function openServiceMessage(item) {
+  router.push(item.target)
+}
+
 function act(action) {
   const defaults = {
     uploadDocument: { name: `患者补充资料-${new Date().toISOString().slice(0, 10)}.pdf`, type: '检验报告', language: 'zh', source: '患者上传' },
@@ -46,6 +101,27 @@ function openZoomMeeting() {
   <div class="patient-mobile-page">
     <header class="patient-page-heading"><p>{{ titles[page][1] }}</p><h1>{{ titles[page][0] }}</h1></header>
     <div v-if="message" class="patient-toast">✓ {{ message }}</div>
+    <section v-if="serviceMessages.length" class="patient-service-inbox">
+      <header>
+        <div><small>AGH SERVICE UPDATES</small><h2>服务消息</h2></div>
+        <span>{{ serviceMessages.length }} 项</span>
+      </header>
+      <button
+        v-for="item in serviceMessages"
+        :key="item.id"
+        type="button"
+        class="patient-service-message"
+        @click="openServiceMessage(item)"
+      >
+        <span>{{ item.type }}</span>
+        <div>
+          <b>{{ item.title }}</b>
+          <small>{{ item.desc }}</small>
+          <em>{{ item.status }}</em>
+        </div>
+        <i>{{ item.action }}</i>
+      </button>
+    </section>
 
     <template v-if="page === 'records'">
       <section class="patient-summary-card"><div><small>资料完整度</small><strong>{{ store.activePatient.completeness }}%</strong></div><div class="patient-ring"><span>{{ store.activeDocuments.length }}</span><small>份文件</small></div></section>
