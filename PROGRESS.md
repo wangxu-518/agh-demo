@@ -253,3 +253,12 @@
 - 公网浏览器回归：宣传首页、医疗资料、治疗方案、赴华行程和归国随访均无横向溢出；首页H1为32px、正文14px，资料卡标题14px/元信息12px，方案与随访正文12px。
 - 服务器部署：手机适配版已发布为release `20260725-061231`，发布包SHA256为`7C9D99A19CEC621200B05362CEBAED69B4C14A9369D16393E473E669591BFEDF`；`agh-demo.service`为active，公网 `/care` 返回HTTP 200。
 - HTTPS状态不变：完整PWA仍需腾讯云安全组放行TCP 443；HTTP主屏幕图标只是网页快捷方式，待HTTPS生效后需删除旧图标并从Safari重新添加一次。
+
+## iOS主屏幕缓存强制升级（2026-07-25）
+
+- 将 Service Worker 缓存从 `agh-care-shell-v1` 升级为 `v2`，激活时删除旧缓存；页面导航使用 `no-store` 网络请求，仍只在断网时回退安全离线页。
+- Service Worker 注册改为 `updateViaCache: none` 并主动执行更新；新版接管已打开页面时自动刷新一次。
+- 服务器对入口HTML、`sw.js`和Manifest统一返回`Cache-Control: no-store, no-cache, must-revalidate`，版本化静态资源继续使用长期缓存。
+- Manifest启动地址升级为`/care?source=pwa&v=20260725-2`，新安装图标不会复用旧启动入口。
+- Vitest：8个测试文件、64项测试全部通过；Vite生产构建成功，72 modules transformed。
+- 服务器部署：缓存修复版已发布为release `20260725-062303`，发布包SHA256为`F46472E114DD161D08ACF31F5C3121D4D26B4E2C384328458FD5CD78BAC5EF56`；线上入口、Service Worker和Manifest均已验证返回禁止缓存响应头。

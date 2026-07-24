@@ -8,7 +8,7 @@ const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.webmanif
 describe('AGH Care PWA', () => {
   it('defines an installable standalone patient experience', () => {
     expect(manifest.name).toBe('AGH Care 患者服务')
-    expect(manifest.start_url).toBe('/care?source=pwa')
+    expect(manifest.start_url).toBe('/care?source=pwa&v=20260725-2')
     expect(manifest.display).toBe('standalone')
     expect(manifest.theme_color).toBe('#1f5fd6')
   })
@@ -33,9 +33,19 @@ describe('AGH Care PWA', () => {
 
   it('keeps medical records out of the offline shell cache', () => {
     const worker = readFileSync(resolve(root, 'public/sw.js'), 'utf8')
+    expect(worker).toContain("agh-care-shell-v2")
+    expect(worker).toContain("cache: 'no-store'")
     expect(worker).toContain('/offline.html')
     expect(worker).not.toContain('/patient/records')
     expect(worker).not.toContain('/patient/plan')
+  })
+
+  it('forces the installed app to check for updates without caching its entry', () => {
+    const main = readFileSync(resolve(root, 'src/main.js'), 'utf8')
+    const server = readFileSync(resolve(root, 'scripts/spa_server.py'), 'utf8')
+    expect(main).toContain("updateViaCache: 'none'")
+    expect(main).toContain("addEventListener('controllerchange'")
+    expect(server).toContain('no-store, no-cache, must-revalidate')
   })
 
   it('exposes a dedicated public care entry route', () => {

@@ -16,6 +16,16 @@ MAX_FEEDBACK_BYTES = 24 * 1024
 
 
 class SPAHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        path = self.path.split("?", 1)[0]
+        if path in {"/index.html", "/sw.js", "/manifest.webmanifest"}:
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+        elif path.startswith("/assets/"):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        super().end_headers()
+
     def _send_json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)

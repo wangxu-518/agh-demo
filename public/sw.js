@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agh-care-shell-v1'
+const CACHE_NAME = 'agh-care-shell-v2'
 const SHELL_FILES = [
   '/offline.html',
   '/manifest.webmanifest',
@@ -28,7 +28,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
 
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match('/offline.html')))
+    event.respondWith(fetch(request, { cache: 'no-store' }).catch(() => caches.match('/offline.html')))
     return
   }
 

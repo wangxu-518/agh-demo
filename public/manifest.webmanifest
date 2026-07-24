@@ -5,7 +5,7 @@
   "description": "AGH跨境肿瘤治疗与归国健康管理患者服务端",
   "lang": "zh-CN",
   "dir": "ltr",
-  "start_url": "/care?source=pwa",
+  "start_url": "/care?source=pwa&v=20260725-2",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
