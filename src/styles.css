@@ -681,6 +681,19 @@ h1, h2, h3, h4, p { margin-top: 0; }
 .patient-health-plan b, .patient-health-plan small { display: block; }
 .patient-health-plan b { font-size: 9px; }
 .patient-health-plan small { margin-top: 4px; color: var(--muted); font-size: 7px; line-height: 1.5; }
+.patient-plan-goal { margin-bottom:12px; padding:13px 14px; border-left:3px solid #1b9873; border-radius:8px; background:#edf8f4; }
+.patient-plan-goal span { color:#168266; font-size:7px; font-weight:800; }
+.patient-plan-goal p { margin:6px 0 0; color:#365649; font-size:9px; line-height:1.65; }
+.patient-plan-group { margin-top:13px; }
+.patient-plan-group > header { margin-bottom:7px; padding:0 3px; display:grid; grid-template-columns:36px 1fr; gap:9px; align-items:center; }
+.patient-plan-group > header > span { width:35px; height:35px; display:grid; place-items:center; border-radius:8px; color:#fff; background:#1b9873; font-size:8px; font-weight:800; }
+.patient-plan-group header b,.patient-plan-group header small { display:block; }
+.patient-plan-group header b { color:#284058; font-size:10px; }
+.patient-plan-group header small { margin-top:3px; color:#8996a5; font-size:7px; }
+.patient-plan-group.exercise > header > span { background:#2b6f9f; }
+.patient-plan-group.exercise .patient-health-plan article > span { color:#2b6f9f; background:#e8f2f8; }
+.patient-plan-group.monitoring > header > span { background:#c77c2b; }
+.patient-plan-group.monitoring .patient-health-plan article > span { color:#ad6923; background:#fff1df; }
 .mobile-detail-row { padding: 10px 0; display: flex; justify-content: space-between; gap: 15px; border-bottom: 1px solid #edf1f6; font-size: 9px; }
 .mobile-detail-row:last-child { border: 0; }
 .mobile-detail-row span { color: #7c899c; }
@@ -1451,6 +1464,16 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .monthly-status small,.monthly-status b { display:block; }
 .monthly-status small { color:#82909d; font-size:7px; }
 .monthly-status b { margin-top:6px; color:var(--health-teal); font-size:10px; }
+.clinical-basis-grid { margin-bottom:15px; display:grid; grid-template-columns:repeat(4,1fr); border:1px solid #dce5e7; background:#fff; }
+.clinical-basis-grid article { min-width:0; padding:13px 15px; border-right:1px solid #e2e8e9; border-top:3px solid var(--health-teal); }
+.clinical-basis-grid article:nth-child(2) { border-top-color:var(--health-blue); }
+.clinical-basis-grid article:nth-child(3) { border-top-color:#d58a31; }
+.clinical-basis-grid article:nth-child(4) { border-top-color:var(--health-coral); }
+.clinical-basis-grid article:last-child { border-right:0; }
+.clinical-basis-grid span,.clinical-basis-grid b,.clinical-basis-grid small { display:block; }
+.clinical-basis-grid span { color:#7d8b98; font-size:7px; }
+.clinical-basis-grid b { margin:5px 0 4px; color:#2c4356; font-size:9px; }
+.clinical-basis-grid small { color:#909ba5; font-size:7px; line-height:1.45; }
 .monthly-plan-layout { display:grid; grid-template-columns:minmax(0,1fr) 290px; gap:15px; align-items:start; }
 .monthly-plan-editor { border:1px solid var(--health-line); background:#fff; }
 .monthly-goal,.monthly-editor-section { padding:18px 20px; border-bottom:1px solid #e2e8e9; }
@@ -1466,6 +1489,17 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .monthly-plan-editor textarea:focus,.monthly-plan-editor input:focus,.capture-form textarea:focus,.capture-form input:focus,.capture-form select:focus,.visit-submit-panel textarea:focus { border-color:var(--health-teal); box-shadow:0 0 0 2px #087d7315; }
 .monthly-editor-section.diet { border-left:3px solid #db8b32; }
 .monthly-editor-section.exercise { border-left:3px solid var(--health-blue); }
+.monthly-editor-section.adjustments,.monthly-editor-section.safety { border-left:3px solid var(--health-coral); }
+.monthly-edit-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.monthly-edit-card-grid > label,.monthly-stage-editors > label { min-width:0; padding:10px; display:grid; gap:7px; border:1px solid #dbe4e6; border-top:3px solid #d58a31; background:#fbfcfc; }
+.monthly-editor-section.exercise .monthly-edit-card-grid > label { border-top-color:var(--health-blue); }
+.monthly-editor-section.adjustments .monthly-edit-card-grid > label,.monthly-editor-section.safety .monthly-edit-card-grid > label { border-top-color:var(--health-coral); }
+.monthly-edit-card-grid label > span,.monthly-stage-editors label > span { color:#83909c; font-size:6px; font-weight:800; }
+.monthly-edit-card-grid input,.monthly-stage-editors input { min-height:33px; }
+.monthly-edit-card-grid textarea,.monthly-stage-editors textarea { min-height:65px; }
+.monthly-edit-card-grid.compact > label { grid-template-rows:auto auto 1fr; }
+.monthly-stage-editors { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+.monthly-stage-editors > label { border-top-color:var(--health-blue); }
 .monthly-editor-table { border:1px solid #dce4e6; }
 .editor-table-head,.monthly-editor-table > label { display:grid; grid-template-columns:.7fr 1fr 1.5fr; }
 .editor-table-head { color:#6f7f8e; background:#f1f5f5; font-size:7px; font-weight:700; }
@@ -1581,6 +1615,9 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
   .report-rail nav { display:grid; grid-template-columns:repeat(3,1fr); }
   .confirmation-panel { display:block; }
   .monthly-plan-layout { grid-template-columns:1fr; }
+  .clinical-basis-grid { grid-template-columns:repeat(2,1fr); }
+  .clinical-basis-grid article:nth-child(2) { border-right:0; }
+  .clinical-basis-grid article:nth-child(-n+2) { border-bottom:1px solid #e2e8e9; }
   .monthly-plan-aside { grid-template-columns:repeat(2,1fr); }
   .monthly-plan-aside > *:last-child { grid-column:1/-1; }
   .visit-submit-panel { grid-template-columns:1fr 1fr; }
@@ -1613,6 +1650,9 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
   .monthly-patient img { width:100%; height:180px; }
   .monthly-ai-state { border:0; border-top:1px solid #dbe6e6; }
   .monthly-plan-aside { grid-template-columns:1fr; }
+  .clinical-basis-grid,.monthly-edit-card-grid,.monthly-stage-editors { grid-template-columns:1fr; }
+  .clinical-basis-grid article { border-right:0; border-bottom:1px solid #e2e8e9; }
+  .clinical-basis-grid article:last-child { border-bottom:0; }
   .monthly-plan-aside > *:last-child { grid-column:auto; }
   .monthly-goal,.monthly-editor-section { padding:15px 12px; }
   .monthly-goal header,.monthly-editor-section > header { align-items:flex-start; flex-direction:column; }

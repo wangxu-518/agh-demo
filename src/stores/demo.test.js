@@ -171,6 +171,12 @@ describe('case-isolated workflow store', () => {
     expect(store.activeHealthPlan.monthlyPlan.version).toBe(startingVersion + 1)
     expect(store.activeHealthPlan.monthlyPlan.status).toBe('ai_generated')
     expect(store.activeHealthPlan.monthlyPlan.revisions).toHaveLength(1)
+    expect(store.activeHealthPlan.monthlyPlan.diet).toHaveLength(6)
+    expect(store.activeHealthPlan.monthlyPlan.exercise).toHaveLength(5)
+    expect(store.activeHealthPlan.monthlyPlan.exerciseStages).toHaveLength(3)
+    expect(store.activeHealthPlan.monthlyPlan.symptomAdjustments).toHaveLength(4)
+    expect(store.activeHealthPlan.monthlyPlan.clinicalBasis.some((item) => item.value.includes('来曲唑'))).toBe(true)
+    expect(JSON.stringify(store.activeHealthPlan.monthlyPlan)).not.toContain('胰腺')
 
     const revisedDiet = JSON.parse(JSON.stringify(store.activeHealthPlan.monthlyPlan.diet))
     revisedDiet[0].target = '蛋白质 25g'
@@ -184,6 +190,7 @@ describe('case-isolated workflow store', () => {
     expect(store.activeHealthPlan.monthlyPlan.status).toBe('edited')
     expect(store.activeHealthPlan.monthlyPlan.revisions).toHaveLength(2)
     expect(store.activeHealthPlan.diet[0].target).toBe('蛋白质 25g')
+    expect(store.activeHealthPlan.monitoring).toHaveLength(4)
 
     expect(store.publishHealthPlan({ actor: 'Farah Lim' }).ok).toBe(true)
     expect(store.activeHealthPlan.monthlyPlan.status).toBe('published')

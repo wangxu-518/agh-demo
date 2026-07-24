@@ -1,9 +1,10 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
+import { createBreastCancerMonthlyPlan } from '../data/breastCancerCarePlan'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v9'
+const KEY = 'agh-demo-v10'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -955,35 +956,25 @@ export const useDemoStore = defineStore('demo', () => {
     const previous = plan.monthlyPlan
     const version = (previous?.version || 0) + 1
     const revisions = previous?.revisions || []
-    if (previous) revisions.unshift({
-      version: previous.version,
-      goal: previous.goal,
-      diet: clone(previous.diet),
-      exercise: clone(previous.exercise),
-      savedAt: nowIso(),
-      savedBy: payload.actor || state.value.currentUsers.health.name,
-    })
-    plan.monthlyPlan = {
-      month: payload.month || nowIso().slice(0, 7),
-      status: 'ai_generated',
-      version,
-      generatedAt: nowIso(),
-      generatedBy: 'AGH Care AI',
-      goal: '维持术后营养、逐步恢复活动耐力并降低并发症风险',
-      diet: [
-        { title: '早餐', target: '蛋白质 20g', note: '鸡蛋、低脂奶或豆浆，搭配全麦主食' },
-        { title: '午晚餐', target: '蛋白质 50-60g', note: '鱼禽瘦肉与豆制品轮换，控制加工食品' },
-        { title: '加餐与饮水', target: '饮水 1500-1800ml', note: '低糖水果或酸奶，少量多次补水' },
-      ],
-      exercise: [
-        { title: '步行', target: '每周 5 天 · 30 分钟', intensity: '可交谈强度，疲劳时分段完成' },
-        { title: '上肢康复', target: '每日 2 组 · 每组 10 次', intensity: '疼痛不超过 3 分，避免突然牵拉' },
-        { title: '呼吸训练', target: '每日 2 次 · 每次 5 分钟', intensity: '缓慢深呼吸，出现头晕立即停止' },
-      ],
-      revisions,
+    if (previous) {
+      const snapshot = clone(previous)
+      delete snapshot.revisions
+      revisions.unshift({
+        version: previous.version,
+        content: snapshot,
+        savedAt: nowIso(),
+        savedBy: payload.actor || state.value.currentUsers.health.name,
+      })
     }
+    plan.monthlyPlan = createBreastCancerMonthlyPlan({
+      month: payload.month || nowIso().slice(0, 7),
+      generatedAt: nowIso(),
+      version,
+      revisions,
+    })
     plan.diet = plan.monthlyPlan.diet.map((item) => ({ title: item.title, target: item.target, note: item.note }))
     plan.exercise = plan.monthlyPlan.exercise.map((item) => ({ title: item.title, target: item.target, intensity: item.intensity }))
+    plan.monitoring = clone(plan.monthlyPlan.monitoring)
     plan.status = 'ready_to_publish'
     addEvent('health', payload.actor || state.value.currentUsers.health.name, 'AI生成月度饮食运动方案', `${plan.monthlyPlan.month} · v${version}`, caseId)
     return result(true, `AI 已生成 ${plan.monthlyPlan.month} 月度方案 v${version}`)
@@ -993,23 +984,29 @@ export const useDemoStore = defineStore('demo', () => {
     const plan = caseById(caseId)?.healthPlan
     const monthly = plan?.monthlyPlan
     if (!monthly || !payload.diet?.length || !payload.exercise?.length) return result(false, '请保留至少一项饮食和运动方案')
+    const snapshot = clone(monthly)
+    delete snapshot.revisions
     monthly.revisions.unshift({
       version: monthly.version,
-      goal: monthly.goal,
-      diet: clone(monthly.diet),
-      exercise: clone(monthly.exercise),
+      content: snapshot,
       savedAt: nowIso(),
       savedBy: payload.actor || state.value.currentUsers.health.name,
     })
     monthly.version += 1
     monthly.goal = payload.goal?.trim() || monthly.goal
-    monthly.diet = clone(payload.diet)
-    monthly.exercise = clone(payload.exercise)
+    const editableCollections = [
+      'dietPrinciples', 'diet', 'symptomAdjustments', 'exercisePrinciples',
+      'exerciseStages', 'exercise', 'safetyRules',
+    ]
+    editableCollections.forEach((key) => {
+      if (payload[key]?.length) monthly[key] = clone(payload[key])
+    })
     monthly.status = 'edited'
     monthly.editedAt = nowIso()
     monthly.editedBy = payload.actor || state.value.currentUsers.health.name
     plan.diet = monthly.diet.map((item) => ({ title: item.title, target: item.target, note: item.note }))
     plan.exercise = monthly.exercise.map((item) => ({ title: item.title, target: item.target, intensity: item.intensity }))
+    plan.monitoring = clone(monthly.monitoring)
     plan.status = 'ready_to_publish'
     addEvent('health', monthly.editedBy, '修改月度饮食运动方案', `${monthly.month} · v${monthly.version}`, caseId)
     return result(true, `月度方案已保存为 v${monthly.version}`)

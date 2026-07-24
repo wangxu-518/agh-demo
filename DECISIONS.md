@@ -115,3 +115,16 @@ P1 权限基线采用 `src/config/permissions.js` 作为页面权限和动作权
 ## D-029：国内诊疗数据采用双域隔离和受控引用
 
 客户确认国内医疗数据不得直接同步到马来数据域。医院上传的检查、手术、治疗、康复和出院资料保存在中国数据域；马来运营端患者档案只保存 `chinaCaseId`、资料可用状态、治疗阶段、更新时间和受控入口等最小引用。查看时必须重新校验患者授权、访问角色、用途和有效期，采用短时效会话、只读水印和完整审计，不允许下载、复制到马来数据域或在前端持久化访问令牌。D-017 的 Case 聚合原则仅在各自数据域内成立，跨域通过稳定 Case 映射和最小引用关联。境外远程查看的合规性质由正式项目的法律与数据合规评估确认，Demo 不作合规结论。
+
+## D-030：饮食运动方案复用结构粒度，不复用异病种医学内容
+
+`郑御梅女士饮食及运动建议.docx` 仅作为方案维度、内容粒度和呈现结构的参考，不直接复用其中针对胰腺癌、糖尿病和放化疗的医学内容。王美玲方案依据演示病案中的乳腺癌术后阶段、来曲唑用药、体重、疼痛和肩关节活动度，组织为临床依据、饮食原则、六时段饮食、症状调整、运动原则、三阶段训练、每日训练、安全规则和监测指标。
+
+Demo 中的蛋白质、蔬果、饮水、运动量和补充剂建议均为可编辑的演示目标，必须由医生或临床营养师结合肾功能、骨密度、治疗副作用和个体耐受确认后才能用于真实患者。系统不生成处方，不推荐极端饮食或所谓抗癌食物，也不自动开具钙剂、维生素 D 或其他补充剂。
+
+医学内容边界参考：
+
+- American Cancer Society, Nutrition and Physical Activity Guideline for Cancer Survivors: https://www.cancer.org/cancer/supportive-care/nutrition-activity-with-cancer/acs-nutrition-and-physical-activity-guideline-for-survivors.html
+- World Cancer Research Fund, Breast cancer survivors: https://www.wcrf.org/research-policy/evidence-for-our-recommendations/after-a-cancer-diagnosis-follow-recommendations/breast-cancer-survivors-research/
+- ESPEN practical guideline: Clinical Nutrition in Cancer: https://www.espen.org/files/ESPEN-Guidelines/ESPEN-practical-guideline-clinical-nutrition-in-cancer.pdf
+- 2025 updated joint position statement on aromatase inhibitor-associated bone loss: https://pubmed.ncbi.nlm.nih.gov/40726588/

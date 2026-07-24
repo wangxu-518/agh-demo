@@ -29,8 +29,13 @@ const medicationReview = ref({ ...visit.value.medicationReview })
 const rehabAssessment = ref({ ...visit.value.rehabAssessment })
 
 const monthlyGoal = ref('')
+const monthlyDietPrinciples = ref([])
 const monthlyDiet = ref([])
+const monthlySymptomAdjustments = ref([])
+const monthlyExercisePrinciples = ref([])
+const monthlyExerciseStages = ref([])
 const monthlyExercise = ref([])
+const monthlySafetyRules = ref([])
 const monthlyMonth = ref('')
 
 const recordingStatus = ref('idle')
@@ -53,8 +58,13 @@ const captureCopy = {
 function loadMonthlyPlan() {
   const monthly = store.activeHealthPlan.monthlyPlan
   monthlyGoal.value = monthly.goal
+  monthlyDietPrinciples.value = JSON.parse(JSON.stringify(monthly.dietPrinciples || []))
   monthlyDiet.value = JSON.parse(JSON.stringify(monthly.diet))
+  monthlySymptomAdjustments.value = JSON.parse(JSON.stringify(monthly.symptomAdjustments || []))
+  monthlyExercisePrinciples.value = JSON.parse(JSON.stringify(monthly.exercisePrinciples || []))
+  monthlyExerciseStages.value = JSON.parse(JSON.stringify(monthly.exerciseStages || []))
   monthlyExercise.value = JSON.parse(JSON.stringify(monthly.exercise))
+  monthlySafetyRules.value = JSON.parse(JSON.stringify(monthly.safetyRules || []))
   monthlyMonth.value = monthly.month
 }
 loadMonthlyPlan()
@@ -91,8 +101,13 @@ function generateMonthlyPlan() {
 function saveMonthlyPlan() {
   show(store.reviseMonthlyHealthPlan({
     goal: monthlyGoal.value,
+    dietPrinciples: monthlyDietPrinciples.value,
     diet: monthlyDiet.value,
+    symptomAdjustments: monthlySymptomAdjustments.value,
+    exercisePrinciples: monthlyExercisePrinciples.value,
+    exerciseStages: monthlyExerciseStages.value,
     exercise: monthlyExercise.value,
+    safetyRules: monthlySafetyRules.value,
     actor: 'Farah Lim',
   }))
   loadMonthlyPlan()
@@ -195,6 +210,12 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
         <div class="monthly-status"><small>当前状态</small><b>{{ store.activeHealthPlan.monthlyPlan.status === 'published' ? '已推送患者' : store.activeHealthPlan.monthlyPlan.status === 'edited' ? '人工已修改' : '等待审核' }}</b></div>
       </section>
 
+      <section class="clinical-basis-grid">
+        <article v-for="item in store.activeHealthPlan.monthlyPlan.clinicalBasis" :key="item.label">
+          <span>{{ item.label }}</span><b>{{ item.value }}</b><small>{{ item.note }}</small>
+        </article>
+      </section>
+
       <div class="monthly-plan-layout">
         <main class="monthly-plan-editor">
           <section class="monthly-goal">
@@ -203,9 +224,21 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
           </section>
 
           <section class="monthly-editor-section diet">
-            <header><div><span>02</span><h3>月度饮食方案</h3></div><small>AI结合手术资料、体重与恢复阶段生成</small></header>
+            <header><div><span>02</span><h3>饮食核心原则与定量目标</h3></div><small>结合体重、术后恢复和来曲唑治疗特点</small></header>
+            <div class="monthly-edit-card-grid">
+              <label v-for="(item, index) in monthlyDietPrinciples" :key="index">
+                <span>原则 {{ index + 1 }}</span>
+                <input v-model="item.title" />
+                <input v-model="item.target" />
+                <textarea v-model="item.detail" rows="3"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="monthly-editor-section diet schedule">
+            <header><div><span>03</span><h3>一日饮食执行表</h3></div><small>餐次、定量目标和具体食物均可修改</small></header>
             <div class="monthly-editor-table">
-              <div class="editor-table-head"><span>餐次/主题</span><span>月度目标</span><span>执行建议</span></div>
+              <div class="editor-table-head"><span>时间/餐次</span><span>定量目标</span><span>执行建议</span></div>
               <label v-for="(item, index) in monthlyDiet" :key="index">
                 <input v-model="item.title" />
                 <input v-model="item.target" />
@@ -214,10 +247,45 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
             </div>
           </section>
 
+          <section class="monthly-editor-section adjustments">
+            <header><div><span>04</span><h3>症状与治疗相关调整</h3></div><small>出现异常时按条件调整，不自行停药</small></header>
+            <div class="monthly-edit-card-grid compact">
+              <label v-for="(item, index) in monthlySymptomAdjustments" :key="index">
+                <span>调整 {{ index + 1 }}</span>
+                <input v-model="item.title" />
+                <textarea v-model="item.detail" rows="3"></textarea>
+              </label>
+            </div>
+          </section>
+
           <section class="monthly-editor-section exercise">
-            <header><div><span>03</span><h3>月度运动方案</h3></div><small>按频次、时长和安全强度执行</small></header>
+            <header><div><span>05</span><h3>运动核心原则</h3></div><small>从术后早期逐步达到长期运动目标</small></header>
+            <div class="monthly-edit-card-grid">
+              <label v-for="(item, index) in monthlyExercisePrinciples" :key="index">
+                <span>原则 {{ index + 1 }}</span>
+                <input v-model="item.title" />
+                <input v-model="item.target" />
+                <textarea v-model="item.detail" rows="3"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="monthly-editor-section exercise stages">
+            <header><div><span>06</span><h3>分阶段康复方案</h3></div><small>根据伤口、活动度和医疗团队确认逐级进阶</small></header>
+            <div class="monthly-stage-editors">
+              <label v-for="(item, index) in monthlyExerciseStages" :key="index">
+                <span>阶段 {{ index + 1 }}</span>
+                <input v-model="item.title" />
+                <input v-model="item.condition" />
+                <textarea v-model="item.plan" rows="4"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="monthly-editor-section exercise schedule">
+            <header><div><span>07</span><h3>一日运动执行表</h3></div><small>按频次、时长和安全强度执行</small></header>
             <div class="monthly-editor-table">
-              <div class="editor-table-head"><span>运动类型</span><span>频次目标</span><span>安全强度</span></div>
+              <div class="editor-table-head"><span>时间/运动</span><span>频次目标</span><span>安全强度</span></div>
               <label v-for="(item, index) in monthlyExercise" :key="index">
                 <input v-model="item.title" />
                 <input v-model="item.target" />
@@ -226,8 +294,19 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
             </div>
           </section>
 
+          <section class="monthly-editor-section safety">
+            <header><div><span>08</span><h3>暂停与预警条件</h3></div><small>用于患者自查和家访人员现场判断</small></header>
+            <div class="monthly-edit-card-grid compact">
+              <label v-for="(item, index) in monthlySafetyRules" :key="index">
+                <span>安全 {{ index + 1 }}</span>
+                <input v-model="item.title" />
+                <textarea v-model="item.detail" rows="3"></textarea>
+              </label>
+            </div>
+          </section>
+
           <footer class="monthly-editor-actions">
-            <span>修改后将生成新版本，需再次审核才能推送患者。</span>
+            <span>全部字段支持二次修改；保存后形成新版本，需再次审核才能推送患者。</span>
             <button class="primary-button" @click="saveMonthlyPlan">保存为新版本</button>
           </footer>
         </main>

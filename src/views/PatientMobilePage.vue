@@ -119,11 +119,27 @@ function openZoomMeeting() {
         <button v-for="(stage,i) in store.activeFollowup.stages" :key="stage.id" @click="router.push(`/patient/detail/${stage.id}?type=followup`)"><span>{{ i+1 }}</span><div><b>{{ stage.name }}</b><small>{{ stage.period }} · {{ stage.frequency }}</small><em>{{ stage.owner }}</em></div><i>›</i></button>
       </div></section>
       <section v-if="store.activeHealthPlan.status === 'published'" class="patient-mobile-section">
-        <div class="section-heading"><h2>我的健康方案</h2><button>v{{ store.activeHealthPlan.version }}</button></div>
-        <div class="patient-health-plan">
-          <article><span>饮食</span><div><b>{{ store.activeHealthPlan.diet[0].title }} · {{ store.activeHealthPlan.diet[0].target }}</b><small>{{ store.activeHealthPlan.diet[0].note }}</small></div></article>
-          <article><span>运动</span><div><b>{{ store.activeHealthPlan.exercise[0].title }} · {{ store.activeHealthPlan.exercise[0].target }}</b><small>{{ store.activeHealthPlan.exercise[0].intensity }}</small></div></article>
-          <article><span>监测</span><div><b>{{ store.activeHealthPlan.monitoring[0] }}</b><small>异常情况可直接联系健康管家</small></div></article>
+        <div class="section-heading"><h2>{{ store.activeHealthPlan.monthlyPlan.month }} 月健康方案</h2><button>v{{ store.activeHealthPlan.monthlyPlan.version }}</button></div>
+        <div class="patient-plan-goal">
+          <span>本月目标</span><p>{{ store.activeHealthPlan.monthlyPlan.goal }}</p>
+        </div>
+        <div class="patient-plan-group">
+          <header><span>饮食</span><div><b>一日饮食执行表</b><small>{{ store.activeHealthPlan.diet.length }} 项具体安排</small></div></header>
+          <div class="patient-health-plan">
+            <article v-for="item in store.activeHealthPlan.diet" :key="item.title"><span>餐</span><div><b>{{ item.title }} · {{ item.target }}</b><small>{{ item.note }}</small></div></article>
+          </div>
+        </div>
+        <div class="patient-plan-group exercise">
+          <header><span>运动</span><div><b>一日运动执行表</b><small>{{ store.activeHealthPlan.exercise.length }} 项分时训练</small></div></header>
+          <div class="patient-health-plan">
+            <article v-for="item in store.activeHealthPlan.exercise" :key="item.title"><span>动</span><div><b>{{ item.title }} · {{ item.target }}</b><small>{{ item.intensity }}</small></div></article>
+          </div>
+        </div>
+        <div class="patient-plan-group monitoring">
+          <header><span>监测</span><div><b>本月自我监测</b><small>异常情况直接联系健康管家</small></div></header>
+          <div class="patient-health-plan">
+            <article v-for="item in store.activeHealthPlan.monitoring" :key="item"><span>✓</span><div><b>{{ item }}</b></div></article>
+          </div>
         </div>
       </section>
       <section class="patient-reminder"><span>Rx</span><div><b>今日用药提醒</b><small>请在晚餐后确认服药</small></div><button @click="act('confirmMedication')">确认</button></section>
