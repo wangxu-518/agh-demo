@@ -120,3 +120,70 @@ export function createBreastCancerMonthlyPlan({
     revisions,
   }
 }
+
+export function createGeneralCancerMonthlyPlan({
+  month,
+  generatedAt,
+  diagnosis = '肿瘤治疗后康复',
+  version = 1,
+  status = 'ai_generated',
+  revisions = [],
+} = {}) {
+  return {
+    ...createBreastCancerMonthlyPlan({ month, generatedAt, version, status, revisions }),
+    goal: '维持体重和肌肉量，逐步恢复日常活动与步行耐力，持续观察治疗相关症状并按复查计划完成监测。',
+    clinicalBasis: [
+      { label: '诊疗阶段', value: diagnosis, note: '根据治疗后恢复阶段制定月度目标' },
+      { label: '当前管理', value: '用药与复查持续中', note: '具体药物和检查以医嘱为准' },
+      { label: '最近评估', value: '生命体征稳定', note: '需结合最近家访结果动态调整' },
+      { label: '重点风险', value: '疲劳 · 营养 · 复查异常', note: '出现新症状时及时升级评估' },
+    ],
+    dietPrinciples: [
+      { title: '保证能量与蛋白', target: '蛋白质按体重和肾功能个体化', detail: '鱼、禽、蛋、奶和豆制品分配到三餐；摄入不足或体重下降时转介营养师。' },
+      { title: '植物性食物多样化', target: '蔬菜 400-500g + 水果 200-300g / 日', detail: '优先完整水果、深色蔬菜、全谷物和豆类，并根据胃肠耐受调整。' },
+      { title: '减少高加工食物', target: '少糖饮料 · 少加工肉 · 酒精 0', detail: '采用蒸、煮、炖等方式，避免以保健品或极端饮食替代正常治疗。' },
+      { title: '分次补充水分', target: '一般 1500-1800ml / 日', detail: '如存在心、肾功能或医生给出的液体限制，以个体医嘱为准。' },
+    ],
+    symptomAdjustments: [
+      { title: '食欲差或恶心', detail: '减少单次进食量并增加加餐，选择温凉、清淡食物；连续摄入不足需联系健康管家。' },
+      { title: '便秘或腹胀', detail: '记录排便和腹部症状，按耐受增加饮水、蔬果及步行；持续加重或伴腹痛及时就医。' },
+      { title: '体重变化', detail: '每周固定时间称重；短期明显下降或水肿时转医生或营养师评估。' },
+      { title: '治疗相关不适', detail: '记录疼痛、疲劳、睡眠和用药副作用，不自行停药、加药或使用补充剂。' },
+    ],
+    exercisePrinciples: [
+      { title: '先评估再进阶', target: '以医疗团队许可为前提', detail: '结合伤口、血象、疼痛和心肺耐力确定起始强度。' },
+      { title: '低强度起步', target: '短时多次 · 逐周增加', detail: '运动时保持能够完整交谈，疲劳或症状加重时主动降级。' },
+      { title: '逐步达到长期目标', target: '有氧 150 分钟 / 周 + 力量 2 天 / 周', detail: '这是恢复稳定后的目标，不要求治疗后早期立即完成。' },
+      { title: '避免久坐', target: '每 30-60 分钟起身活动', detail: '将步行、呼吸训练和轻柔拉伸分散到全天。' },
+    ],
+    exerciseStages: [
+      { title: 'Ⅰ级 · 恢复适应', condition: '症状稳定 · 可完成日常活动', plan: '步行 10-15 分钟，每日 2 次；配合呼吸、踝泵和轻柔活动。' },
+      { title: 'Ⅱ级 · 耐力恢复', condition: '无新发症状 · 疲劳可控', plan: '步行 20-30 分钟，每周 5 天；经评估加入低阻力训练。' },
+      { title: 'Ⅲ级 · 稳定管理', condition: '复查稳定 · 医疗团队确认', plan: '逐步达到中等强度有氧和每周 2 天力量训练，持续记录耐受。' },
+    ],
+    exercise: [
+      { title: '08:30 呼吸与循环', target: '5-8 分钟', intensity: '腹式呼吸、踝泵和轻柔活动，动作缓慢且不憋气。' },
+      { title: '10:00 关节活动', target: '2 组 · 每组 8-10 次', intensity: '在无明显疼痛和牵拉的范围内完成。' },
+      { title: '13:00 餐后步行', target: '10-15 分钟', intensity: '平地可交谈强度，避免高温和湿滑路面。' },
+      { title: '16:30 低阻力训练', target: '8-10 分钟', intensity: '医疗团队允许后开始，疲劳时减少组数。' },
+      { title: '19:00 晚间步行', target: '15-20 分钟', intensity: '可拆分为两段，结束后进行轻柔拉伸。' },
+    ],
+    safetyRules: [
+      { title: '立即停止运动', detail: '胸痛、明显气促、头晕、心悸、出冷汗或疼痛突然加重。' },
+      { title: '发热或感染', detail: '发热、伤口异常或急性不适时暂停训练并联系医生。' },
+      { title: '新发肿胀或出血', detail: '出现单侧肢体肿胀、异常出血或明显乏力时停止活动并评估。' },
+      { title: '症状持续加重', detail: '连续数日疲劳、疼痛或进食下降影响生活时升级健康管理评估。' },
+    ],
+    monitoring: [
+      '每日记录主要症状、疼痛和异常体征',
+      '每周固定时间记录体重和连续步行时长',
+      '按计划核对用药依从性和治疗相关不适',
+      '按医嘱完成检验、影像或肿瘤标志物复查',
+    ],
+    evidenceSources: [
+      '中国境内治疗与出院资料',
+      '最近家访生命体征和活动耐力评估',
+      '癌症幸存者营养与运动通用指南',
+    ],
+  }
+}

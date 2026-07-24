@@ -82,14 +82,14 @@ function stageCount(stageId) {
 function openPatient(patient) {
   if (patient.caseId) store.setActiveCase(patient.caseId)
   if (patient.target === 'alerts') return router.push('/health-management/alerts')
-  if (patient.target === 'home-visits') return router.push('/health-management/home-visits')
+  if (patient.target === 'home-visits') return router.push({ path: '/health-management/home-visits', query: { case: patient.caseId } })
   message.value = `${patient.name}的${patient.taskLabel}已打开（Demo 展示）`
 }
 
 function openCarePlan(patient) {
   if (patient.caseId) {
     store.setActiveCase(patient.caseId)
-    router.push('/health-management/followups')
+    router.push({ path: '/health-management/followups', query: { case: patient.caseId } })
   } else {
     message.value = `${patient.name}的阶段方案已打开（Demo 展示）`
   }

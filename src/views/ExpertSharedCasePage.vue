@@ -1,14 +1,38 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
+import WorkflowPatientQueue from '../components/WorkflowPatientQueue.vue'
+import { workflowQueueFor } from '../config/workflowQueues'
 import { useDemoStore } from '../stores/demo'
 import { formatDateTime } from '../utils/format'
 
+const route = useRoute()
+const router = useRouter()
 const store = useDemoStore()
+const page = computed(() => route.meta.page)
+const hasSelectedCase = computed(() => typeof route.query.case === 'string' && Boolean(store.state.cases[route.query.case]))
+const patientQueue = computed(() => workflowQueueFor('expert', page.value, store.state))
 const activeTab = ref('病案摘要')
 const note = ref('')
 const message = ref('')
+
+watch(() => route.query.case, (caseId) => {
+  if (typeof caseId !== 'string' || !store.setActiveCase(caseId)) return
+  activeTab.value = '病案摘要'
+  note.value = store.activeReview.recommendation || ''
+}, { immediate: true })
+
+function openCase(caseId) {
+  store.setActiveCase(caseId)
+  router.replace({ path: route.path, query: { case: caseId } })
+}
+
+function backToQueue() {
+  message.value = ''
+  router.replace({ path: route.path })
+}
 
 function finish() {
   const result = store.finishReview({ recommendation: note.value || '建议赴华完成补充检查后，由胸外科与肿瘤内科联合评估治疗路径。' })
@@ -35,9 +59,20 @@ function consultationStatusLabel(status) {
 <template>
   <div class="shared-case-page">
     <PageHeader eyebrow="Consultation shared record" title="面诊共享病案" subtitle="专家面诊时共享同一份结构化病案、原始资料索引与患者选择">
-      <button class="secondary-button">发起补资料</button><button class="primary-button" @click="finish">提交专家意见</button>
+      <button v-if="hasSelectedCase" class="secondary-button detail-queue-back" @click="backToQueue">← 返回患者队列</button>
+      <button v-if="hasSelectedCase" class="secondary-button">发起补资料</button>
+      <button v-if="hasSelectedCase" class="primary-button" @click="finish">提交专家意见</button>
     </PageHeader>
     <div v-if="message" class="action-success">{{ message }}</div>
+    <WorkflowPatientQueue
+      v-if="!hasSelectedCase"
+      :queue="patientQueue"
+      :title="page === 'mdt' ? 'MDT会诊患者队列' : '专家病例队列'"
+      :subtitle="page === 'mdt' ? '按会议状态选择病例，再进入共享病案和会诊议程' : '按评审状态选择病例，再进入结构化病案详情'"
+      :action-label="page === 'mdt' ? '进入会诊' : '进入病例'"
+      @select="openCase"
+    />
+    <template v-else>
     <section class="shared-case-banner">
       <div><span>{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }} · {{ store.activePatient.englishName }}</b><small>{{ store.activePatient.caseId }} · {{ store.activePatient.diagnosis }}</small></div></div>
       <div><span>面诊状态</span><b>{{ consultationStatusLabel(store.activeConsultation.status) }}</b></div>
@@ -75,5 +110,6 @@ function consultationStatusLabel(status) {
         <SectionCard title="面诊议程"><div class="check-list"><div v-for="item in store.activeConsultation.agenda" :key="item" class="check-item"><span class="check-mark">✓</span>{{ item }}</div></div></SectionCard>
       </aside>
     </div>
+    </template>
   </div>
 </template>

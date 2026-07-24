@@ -28,7 +28,7 @@ const filteredPatients = computed(() => patientCards.value.filter((patient) => {
 
 function openPatient(patient) {
   store.setActiveCase(patient.caseId)
-  router.push('/malaysia/cases')
+  router.push({ path: '/malaysia/cases', query: { case: patient.caseId } })
 }
 
 function confirmationLabel(status) {

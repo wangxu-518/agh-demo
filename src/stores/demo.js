@@ -1,10 +1,10 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
-import { createBreastCancerMonthlyPlan } from '../data/breastCancerCarePlan'
+import { createBreastCancerMonthlyPlan, createGeneralCancerMonthlyPlan } from '../data/breastCancerCarePlan'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v10'
+const KEY = 'agh-demo-v11'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -966,11 +966,15 @@ export const useDemoStore = defineStore('demo', () => {
         savedBy: payload.actor || state.value.currentUsers.health.name,
       })
     }
-    plan.monthlyPlan = createBreastCancerMonthlyPlan({
+    const createMonthlyPlan = caseId === 'AGH-MY-2026-0012'
+      ? createBreastCancerMonthlyPlan
+      : createGeneralCancerMonthlyPlan
+    plan.monthlyPlan = createMonthlyPlan({
       month: payload.month || nowIso().slice(0, 7),
       generatedAt: nowIso(),
       version,
       revisions,
+      diagnosis: patientByCase(caseId)?.diagnosis,
     })
     plan.diet = plan.monthlyPlan.diet.map((item) => ({ title: item.title, target: item.target, note: item.note }))
     plan.exercise = plan.monthlyPlan.exercise.map((item) => ({ title: item.title, target: item.target, intensity: item.intensity }))

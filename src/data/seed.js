@@ -1,4 +1,4 @@
-import { createBreastCancerMonthlyPlan } from './breastCancerCarePlan'
+import { createBreastCancerMonthlyPlan, createGeneralCancerMonthlyPlan } from './breastCancerCarePlan'
 
 const followupStages = () => ([
   { id: 'pre-return', name: '归国前准备', nameEn: 'Pre-return preparation', period: '治疗结束前3天', frequency: '一次集中筹备', status: 'upcoming', owner: '健康管家', items: ['电子档案归集', '双语用药告知', '本地资源预约', '患者及家属培训'] },
@@ -319,6 +319,59 @@ const baseHealthPlan = (overrides = {}) => ({
 
 for (const [caseId, currentCase] of Object.entries(cases)) {
   const hasChinaRecords = ['AGH-MY-2026-0012', 'AGH-MY-2026-0007'].includes(caseId)
+  const aiProfiles = {
+    'AGH-MY-2026-0021': {
+      reportSummary: '患者因上腹不适完成胃镜检查，现有资料提示胃部恶性肿瘤可能，分期资料尚不完整，需补充病理、增强CT及基础检验后进入专家评审。',
+      sourceCount: 2,
+      classifiedCount: 2,
+      duplicateCount: 0,
+      extractedFields: [
+        { label: '主要诊断', value: '胃癌待分期', confidence: 90 },
+        { label: '当前依据', value: '胃镜检查', confidence: 88 },
+        { label: '分期状态', value: '资料不足', confidence: 96 },
+      ],
+      missingItems: ['胃镜病理报告', '胸腹增强CT', '近期血液检验'],
+      timeline: [
+        { date: dateOnly(-12), title: '因上腹不适完成初诊', source: '咨询表' },
+        { date: dateOnly(-8), title: '完成胃镜检查', source: '患者描述' },
+      ],
+    },
+    'AGH-MY-2026-0012': {
+      reportSummary: '患者已在国内完成乳腺癌手术及术后病理确认，目前进入归国恢复阶段，继续来曲唑内分泌治疗，并按计划开展伤口观察、上肢活动和长期复查。',
+      sourceCount: 4,
+      classifiedCount: 4,
+      duplicateCount: 0,
+      confidence: 96,
+      extractedFields: [
+        { label: '主要诊断', value: '乳腺癌术后', confidence: 98 },
+        { label: '术后病理', value: '浸润性导管癌', confidence: 96 },
+        { label: '当前治疗', value: '来曲唑内分泌治疗', confidence: 95 },
+      ],
+      missingItems: [],
+      timeline: [
+        { date: dateOnly(-12), title: '完成乳腺肿瘤切除术', source: '中国手术记录' },
+        { date: dateOnly(-9), title: '术后病理结果归档', source: '中国病理报告' },
+        { date: dateOnly(-3), title: '出院并启动归国康复', source: '出院小结' },
+      ],
+    },
+    'AGH-MY-2026-0007': {
+      reportSummary: '患者完成卵巢癌治疗后进入归国随访，近期CA-125连续升高并伴腹胀，需要调取复查资料并尽快安排妇科肿瘤专家复评。',
+      sourceCount: 3,
+      classifiedCount: 3,
+      duplicateCount: 0,
+      confidence: 94,
+      extractedFields: [
+        { label: '主要诊断', value: '卵巢癌治疗后', confidence: 97 },
+        { label: '异常指标', value: 'CA-125连续升高', confidence: 95 },
+        { label: '当前风险', value: '高危复查', confidence: 96 },
+      ],
+      missingItems: ['近期盆腹腔影像'],
+      timeline: [
+        { date: dateOnly(-42), title: '完成治疗并归国', source: '出院小结' },
+        { date: dateOnly(-2), title: 'CA-125复查异常', source: '中国复查报告' },
+      ],
+    },
+  }
   currentCase.domesticRecordReference = {
     chinaCaseId: hasChinaRecords ? `CN-${caseId.slice(-4)}` : '',
     status: hasChinaRecords ? 'available' : 'not_available',
@@ -328,15 +381,36 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     accessStatus: hasChinaRecords ? '二次验证后查看' : '暂无境内诊疗资料',
   }
   currentCase.aiStructuring = baseAiStructuring({
-    status: caseId === 'AGH-MY-2026-0018' ? 'operator_confirmed' : 'draft',
-    confirmedAt: caseId === 'AGH-MY-2026-0018' ? dateTime(0, 9, 30) : null,
-    confirmedBy: caseId === 'AGH-MY-2026-0018' ? 'Aisyah Rahman' : '',
+    status: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? 'operator_confirmed' : 'draft',
+    confirmedAt: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? dateTime(0, 9, 30) : null,
+    confirmedBy: ['AGH-MY-2026-0018', 'AGH-MY-2026-0012'].includes(caseId) ? 'Aisyah Rahman' : '',
+    ...(aiProfiles[caseId] || {}),
   })
   currentCase.consultation = baseConsultation({
     status: caseId === 'AGH-MY-2026-0018' ? 'time_confirmed' : 'not_scheduled',
+    ...(caseId === 'AGH-MY-2026-0012' ? {
+      expert: '周敏 教授',
+      hospital: '中山大学肿瘤防治中心',
+      agenda: ['术后病理核对', '内分泌治疗随访', '复查与康复计划'],
+    } : {}),
+    ...(caseId === 'AGH-MY-2026-0007' ? {
+      expert: '陈力 主任',
+      hospital: '南方医科大学南方医院',
+      agenda: ['CA-125趋势核对', '复查影像安排', '异常症状处理'],
+    } : {}),
   })
   currentCase.healthPlan = baseHealthPlan({
     status: hasChinaRecords ? 'ready_to_publish' : 'draft',
+    tags: caseId === 'AGH-MY-2026-0012'
+      ? ['乳腺癌术后', '内分泌治疗', '低强度康复']
+      : ['治疗后康复', '营养支持', '活动耐力'],
+    monthlyPlan: caseId === 'AGH-MY-2026-0012'
+      ? createBreastCancerMonthlyPlan({ month: dateOnly(0).slice(0, 7), generatedAt: dateTime(-1, 9) })
+      : createGeneralCancerMonthlyPlan({
+        month: dateOnly(0).slice(0, 7),
+        generatedAt: dateTime(-1, 9),
+        diagnosis: caseId === 'AGH-MY-2026-0007' ? '卵巢癌治疗后 · 高危随访' : '肿瘤治疗前后健康准备',
+      }),
   })
   currentCase.homeVisits = hasChinaRecords ? [{
     id: `HV-${caseId.slice(-4)}-01`,
@@ -357,10 +431,12 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
       woundStatus: '愈合良好', redness: '无', exudate: '无', painScore: 2, notes: '',
     },
     medicationReview: {
-      medication: '来曲唑 2.5mg', takenToday: true, adherence: '良好', sideEffects: '无明显不适', notes: '',
+      medication: caseId === 'AGH-MY-2026-0012' ? '来曲唑 2.5mg' : '奥拉帕利 300mg',
+      takenToday: true, adherence: '良好', sideEffects: '无明显不适', notes: '',
     },
     rehabAssessment: {
-      shoulderFlexion: '135', walkMinutes: '25', movementQuality: '动作顺畅', completedSets: '2', notes: '',
+      shoulderFlexion: caseId === 'AGH-MY-2026-0012' ? '135' : '72',
+      walkMinutes: '25', movementQuality: '动作顺畅', completedSets: '2', notes: '',
     },
     videoRecordings: [],
   }] : []
@@ -381,7 +457,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 10,
+  schemaVersion: 11,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {
@@ -431,6 +507,10 @@ export const seedState = {
     { id: 'D3', caseId: 'AGH-MY-2026-0018', type: '检验报告', name: '血常规与肝肾功能.pdf', language: 'en', source: '患者上传', status: 'translated', version: 1, originalId: 'ORIG-D3', translationStatus: 'completed', medicalVerification: 'pending', authorizationScopes: ['patient', 'malaysia', 'china', 'expert'], downloadCount: 1, voidedAt: null },
     { id: 'D4', caseId: 'AGH-MY-2026-0018', type: '咨询表', name: 'Cancer Consultation Form.pdf', language: 'bilingual', source: '马来服务端', status: 'verified', version: 3, originalId: 'ORIG-D4', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 5, voidedAt: null },
     { id: 'D5', caseId: 'AGH-MY-2026-0018', type: '授权书', name: '跨境数据授权书.pdf', language: 'bilingual', source: '患者签署', status: 'verified', version: 1, originalId: 'ORIG-D5', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'china', 'expert', 'hospital'], downloadCount: 2, voidedAt: null },
+    { id: 'D12-1', caseId: 'AGH-MY-2026-0012', type: '病理报告', name: '乳腺穿刺病理报告.pdf', language: 'zh', source: '患者上传', status: 'verified', version: 1, originalId: 'ORIG-D12-1', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'expert', 'hospital'], downloadCount: 2, voidedAt: null },
+    { id: 'D12-2', caseId: 'AGH-MY-2026-0012', type: '影像资料', name: '乳腺MRI检查资料.zip', language: 'en', source: '马来医院', status: 'verified', version: 1, originalId: 'ORIG-D12-2', translationStatus: 'completed', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'expert', 'hospital'], downloadCount: 3, voidedAt: null },
+    { id: 'D12-3', caseId: 'AGH-MY-2026-0012', type: '咨询表', name: 'Breast Cancer Consultation Form.pdf', language: 'bilingual', source: '马来服务端', status: 'verified', version: 2, originalId: 'ORIG-D12-3', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'expert'], downloadCount: 2, voidedAt: null },
+    { id: 'D12-4', caseId: 'AGH-MY-2026-0012', type: '授权书', name: '跨境医疗资料授权书.pdf', language: 'bilingual', source: '患者签署', status: 'verified', version: 1, originalId: 'ORIG-D12-4', translationStatus: 'not_required', medicalVerification: 'verified', authorizationScopes: ['patient', 'malaysia', 'expert', 'hospital', 'health'], downloadCount: 1, voidedAt: null },
   ],
   tasks: [
     { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'expert', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(1, 18), status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },

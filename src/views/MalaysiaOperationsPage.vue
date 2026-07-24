@@ -1,14 +1,19 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
+import WorkflowPatientQueue from '../components/WorkflowPatientQueue.vue'
+import { workflowQueueFor } from '../config/workflowQueues'
 import { useDemoStore } from '../stores/demo'
 import { formatDateTime } from '../utils/format'
 
 const route = useRoute()
+const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
+const hasSelectedCase = computed(() => typeof route.query.case === 'string' && Boolean(store.state.cases[route.query.case]))
+const patientQueue = computed(() => workflowQueueFor('malaysia', page.value, store.state))
 const message = ref('')
 const messageOk = ref(true)
 const reportEditing = ref(false)
@@ -64,7 +69,17 @@ watch(() => store.state.activeCaseId, () => {
 
 function selectCase(caseId) {
   store.setActiveCase(caseId)
+  router.replace({ path: route.path, query: { case: caseId } })
 }
+
+function backToQueue() {
+  message.value = ''
+  router.replace({ path: route.path })
+}
+
+watch(() => route.query.case, (caseId) => {
+  if (typeof caseId === 'string') store.setActiveCase(caseId)
+}, { immediate: true })
 
 function show(result) {
   message.value = result.message
@@ -143,16 +158,26 @@ function markJourney(item) {
 <template>
   <div class="ops-page">
     <PageHeader :eyebrow="pageCopy[0]" :title="pageCopy[1]" :subtitle="pageCopy[2]">
-      <button v-if="page === 'documents'" class="primary-button" @click="addDemoDocument">上传补充资料</button>
-      <button v-if="page === 'tasks'" class="secondary-button" @click="downloadReport">下载完整报告</button>
-      <button v-if="page === 'tasks' && store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="confirmAndSend">发送给患者确认</button>
-      <button v-if="page === 'resources' && store.activeConsultation.meeting.status === 'not_booked'" class="primary-button" @click="bookZoomMeeting">创建 Zoom 会议</button>
-      <button v-if="page === 'leads'" class="primary-button" @click="show(store.completeHandoff({ note: '演示：跨境交接清单已确认' }))">确认跨境交接</button>
+      <button v-if="hasSelectedCase" class="secondary-button detail-queue-back" @click="backToQueue">← 返回患者队列</button>
+      <button v-if="hasSelectedCase && page === 'documents'" class="primary-button" @click="addDemoDocument">上传补充资料</button>
+      <button v-if="hasSelectedCase && page === 'tasks'" class="secondary-button" @click="downloadReport">下载完整报告</button>
+      <button v-if="hasSelectedCase && page === 'tasks' && store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="confirmAndSend">发送给患者确认</button>
+      <button v-if="hasSelectedCase && page === 'resources' && store.activeConsultation.meeting.status === 'not_booked'" class="primary-button" @click="bookZoomMeeting">创建 Zoom 会议</button>
+      <button v-if="hasSelectedCase && page === 'leads'" class="primary-button" @click="show(store.completeHandoff({ note: '演示：跨境交接清单已确认' }))">确认跨境交接</button>
     </PageHeader>
 
     <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
 
-    <section class="case-context-bar">
+    <WorkflowPatientQueue
+      v-if="!hasSelectedCase"
+      :queue="patientQueue"
+      :title="`${pageCopy[1]}患者队列`"
+      subtitle="按当前业务节点查看全部患者，选择后进入具体办理页面"
+      action-label="进入办理"
+      @select="selectCase"
+    />
+
+    <section v-if="hasSelectedCase" class="case-context-bar">
       <div class="case-context-main">
         <span class="case-avatar">{{ store.activePatient.avatar }}</span>
         <div><b>{{ store.activePatient.name }} · {{ store.activePatient.englishName }}</b><small>{{ store.activePatient.caseId }} · {{ store.activePatient.diagnosis }}</small></div>
@@ -163,7 +188,7 @@ function markJourney(item) {
       </select>
     </section>
 
-    <template v-if="page === 'cases'">
+    <template v-if="hasSelectedCase && page === 'cases'">
       <section class="patient-story-layout">
         <div class="patient-visual-panel">
           <div class="patient-photo-stage">
@@ -212,7 +237,7 @@ function markJourney(item) {
       </div>
     </template>
 
-    <template v-else-if="page === 'documents'">
+    <template v-else-if="hasSelectedCase && page === 'documents'">
       <div class="collection-layout">
         <SectionCard title="采集清单" :subtitle="`${store.activeDocuments.length} 份有效资料 · 自动识别 1 组重复版本`">
           <div class="collection-list">
@@ -234,7 +259,7 @@ function markJourney(item) {
       </div>
     </template>
 
-    <template v-else-if="page === 'tasks'">
+    <template v-else-if="hasSelectedCase && page === 'tasks'">
       <section :class="['report-send-hub', confirmationCopy[1]]">
         <span class="report-send-icon">P</span>
         <div>
@@ -334,7 +359,7 @@ function markJourney(item) {
       </div>
     </template>
 
-    <template v-else-if="page === 'resources'">
+    <template v-else-if="hasSelectedCase && page === 'resources'">
       <section class="zoom-command-center">
         <header>
           <div><span>ZOOM CONSULTATION FLOW</span><h2>专家视频面诊协调中心</h2><p>马来团队统一协调患者与专家时间、创建会议、分发邀请并归档会后纪要。</p></div>
@@ -417,7 +442,7 @@ function markJourney(item) {
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="hasSelectedCase">
       <div class="journey-board">
         <SectionCard title="治疗行程总览" subtitle="马来运营端统筹患者、专家、医院及跨境交接">
           <div class="journey-timeline">

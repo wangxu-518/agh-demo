@@ -702,6 +702,73 @@ h1, h2, h3, h4, p { margin-top: 0; }
 
 /* Customer workflow demo */
 .action-success { margin: 0 0 14px; padding: 11px 13px; border: 1px solid #bce6d7; border-radius: 7px; color: #147658; background: #effaf6; font-size: 11px; }
+.workflow-queue { display:grid; gap:14px; }
+.workflow-queue-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border:1px solid var(--line); background:#fff; }
+.workflow-queue-metrics article { min-width:0; min-height:82px; padding:14px 16px; border-right:1px solid var(--line); }
+.workflow-queue-metrics article:last-child { border-right:0; }
+.workflow-queue-metrics span,.workflow-queue-metrics small,.workflow-queue-metrics strong { display:block; }
+.workflow-queue-metrics span { color:#6e7c8d; font-size:8px; font-weight:700; }
+.workflow-queue-metrics strong { margin-top:5px; color:#1d3148; font-size:20px; line-height:1.1; }
+.workflow-queue-metrics small { margin-top:5px; color:#8995a4; font-size:7px; line-height:1.4; }
+.workflow-queue-panel { border:1px solid var(--line); background:#fff; }
+.workflow-queue-panel > header { padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:18px; border-bottom:1px solid #e4e9ef; }
+.workflow-queue-panel > header > div { min-width:0; }
+.workflow-queue-panel > header span { color:var(--system-color); font-size:7px; font-weight:800; }
+.workflow-queue-panel > header h2 { margin:4px 0 0; color:#1d3148; font-size:15px; }
+.workflow-queue-panel > header p { margin:4px 0 0; color:#778596; font-size:8px; }
+.workflow-search { width:min(330px,40%); min-height:36px; padding:0 11px; display:flex; align-items:center; gap:8px; border:1px solid #d9e1e9; border-radius:7px; background:#f9fbfc; }
+.workflow-search span { color:#738296; font-size:14px; }
+.workflow-search input { min-width:0; width:100%; border:0; outline:0; color:#26394f; background:transparent; font-size:9px; }
+.workflow-filter-tabs { min-height:47px; padding:8px 18px; display:flex; align-items:center; gap:5px; overflow-x:auto; border-bottom:1px solid #e7ebf0; background:#fafcfd; }
+.workflow-filter-tabs button { flex:none; padding:7px 10px; display:flex; align-items:center; gap:6px; border:1px solid transparent; border-radius:6px; color:#657487; background:transparent; font-size:8px; cursor:pointer; }
+.workflow-filter-tabs button small { min-width:17px; height:17px; padding:0 4px; display:grid; place-items:center; border-radius:4px; color:#7f8b99; background:#eef2f5; font-size:7px; }
+.workflow-filter-tabs button.active { border-color:#c8d9e3; color:var(--system-color); background:#fff; box-shadow:0 2px 7px #17384b0d; }
+.workflow-filter-tabs button.active small { color:#fff; background:var(--system-color); }
+.workflow-queue-columns,.workflow-patient-row { display:grid; grid-template-columns:minmax(220px,1.35fr) minmax(112px,.65fr) minmax(230px,1.25fr) minmax(110px,.55fr) 88px; gap:14px; align-items:center; }
+.workflow-queue-columns { padding:9px 18px; color:#8b96a4; background:#f5f7f9; font-size:7px; font-weight:700; }
+.workflow-patient-row { position:relative; min-height:88px; padding:12px 18px; border-top:1px solid #e8ecf0; outline:0; cursor:pointer; transition:background .18s ease,border-color .18s ease; }
+.workflow-patient-row:first-child { border-top:0; }
+.workflow-patient-row::before { position:absolute; inset:12px auto 12px 0; width:3px; content:""; background:#cfd7df; }
+.workflow-patient-row.attention::before { background:#d89637; }
+.workflow-patient-row.critical::before { background:#cc4b5a; }
+.workflow-patient-row.done::before { background:#278a74; }
+.workflow-patient-row:hover,.workflow-patient-row:focus-visible { background:#f8fbfc; }
+.workflow-patient-identity { min-width:0; display:flex; align-items:center; gap:11px; }
+.workflow-patient-identity > img,.workflow-patient-identity > span { flex:none; width:44px; height:52px; border-radius:6px; object-fit:cover; }
+.workflow-patient-identity > span { display:grid; place-items:center; color:#fff; background:#274960; font-size:14px; font-weight:700; }
+.workflow-patient-identity > div { min-width:0; }
+.workflow-patient-identity > div > div { display:flex; align-items:center; gap:7px; }
+.workflow-patient-identity b { color:#20364e; font-size:10px; }
+.workflow-patient-identity em { padding:3px 5px; border-radius:4px; color:#7b4a14; background:#fff0d9; font-size:6px; font-style:normal; }
+.workflow-patient-identity small,.workflow-patient-identity p { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workflow-patient-identity small { margin-top:3px; color:#84909f; font-size:7px; }
+.workflow-patient-identity p { margin:5px 0 0; color:#506075; font-size:8px; }
+.workflow-node-state { min-width:0; display:grid; justify-items:start; gap:5px; }
+.workflow-status { padding:4px 7px; border-radius:4px; color:#526273; background:#edf1f4; font-size:7px; font-weight:700; }
+.workflow-status.pending { color:#34627d; background:#e8f2f7; }
+.workflow-status.attention { color:#9a641e; background:#fff1dc; }
+.workflow-status.critical { color:#ad3546; background:#ffe9ed; }
+.workflow-status.done { color:#16715e; background:#e5f4f0; }
+.workflow-node-state small { color:#7b8998; font-size:7px; }
+.workflow-node-state i { padding-left:9px; position:relative; color:#74808e; font-size:6px; font-style:normal; }
+.workflow-node-state i::before { position:absolute; left:0; top:50%; width:5px; height:5px; border-radius:50%; background:#7fa195; content:""; transform:translateY(-50%); }
+.workflow-node-state i.high::before { background:#d89637; }
+.workflow-node-state i.critical::before { background:#cc4b5a; }
+.workflow-row-summary { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px 12px; }
+.workflow-row-summary > div { min-width:0; }
+.workflow-row-summary span,.workflow-row-summary b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workflow-row-summary span { color:#8a96a4; font-size:6px; }
+.workflow-row-summary b { margin-top:3px; color:#32485f; font-size:8px; }
+.workflow-row-summary p { grid-column:1/-1; margin:2px 0 0; overflow:hidden; color:#667589; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
+.workflow-row-owner b,.workflow-row-owner small { display:block; }
+.workflow-row-owner b { color:#354a60; font-size:8px; }
+.workflow-row-owner small { margin-top:5px; color:#8b96a4; font-size:6px; line-height:1.4; }
+.workflow-open-button { min-height:31px; padding:7px 9px; border:1px solid #cad8e1; border-radius:6px; color:var(--system-color); background:#fff; font-size:7px; cursor:pointer; }
+.workflow-open-button span { margin-left:3px; }
+.workflow-patient-row:hover .workflow-open-button { color:#fff; border-color:var(--system-color); background:var(--system-color); }
+.workflow-empty { padding:36px; color:#8693a2; text-align:center; font-size:9px; }
+.detail-queue-back { display:inline-flex; align-items:center; gap:5px; }
+.video-patient-fallback { position:absolute; inset:0; display:grid; place-items:center; color:#fff; background:#244457; font-size:72px; font-weight:700; }
 .case-context-bar { min-height: 70px; margin-bottom: 16px; padding: 12px 15px; display: flex; align-items: center; gap: 18px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .case-context-main { min-width: 270px; display: flex; align-items: center; gap: 11px; }
 .case-avatar { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 8px; color: #fff; background: #7554c7; font-weight: 700; }
@@ -894,11 +961,25 @@ body:has(.pad-visit-mode) .feedback-widget,
 body:has(.patient-system-shell) .feedback-widget { display: none; }
 
 @media (max-width: 1100px) {
+  .workflow-queue-columns,.workflow-patient-row { grid-template-columns:minmax(210px,1.3fr) minmax(100px,.65fr) minmax(190px,1.1fr) 84px; }
+  .workflow-queue-columns span:nth-child(4),.workflow-row-owner { display:none; }
   .journey-timeline, .handoff-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shared-case-layout, .health-plan-layout { grid-template-columns: 1fr; }
   .collection-layout { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
+  .workflow-queue-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workflow-queue-metrics article:nth-child(2) { border-right:0; }
+  .workflow-queue-metrics article:nth-child(-n+2) { border-bottom:1px solid var(--line); }
+  .workflow-queue-panel > header { align-items:flex-start; flex-direction:column; }
+  .workflow-search { width:100%; }
+  .workflow-queue-columns { display:none; }
+  .workflow-patient-row { min-height:0; padding:14px; grid-template-columns:1fr auto; gap:12px; }
+  .workflow-patient-identity { grid-column:1/-1; }
+  .workflow-node-state { align-self:start; }
+  .workflow-row-summary { grid-column:1/-1; padding-top:10px; border-top:1px solid #e8edf1; }
+  .workflow-open-button { grid-column:2; grid-row:2; min-width:86px; }
+  .workflow-patient-row::before { inset:14px auto 14px 0; }
   .case-context-bar, .domain-boundary-banner { align-items: flex-start; flex-direction: column; }
   .case-context-main { min-width: 0; }
   .case-context-meta { margin-left: 0; flex-wrap: wrap; }

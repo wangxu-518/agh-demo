@@ -128,3 +128,9 @@ Demo 中的蛋白质、蔬果、饮水、运动量和补充剂建议均为可编
 - World Cancer Research Fund, Breast cancer survivors: https://www.wcrf.org/research-policy/evidence-for-our-recommendations/after-a-cancer-diagnosis-follow-recommendations/breast-cancer-survivors-research/
 - ESPEN practical guideline: Clinical Nutrition in Cancer: https://www.espen.org/files/ESPEN-Guidelines/ESPEN-practical-guideline-clinical-nutrition-in-cancer.pdf
 - 2025 updated joint position statement on aromatase inhibitor-associated bone loss: https://pubmed.ncbi.nlm.nih.gov/40726588/
+
+## D-031：内部业务模块采用患者队列与详情两层结构
+
+王美玲是贯穿客户演示的主案例，但不是任何内部业务模块的隐式唯一患者。马来运营、专家、医院、中国资料和健康管理端的患者级业务菜单默认进入本节点患者队列，展示搜索、状态筛选、风险、负责人和下一步动作；只有用户明确点击患者后，页面才通过 `case` 查询参数进入该患者的业务详情。
+
+全局 `activeCaseId` 只保存用户最近一次明确选择，不得再用于让菜单入口自动显示某一患者，也不得因患者缺少某类资料而强制切换到王美玲。工作台进入详情时必须携带 Case ID，详情页提供返回原业务队列的入口。王美玲在队列中用“演示主案例”标记并优先用于讲解，其他患者继续保留独立状态和病种数据。

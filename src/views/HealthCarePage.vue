@@ -1,15 +1,25 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
+import WorkflowPatientQueue from '../components/WorkflowPatientQueue.vue'
+import { workflowQueueFor } from '../config/workflowQueues'
 import { useDemoStore } from '../stores/demo'
 
 const route = useRoute()
+const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
 const isFollowup = computed(() => page.value === 'followups')
 const isVisit = computed(() => page.value === 'home-visits')
+const hasSelectedCase = computed(() => typeof route.query.case === 'string' && Boolean(store.state.cases[route.query.case]))
+const patientQueue = computed(() => workflowQueueFor('health', page.value, store.state))
+const activeFollowupStage = computed(() => store.activeFollowup.stages.find((stage) => stage.status === 'active'))
+const dietContextCopy = computed(() => store.activePatient.caseId === 'AGH-MY-2026-0012'
+  ? '结合体重、术后恢复和来曲唑治疗特点'
+  : '结合治疗阶段、营养状态和近期症状')
+const rehabMetricLabel = computed(() => store.activePatient.caseId === 'AGH-MY-2026-0012' ? '肩关节前屈 °' : '活动耐力评分')
 const message = ref('')
 const messageOk = ref(true)
 const accessOpen = ref(false)
@@ -17,9 +27,23 @@ const accessPurpose = ref('制定术后健康管理方案')
 const secondFactor = ref('889102')
 const session = ref(null)
 
-if (!store.activeDomesticReference?.chinaCaseId) store.setActiveCase('AGH-MY-2026-0012')
-
-const visit = computed(() => store.activeHomeVisits[0])
+const emptyVisit = {
+  id: '',
+  checklist: [
+    { id: 'vitals', label: '测量生命体征', done: false },
+    { id: 'wound', label: '检查伤口与疼痛', done: false },
+    { id: 'medication', label: '核对用药', done: false },
+    { id: 'rehab', label: '评估康复动作', done: false },
+  ],
+  observations: '',
+  riskLevel: 'normal',
+  vitals: { bloodPressure: '', heartRate: '', oxygen: '', temperature: '', weight: '' },
+  woundPain: { woundStatus: '愈合良好', redness: '无', exudate: '无', painScore: 0, notes: '' },
+  medicationReview: { medication: '', takenToday: false, adherence: '良好', sideEffects: '', notes: '' },
+  rehabAssessment: { shoulderFlexion: '', walkMinutes: '', movementQuality: '动作顺畅', completedSets: '', notes: '' },
+  videoRecordings: [],
+}
+const visit = computed(() => store.activeHomeVisits[0] || emptyVisit)
 const activeCapture = ref('vitals')
 const observations = ref(visit.value.observations || '')
 const riskLevel = ref(visit.value.riskLevel || 'normal')
@@ -67,7 +91,38 @@ function loadMonthlyPlan() {
   monthlySafetyRules.value = JSON.parse(JSON.stringify(monthly.safetyRules || []))
   monthlyMonth.value = monthly.month
 }
-loadMonthlyPlan()
+
+function loadVisit() {
+  observations.value = visit.value.observations || ''
+  riskLevel.value = visit.value.riskLevel || 'normal'
+  vitals.value = { ...visit.value.vitals }
+  woundPain.value = { ...visit.value.woundPain }
+  medicationReview.value = { ...visit.value.medicationReview }
+  rehabAssessment.value = { ...visit.value.rehabAssessment }
+  activeCapture.value = 'vitals'
+}
+
+function openCase(caseId) {
+  store.setActiveCase(caseId)
+  router.replace({ path: route.path, query: { case: caseId } })
+}
+
+function backToQueue() {
+  clearInterval(recordingTimer)
+  recordingTimer = null
+  recordingStatus.value = 'idle'
+  message.value = ''
+  router.replace({ path: route.path })
+}
+
+watch(() => route.query.case, (caseId) => {
+  if (typeof caseId === 'string') store.setActiveCase(caseId)
+}, { immediate: true })
+
+watch(() => store.state.activeCaseId, () => {
+  loadMonthlyPlan()
+  loadVisit()
+}, { immediate: true })
 
 function show(result) {
   message.value = result.message
@@ -185,9 +240,25 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
 </script>
 
 <template>
-  <div :class="['health-care-page', { 'pad-visit-mode': isVisit }]">
-    <template v-if="isFollowup">
+  <div :class="['health-care-page', { 'pad-visit-mode': isVisit && hasSelectedCase }]">
+    <template v-if="!hasSelectedCase">
+      <PageHeader
+        :eyebrow="isFollowup ? 'FOLLOW-UP PATIENT QUEUE' : 'HOME VISIT PATIENT QUEUE'"
+        :title="isFollowup ? '随访计划患者队列' : '家访执行患者队列'"
+        :subtitle="isFollowup ? '按康复阶段、计划状态和风险选择患者，再进入月度方案' : '按预约、执行进度和风险选择患者，再进入Pad现场采集'"
+      />
+      <WorkflowPatientQueue
+        :queue="patientQueue"
+        :title="isFollowup ? '在管随访患者' : '待执行家访患者'"
+        subtitle="王美玲为全流程演示主案例，其他患者保留各自独立的业务状态"
+        :action-label="isFollowup ? '打开方案' : '进入家访'"
+        @select="openCase"
+      />
+    </template>
+
+    <template v-else-if="isFollowup">
       <PageHeader eyebrow="AI monthly care plan" title="随访计划与月度方案" subtitle="根据患者康复阶段，由AI生成月度饮食运动方案，健康管家修改后推送患者">
+        <button class="secondary-button detail-queue-back" @click="backToQueue">← 返回患者队列</button>
         <button class="secondary-button" @click="openRecords">查看方案依据</button>
         <button class="secondary-button" @click="generateMonthlyPlan">AI重新生成</button>
         <button class="primary-button" @click="publishMonthlyPlan">推送给患者</button>
@@ -204,7 +275,7 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
       <section class="monthly-plan-hero">
         <div class="monthly-patient">
           <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
-          <div><span>MONTHLY RECOVERY PLAN</span><h2>{{ store.activePatient.name }} · {{ monthlyMonth }} 月度方案</h2><p>{{ store.activePatient.diagnosis }} · 当前处于归国适应期</p></div>
+          <div><span>MONTHLY RECOVERY PLAN</span><h2>{{ store.activePatient.name }} · {{ monthlyMonth }} 月度方案</h2><p>{{ store.activePatient.diagnosis }} · {{ activeFollowupStage?.name || '待制定阶段' }}</p></div>
         </div>
         <div class="monthly-ai-state"><span>AI</span><div><b>AGH Care AI 已生成</b><small>{{ store.activeHealthPlan.monthlyPlan.generatedAt.slice(0, 10) }} · v{{ store.activeHealthPlan.monthlyPlan.version }}</small></div></div>
         <div class="monthly-status"><small>当前状态</small><b>{{ store.activeHealthPlan.monthlyPlan.status === 'published' ? '已推送患者' : store.activeHealthPlan.monthlyPlan.status === 'edited' ? '人工已修改' : '等待审核' }}</b></div>
@@ -224,7 +295,7 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
           </section>
 
           <section class="monthly-editor-section diet">
-            <header><div><span>02</span><h3>饮食核心原则与定量目标</h3></div><small>结合体重、术后恢复和来曲唑治疗特点</small></header>
+            <header><div><span>02</span><h3>饮食核心原则与定量目标</h3></div><small>{{ dietContextCopy }}</small></header>
             <div class="monthly-edit-card-grid">
               <label v-for="(item, index) in monthlyDietPrinciples" :key="index">
                 <span>原则 {{ index + 1 }}</span>
@@ -333,9 +404,9 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="isVisit">
       <header class="pad-header">
-        <div><span>HOME VISIT · PAD MODE</span><h1>家访执行</h1></div>
+        <div><button class="secondary-button detail-queue-back" @click="backToQueue">← 返回家访队列</button><span>HOME VISIT · PAD MODE</span><h1>家访执行</h1></div>
         <div class="pad-patient"><span>{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.caseId }} · {{ store.activePatient.diagnosis }}</small></div></div>
         <button class="secondary-button" @click="openRecords">查看国内资料</button>
       </header>
@@ -343,7 +414,8 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
 
       <section class="visit-video-recorder">
         <div :class="['video-visit-preview', recordingStatus]">
-          <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}家访录制演示`" />
+          <img v-if="store.activePatient.portrait" :src="store.activePatient.portrait" :alt="`${store.activePatient.name}家访录制演示`" />
+          <span v-else class="video-patient-fallback">{{ store.activePatient.avatar }}</span>
           <div class="video-grid-overlay"></div>
           <span v-if="recordingStatus === 'recording'" class="recording-indicator"><i></i> REC {{ recordingTime }}</span>
           <span v-else class="camera-ready">VIDEO VISIT RECORD</span>
@@ -403,7 +475,7 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
 
           <div v-else class="capture-form">
             <div class="capture-grid">
-              <label>肩关节前屈 °<input v-model="rehabAssessment.shoulderFlexion" inputmode="numeric" /></label>
+              <label>{{ rehabMetricLabel }}<input v-model="rehabAssessment.shoulderFlexion" inputmode="numeric" /></label>
               <label>连续步行 分钟<input v-model="rehabAssessment.walkMinutes" inputmode="numeric" /></label>
               <label>完成组数<input v-model="rehabAssessment.completedSets" inputmode="numeric" /></label>
               <label>动作质量<select v-model="rehabAssessment.movementQuality"><option>动作顺畅</option><option>轻微受限</option><option>明显受限</option></select></label>
