@@ -232,3 +232,14 @@
 - 服务器部署：AGH专家人工决策版已发布为release `20260724-230211`，发布包SHA256为`590360DBD0A790B9637C10D5D72D053A4D6F874441D49AAF40E124123B5FC224`。
 - 线上验证：`agh-demo.service`为active；服务器内部及公网Portal、专家评审、马来资源协调和新版JS/CSS资源均返回HTTP 200，服务器资源哈希与本地构建一致。
 - 回滚点：上一版release `/opt/agh-demo-demo/releases/20260724-222436`继续保留。
+
+## AGH Care患者服务PWA（2026-07-24）
+
+- 新增独立 `/care` 品牌入口、AGH Care主屏幕图标、Web App Manifest、Service Worker、离线安全提示页和iOS添加主屏幕引导。
+- 患者首页由平台宣传页改为个人服务工作台，第一屏展示患者身份、当前阶段、下一步行动、服务进度、四个常用入口和健康管家联系方式。
+- Service Worker只缓存应用壳、图标、清单和离线页，不缓存患者病历、治疗方案、行程或随访正文。
+- iOS安装弹层明确展示Safari分享、添加到主屏幕和确认添加三步；患者顶部栏保留随时重新打开安装引导的入口。
+- Vitest：8个测试文件、61项测试全部通过；Vite生产构建成功，72 modules transformed。
+- 浏览器回归：390×844下入口、安装弹层、患者工作台和固定底部导航无横向溢出；PWA清单、Service Worker、离线页和四种图标资源均返回正确内容类型。
+- 服务器部署：PWA代码已发布为release `20260724-234050`，发布包SHA256为`FEF42461CA2FC720372A79844A8F64A3C9536395ED38F11055C10F30282FBDB2`；公网HTTP入口和全部PWA资源返回HTTP 200。
+- HTTPS准备：服务器已安装Caddy 2.11.4并配置 `agh-care.43-155-231-220.sslip.io`；腾讯云安全组尚未放行TCP 443，证书机构连接超时。放行443后需重启Caddy并完成最终HTTPS与iPhone安装验证。
