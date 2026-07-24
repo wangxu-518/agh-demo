@@ -13,15 +13,84 @@ function enterService() {
 }
 
 const hospitals = [
-  { mark: 'GZ', name: '广州医科大学附属第一医院', specialty: '国家呼吸医学中心 · 胸部肿瘤诊疗', city: '广州' },
-  { mark: 'SYSU', name: '中山大学肿瘤防治中心', specialty: '肿瘤多学科诊疗 · 精准治疗', city: '广州' },
-  { mark: 'NF', name: '南方医科大学南方医院', specialty: '综合肿瘤治疗 · 国际医疗服务', city: '广州' },
+  {
+    name: '佛山复星禅诚医院',
+    type: '三甲综合医院',
+    city: '佛山',
+    badge: '佛山首台',
+    highlight: 'CyberKnife M6 射波刀',
+    description: '肿瘤精准诊疗、妇科重点专科与国际医疗服务。',
+    image: '/hospitals/foshan-chancheng.webp',
+  },
+  {
+    name: '武汉同济医院',
+    type: '国家医学中心',
+    city: '武汉',
+    badge: '质子治疗',
+    highlight: '肿瘤专科始建于1958年',
+    description: '综合肿瘤诊疗、质子治疗及多学科会诊资源。',
+    image: '/hospitals/wuhan-tongji.webp',
+  },
+  {
+    name: '北京大学首钢医院',
+    type: '三级综合医院',
+    city: '北京',
+    badge: '北大医学',
+    highlight: '精准诊治与临床研究',
+    description: '结直肠肿瘤、骨肿瘤及综合诊疗研究资源。',
+    image: '/hospitals/beijing-shougang.webp',
+  },
+  {
+    name: '重庆海吉亚肿瘤医院',
+    type: '肿瘤专科医院',
+    city: '重庆',
+    badge: '精准放疗',
+    highlight: '陀螺旋转式钴-60放疗',
+    description: '放疗、微创介入与肿瘤综合治疗资源。',
+    image: '/hospitals/chongqing-hygeia.webp',
+  },
+  {
+    name: '上海第九人民医院',
+    type: '三甲综合医院',
+    city: '上海',
+    badge: '全国第1',
+    highlight: '整复外科全国第1',
+    description: '2018复旦专科榜；另具口腔颌面及头颈肿瘤优势。',
+    image: '/hospitals/shanghai-ninth.webp',
+  },
+  {
+    name: '宁波 Sinocell 希诺赛',
+    type: '生物科技机构',
+    city: '宁波',
+    badge: '专项技术',
+    highlight: '细胞制备、储存与质检',
+    description: '非医院；临床应用须经资质核验和专家评审。',
+    image: '/hospitals/ningbo-sinocell.webp',
+  },
 ]
 
 const experts = [
-  { avatar: '林', name: '林志远', role: '医学总监', specialty: '肿瘤内科', color: 'blue' },
-  { avatar: '郑', name: '郑慧敏', role: '首席医学顾问', specialty: '肿瘤外科', color: 'red' },
-  { avatar: '陈', name: '陈嘉豪', role: '医学顾问', specialty: '放射肿瘤与MDT', color: 'green' },
+  {
+    name: '林志远',
+    role: '医学总监',
+    specialty: '肿瘤内科 · MDT · 系统治疗',
+    bio: '负责病例初筛、系统治疗路径评审与跨境MDT牵头。',
+    image: '/experts/lin-zhiyuan.webp',
+  },
+  {
+    name: '郑慧敏',
+    role: '首席医学顾问',
+    specialty: '肿瘤外科 · 围术期 · 康复衔接',
+    bio: '负责实体瘤外科评审、围术期方案与术后管理衔接。',
+    image: '/experts/zheng-huimin.webp',
+  },
+  {
+    name: '陈嘉豪',
+    role: '医学顾问',
+    specialty: '放射肿瘤 · 影像复核 · 视频面诊',
+    bio: '负责放疗适应证评估、影像资料复核与会诊组织。',
+    image: '/experts/chen-jiahao.webp',
+  },
 ]
 </script>
 
@@ -40,7 +109,7 @@ const experts = [
     </section>
 
     <section class="care-trust-strip">
-      <div><strong>6+</strong><span>合作肿瘤中心</span></div>
+      <div><strong>6项</strong><span>重点医疗资源</span></div>
       <div><strong>3位</strong><span>AGH牵头专家</span></div>
       <div><strong>中英</strong><span>双语全程协调</span></div>
     </section>
@@ -55,25 +124,38 @@ const experts = [
     </section>
 
     <section class="care-home-band care-hospital-band">
-      <header><small>PARTNER HOSPITALS</small><h2>合作医疗机构</h2><p>具体接诊团队由AGH专家评审或MDT会审后人工确认。</p></header>
+      <header><small>MEDICAL NETWORK</small><h2>重点对接医疗资源</h2><p>覆盖肿瘤精准治疗、综合诊疗、整复医疗与专项技术。</p></header>
       <div class="care-hospital-list">
         <article v-for="hospital in hospitals" :key="hospital.name">
-          <span>{{ hospital.mark }}</span>
-          <div><b>{{ hospital.name }}</b><p>{{ hospital.specialty }}</p></div>
-          <em>{{ hospital.city }}</em>
+          <div class="care-hospital-photo">
+            <img :src="hospital.image" :alt="hospital.name">
+            <span>{{ hospital.type }}</span>
+          </div>
+          <div class="care-hospital-copy">
+            <header><em>{{ hospital.city }}</em><small>{{ hospital.badge }}</small></header>
+            <b>{{ hospital.name }}</b>
+            <strong>{{ hospital.highlight }}</strong>
+            <p>{{ hospital.description }}</p>
+          </div>
         </article>
       </div>
+      <p class="care-resource-source"><b>资料说明</b> 名单依据AGH Facebook公开宣传资料整理，机构优势来自医院官网或政府公开页面。具体接诊医院和医生由AGH专家评审后人工确认。</p>
     </section>
 
     <section class="care-home-band care-expert-band">
       <header><small>AGH MEDICAL ADVISORY</small><h2>AGH肿瘤专家团队</h2><p>三位AGH内部专家负责牵头评审、视频面诊和MDT会审。</p></header>
       <div class="care-expert-list">
         <article v-for="expert in experts" :key="expert.name">
-          <span :class="expert.color">{{ expert.avatar }}</span>
-          <div><b>{{ expert.name }} <small>{{ expert.role }}</small></b><p>{{ expert.specialty }}</p></div>
-          <em>AGH</em>
+          <img :src="expert.image" :alt="expert.name">
+          <div>
+            <header><small>AGH · DEMO</small><em>{{ expert.role }}</em></header>
+            <b>{{ expert.name }}</b>
+            <strong>{{ expert.specialty }}</strong>
+            <p>{{ expert.bio }}</p>
+          </div>
         </article>
       </div>
+      <p class="care-expert-note">专家姓名、头像及简介为Demo演示资料，正式版替换为AGH确认的真实专家信息。</p>
     </section>
 
     <section class="care-home-band care-flow-band">

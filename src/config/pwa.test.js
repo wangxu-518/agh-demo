@@ -58,11 +58,32 @@ describe('AGH Care PWA', () => {
     const home = readFileSync(resolve(root, 'src/views/PatientPortal.vue'), 'utf8')
     const entry = readFileSync(resolve(root, 'src/views/CareEntry.vue'), 'utf8')
     expect(home).toContain('AGH International Care')
-    expect(home).toContain('合作医疗机构')
+    expect(home).toContain('重点对接医疗资源')
+    expect(home).toContain('佛山复星禅诚医院')
+    expect(home).toContain('武汉同济医院')
+    expect(home).toContain('上海第九人民医院')
+    expect(home).toContain('宁波 Sinocell 希诺赛')
+    expect(home).toContain('AGH Facebook公开宣传资料')
     expect(home).toContain('AGH肿瘤专家团队')
+    expect(home).toContain('专家姓名、头像及简介为Demo演示资料')
     expect(home).toContain('查看我的服务')
     expect(entry).toContain('<PatientPortal entry-mode />')
     expect(entry).not.toContain('standalone) enterCare')
+  })
+
+  it('packages medical network and expert imagery for the public home', () => {
+    const assets = [
+      'public/hospitals/foshan-chancheng.webp',
+      'public/hospitals/wuhan-tongji.webp',
+      'public/hospitals/beijing-shougang.webp',
+      'public/hospitals/chongqing-hygeia.webp',
+      'public/hospitals/shanghai-ninth.webp',
+      'public/hospitals/ningbo-sinocell.webp',
+      'public/experts/lin-zhiyuan.webp',
+      'public/experts/zheng-huimin.webp',
+      'public/experts/chen-jiahao.webp',
+    ]
+    expect(assets.every((file) => existsSync(resolve(root, file)))).toBe(true)
   })
 
   it('defines a real-phone readability baseline for patient pages', () => {
