@@ -1374,12 +1374,12 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .care-card-diagnosis span { color:#7b8998; font-size:7px; }
 .care-card-diagnosis b { margin:5px 0; color:#24384d; font-size:10px; }
 .care-card-diagnosis small { color:#96a1ae; font-size:7px; }
-.care-score-line { padding:0 17px 11px; display:grid; grid-template-columns:52px 1fr; gap:11px; align-items:center; }
-.care-score-line > div:first-child { display:flex; gap:5px; align-items:baseline; }
+.care-score-line { padding:0 17px 11px; display:grid; grid-template-columns:42px 1fr; gap:11px; align-items:center; }
+.care-score-line > div:first-child { display:flex; flex-direction:column; gap:1px; align-items:flex-start; }
 .care-score-line strong { color:var(--care-green); font-size:21px; }
 .care-patient-card.medium .care-score-line strong { color:var(--care-amber); }
 .care-patient-card.critical .care-score-line strong { color:var(--care-red); }
-.care-score-line span { color:#8592a0; font-size:6px; }
+.care-score-line span { color:#8592a0; font-size:6px; line-height:1.2; white-space:nowrap; }
 .care-score-line > div:last-child { height:5px; overflow:hidden; border-radius:3px; background:#e7ecec; }
 .care-score-line i { height:100%; display:block; background:var(--care-green); }
 .care-patient-card.medium .care-score-line i { background:var(--care-amber); }
@@ -1492,23 +1492,6 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .monthly-plan-aside .push-status b { color:#426052; font-size:7px; }
 .monthly-plan-aside .push-status small { margin-top:3px; color:#87948f; font-size:6px; }
 
-.rehab-overview { display:grid; align-content:start; }
-.rehab-progress-list { margin-top:16px; display:grid; gap:12px; }
-.rehab-progress-list > div { display:grid; grid-template-columns:1fr auto; gap:6px 12px; }
-.rehab-progress-list span { color:#31485b; font-size:8px; font-weight:700; }
-.rehab-progress-list b { color:var(--health-teal); font-size:8px; }
-.rehab-progress-list i { grid-column:1/-1; height:6px; overflow:hidden; border-radius:4px; background:#e3e9ea; }
-.rehab-progress-list em { height:100%; display:block; background:var(--health-teal); }
-.rehab-progress-list small { grid-column:1/-1; color:#84909b; font-size:7px; }
-.rehab-protocol-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-.rehab-protocol-grid article { min-height:112px; padding:16px; display:grid; grid-template-columns:34px 1fr auto; gap:11px; align-items:start; border:1px solid var(--health-line); border-top:3px solid var(--health-teal); background:#fff; }
-.rehab-protocol-grid article:nth-child(2) { border-top-color:var(--health-blue); }
-.rehab-protocol-grid article:nth-child(3) { border-top-color:#d78832; }
-.rehab-protocol-grid article > span { width:32px; height:32px; display:grid; place-items:center; border-radius:5px; color:#fff; background:var(--health-navy); font-size:7px; font-weight:800; }
-.rehab-protocol-grid h3 { margin:1px 0 7px; color:#263d51; font-size:10px; }
-.rehab-protocol-grid p { margin:0; color:#748493; font-size:7px; line-height:1.65; }
-.rehab-protocol-grid article > b { padding:5px 7px; border-radius:4px; color:var(--health-teal); background:#e5f3f0; font-size:7px; white-space:nowrap; }
-
 .visit-video-recorder { margin:14px 0; min-height:235px; display:grid; grid-template-columns:minmax(310px,.78fr) minmax(0,1.22fr); border:1px solid #ccdadd; background:#fff; }
 .video-visit-preview { min-height:235px; position:relative; overflow:hidden; color:#fff; background:#172e42; }
 .video-visit-preview img { width:100%; height:100%; position:absolute; inset:0; object-fit:cover; object-position:center 22%; filter:saturate(.8) contrast(.95) brightness(.82); }
@@ -1545,8 +1528,12 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
 .recorded-file b { color:#334a5e; font-size:7px; }
 .recorded-file small { margin-top:3px; color:#8794a0; font-size:6px; }
 .recorded-file em { color:var(--health-teal); font-style:normal; font-weight:800; }
-.pad-visit-grid.enhanced { grid-template-columns:235px minmax(0,1fr); align-items:stretch; }
+.pad-visit-grid.enhanced { grid-template-columns:300px minmax(0,1fr); align-items:stretch; }
 .pad-checklist button { width:100%; cursor:pointer; }
+.pad-visit-grid.enhanced .pad-checklist button { grid-template-columns:42px minmax(0,1fr); }
+.pad-visit-grid.enhanced .pad-checklist button > span { grid-row:1/3; }
+.pad-visit-grid.enhanced .pad-checklist button b { min-width:0; line-height:1.35; }
+.pad-visit-grid.enhanced .pad-checklist button small { grid-column:2; white-space:nowrap; }
 .pad-checklist button.active { border-color:var(--health-teal); box-shadow:inset 3px 0 0 var(--health-teal); background:#eef7f5; }
 .pad-capture-panel { padding:20px; border:1px solid var(--health-line); background:#fff; }
 .pad-capture-panel > header { margin-bottom:17px; padding-bottom:13px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; border-bottom:1px solid #e3e8e9; }
@@ -1625,7 +1612,7 @@ body:has(.patient-system-shell) .feedback-widget { display: none; }
   .monthly-plan-hero,.monthly-patient { grid-template-columns:1fr; }
   .monthly-patient img { width:100%; height:180px; }
   .monthly-ai-state { border:0; border-top:1px solid #dbe6e6; }
-  .monthly-plan-aside,.rehab-protocol-grid { grid-template-columns:1fr; }
+  .monthly-plan-aside { grid-template-columns:1fr; }
   .monthly-plan-aside > *:last-child { grid-column:auto; }
   .monthly-goal,.monthly-editor-section { padding:15px 12px; }
   .monthly-goal header,.monthly-editor-section > header { align-items:flex-start; flex-direction:column; }

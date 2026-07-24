@@ -48,8 +48,8 @@ export const systems = {
     color: '#1b9873', home: '/health-management/dashboard', account: 'health@agh.demo', password: '123456',
     nav: [
       ['dashboard', '健康管理工作台', 'Dashboard'], ['followups', '随访计划', 'Follow-up Plans'],
-      ['medication', '用药管理', 'Medication'], ['rehab', '康复与护理', 'Rehabilitation'],
-      ['home-visits', '家访执行', 'Home Visits'], ['alerts', '预警与应急', 'Alerts'],
+      ['medication', '用药管理', 'Medication'], ['home-visits', '家访执行', 'Home Visits'],
+      ['alerts', '预警与应急', 'Alerts'],
       ['quality', '服务质控', 'Quality'],
     ],
   },

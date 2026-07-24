@@ -45,7 +45,6 @@ export const pagePermissions = {
     dashboard: 'view_discharge_case',
     followups: 'manage_followup',
     medication: 'manage_medication',
-    rehab: 'manage_followup',
     'home-visits': 'manage_followup',
     alerts: 'manage_alert',
     quality: 'manage_followup',

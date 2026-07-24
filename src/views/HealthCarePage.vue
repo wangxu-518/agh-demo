@@ -1,16 +1,14 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
 import { useDemoStore } from '../stores/demo'
 
 const route = useRoute()
-const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
 const isFollowup = computed(() => page.value === 'followups')
-const isRehab = computed(() => page.value === 'rehab')
 const isVisit = computed(() => page.value === 'home-visits')
 const message = ref('')
 const messageOk = ref(true)
@@ -254,48 +252,6 @@ onBeforeUnmount(() => clearInterval(recordingTimer))
           </SectionCard>
         </aside>
       </div>
-    </template>
-
-    <template v-else-if="isRehab">
-      <PageHeader eyebrow="Rehabilitation & nursing" title="康复与护理" subtitle="围绕伤口、疼痛、活动度和日常功能进行独立康复评估">
-        <button class="secondary-button" @click="openRecords">调用中国康复资料</button>
-        <button class="primary-button" @click="router.push('/health-management/home-visits')">安排家访评估</button>
-      </PageHeader>
-      <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
-      <section class="health-visual-dashboard">
-        <div class="health-human-panel">
-          <header><span>RECOVERY BODY MAP</span><h2>术后恢复人体图</h2><p>按身体区域查看恢复状态和康复动作。</p></header>
-          <div class="health-portrait-stage">
-            <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
-            <button class="health-hotspot breast"><i></i><span><b>手术区域</b><small>伤口恢复良好</small></span></button>
-            <button class="health-hotspot shoulder"><i></i><span><b>上肢活动</b><small>前屈 135°</small></span></button>
-            <button class="health-hotspot nutrition"><i></i><span><b>耐力状态</b><small>步行 25 分钟</small></span></button>
-          </div>
-          <footer><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.age }}岁 · {{ store.activePatient.diagnosis }}</small></div><span class="status-pill done">恢复稳定</span></footer>
-        </div>
-        <div class="health-overview rehab-overview">
-          <header><div><span>REHAB ASSESSMENT</span><h2>本周康复进度</h2><p>最近评估来自家访记录与患者每日打卡。</p></div><div class="care-score"><strong>82</strong><small>恢复指数</small></div></header>
-          <section class="care-vitals">
-            <article><span>伤口</span><b>恢复良好</b><small>无红肿渗液</small></article>
-            <article><span>疼痛</span><b>2 / 10</b><small>较上周 -1</small></article>
-            <article><span>肩关节前屈</span><b>135°</b><small>目标 150°</small></article>
-            <article><span>连续步行</span><b>25 分钟</b><small>目标 30 分钟</small></article>
-          </section>
-          <div class="rehab-progress-list">
-            <div><span>伤口与疼痛护理</span><b>90%</b><i><em style="width:90%"></em></i><small>继续观察牵拉感和局部温度</small></div>
-            <div><span>上肢活动训练</span><b>78%</b><i><em style="width:78%"></em></i><small>每日 2 组，疼痛不超过 3 分</small></div>
-            <div><span>步行与耐力恢复</span><b>72%</b><i><em style="width:72%"></em></i><small>本周逐步增加至每日 30 分钟</small></div>
-          </div>
-          <button class="china-surgery-entry" @click="openRecords">
-            <span>CN</span><div><small>中国诊疗资料中心</small><b>调用手术资料与30天康复方案</b><p>{{ store.activeDomesticReference.chinaCaseId }} · {{ store.activeDomesticReference.availableCount }} 份境内资料</p></div><i>受控打开 →</i>
-          </button>
-        </div>
-      </section>
-      <section class="rehab-protocol-grid">
-        <article><span>01</span><div><h3>伤口与疼痛护理</h3><p>每日观察红肿、渗液、温度和牵拉感；疼痛超过 4 分进入预警。</p></div><b>每日</b></article>
-        <article><span>02</span><div><h3>上肢活动训练</h3><p>爬墙、钟摆和肩关节前屈训练，每日 2 组，每组 10 次。</p></div><b>2组/日</b></article>
-        <article><span>03</span><div><h3>步行与呼吸训练</h3><p>以可交谈强度步行并配合缓慢深呼吸，疲劳时分段完成。</p></div><b>30分钟</b></article>
-      </section>
     </template>
 
     <template v-else>

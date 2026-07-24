@@ -186,13 +186,6 @@ export const pageSchemas = {
         {id:'MED-007',cells:['黄丽珍','奥拉帕利 300mg','每日两次','已确认','91%','轻度恶心']},
       ],
     },
-    rehab: {
-      eyebrow: 'REHABILITATION & NURSING', title: '康复与护理', description: '康复评估、训练、营养、伤口和生命体征管理',
-      type: 'table', primary: ['完成康复评估', 'completeRehab'],
-      metrics: [['康复计划','39'],['今日训练','16'],['护理上门','5'],['待评估','4']],
-      columns: ['患者','康复阶段','本周目标','最近评估','执行人员','状态'],
-      rowSource: 'rehabCases',
-    },
     'home-visits': {
       eyebrow: 'PAD HOME VISIT', title: '家访执行台', description: '适配 Pad 的现场检查、记录、风险分级和预警上报',
       type: 'home-visit', primary: ['生成五阶段计划', 'generateFollowup'],
@@ -524,14 +517,6 @@ function metricsFromState(system, page, state, fallback) {
       ['用药预警', String(count(alerts, (alert) => alert.type === '用药提醒' && alert.status !== 'closed'))],
       ['随访中', String(count(cases, (item) => item.followup?.status === 'active'))],
       ['待处理预警', String(count(alerts, (alert) => alert.status === 'open'))],
-    ]
-  }
-  if (system === 'health' && page === 'rehab') {
-    return [
-      ['康复病例', String(count(cases, (item) => item.followup?.generated))],
-      ['评估记录', String((state.rehabAssessments || []).length)],
-      ['待评估', String(count(cases, (item) => item.followup?.generated && !(state.rehabAssessments || []).some((record) => record.caseId === item.id)))],
-      ['高危随访', String(count(patients, (patient) => patient.risk === 'critical'))],
     ]
   }
   if (system === 'health' && page === 'quality') {

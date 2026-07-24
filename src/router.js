@@ -31,7 +31,7 @@ const pageComponent = (system, page) => {
   if (system === 'china') return ChinaRecordsPage
   if (system === 'expert' && ['case', 'mdt'].includes(page)) return ExpertSharedCasePage
   if (system === 'hospital' && page === 'inpatient') return HospitalTreatmentDocumentsPage
-  if (system === 'health' && ['followups', 'rehab', 'home-visits'].includes(page)) return HealthCarePage
+  if (system === 'health' && ['followups', 'home-visits'].includes(page)) return HealthCarePage
   return BusinessPage
 }
 
@@ -56,6 +56,7 @@ for (const [system, config] of Object.entries(systems)) {
         component: pageComponent(system, page),
         meta: { system, page, title },
       })),
+      ...(system === 'health' ? [{ path: 'rehab', redirect: '/health-management/followups' }] : []),
       { path: 'record/:id', component: RecordDetail, meta: { system, page: 'record', title: '业务详情' } },
       ...(system === 'patient' ? [{ path: 'detail/:id', component: PatientMobileDetail, meta: { system, page: 'detail', title: '详情' } }] : []),
     ],

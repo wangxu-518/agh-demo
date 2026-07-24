@@ -33,6 +33,13 @@ describe('business page schemas', () => {
     expect(schemaFor('malaysia', 'resources', seedState).type).toBe('comparison')
   })
 
+  it('keeps rehabilitation inside follow-up and home visits instead of a separate menu', () => {
+    expect(systems.health.nav.map(([page]) => page)).not.toContain('rehab')
+    expect(schemaFor('health', 'rehab', seedState)).toBeUndefined()
+    expect(systems.health.nav.map(([page]) => page)).toContain('followups')
+    expect(systems.health.nav.map(([page]) => page)).toContain('home-visits')
+  })
+
   it('derives patient workflow queues from the unified case state', () => {
     const cases = schemaFor('malaysia', 'cases', seedState)
     const expertQueue = schemaFor('expert', 'queue', seedState)
