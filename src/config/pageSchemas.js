@@ -6,7 +6,7 @@ export const pageSchemas = {
       filters: ['全部资料', '病理报告', '影像资料', '检验报告', '授权文件'],
     },
     plan: {
-      eyebrow: 'TREATMENT PLAN', title: '治疗方案', description: '查看专家意见、推荐医院、治疗路径和费用预估',
+      eyebrow: 'TREATMENT PLAN', title: '治疗方案', description: '查看AGH专家意见、人工确认的接诊团队、治疗路径和费用预估',
       type: 'plan', primary: ['确认已阅读方案', 'confirmPlan'],
     },
     travel: {
@@ -43,9 +43,9 @@ export const pageSchemas = {
       metrics: [['已识别文件','21'],['自动分类','19'],['疑似重复','2'],['待人工确认','3']],
     },
     resources: {
-      eyebrow: 'SCREENING & COORDINATION', title: '初筛与国内协同', description: '由马来运营安排专家、面诊和候选医院并跟踪办理状态',
-      type: 'comparison', primary: ['分配评审专家', 'assignExpert'],
-      metrics: [['待初筛','4'],['待安排专家','3'],['面诊待确认','2'],['医院候选','3']],
+      eyebrow: 'SCREENING & COORDINATION', title: '初筛与专家协同', description: '由马来运营指派AGH内部牵头专家并协调面诊，接诊医院和医生由专家评审或MDT会审决定',
+      type: 'comparison', primary: ['指派AGH牵头专家', 'assignExpert'],
+      metrics: [['待初筛','4'],['待指派牵头专家','3'],['面诊待确认','2'],['待接诊团队决策','3']],
     },
   },
   china: {
@@ -60,21 +60,21 @@ export const pageSchemas = {
       metrics: [['国内资料','8'],['手术资料','3'],['康复方案','2'],['访问均已审计','100%']],
     },
     experts: {
-      eyebrow: 'EXPERT COORDINATION', title: '专家协调', description: '根据病种、职称、档期和 SLA 分配评审专家',
-      type: 'table', primary: ['分配专家', 'assignExpert'],
-      metrics: [['待分配病例','8'],['24h内到期','3'],['可用专家','26'],['本月完成评审','51']],
+      eyebrow: 'AGH EXPERT COORDINATION', title: 'AGH牵头专家协调', description: '仅从AGH三位内部医学专家中指派病例牵头人',
+      type: 'table', primary: ['指派牵头专家', 'assignExpert'],
+      metrics: [['待指派病例','8'],['24h内到期','3'],['AGH内部专家','3'],['本月完成评审','51']],
       filters: ['待分配','评审中','待MDT','已完成'],
-      columns: ['专家','医院 / 科室','擅长领域','当前负载','最近可约','状态'],
+      columns: ['AGH专家','内部角色','牵头方向','当前负载','最近可约','状态'],
       rows: [
-        {id:'EXP-001',cells:['张建国 主任','广州医科大学附一院 · 胸外科','肺癌 / 胸腔镜','3例','明天 15:00','可分配']},
-        {id:'EXP-014',cells:['周敏 教授','中山大学肿瘤医院 · 内科','肺癌精准治疗','5例','后天','接近满载']},
-        {id:'EXP-021',cells:['陈力 主任','南方医院 · 放疗科','胸部肿瘤放疗','2例','明天 17:00','可分配']},
+        {id:'AGH-EXP-01',cells:['林志远 医学总监','AGH医学总监','肿瘤内科','3例','明天 15:00','可指派']},
+        {id:'AGH-EXP-02',cells:['郑慧敏 首席医学顾问','AGH首席医学顾问','肿瘤外科','2例','明天 17:00','可指派']},
+        {id:'AGH-EXP-03',cells:['陈嘉豪 医学顾问','AGH医学顾问','放射肿瘤与MDT','4例','后天','会审中']},
       ],
     },
     hospitals: {
-      eyebrow: 'HOSPITAL MATCHING', title: '医院匹配', description: '比较诊疗能力、专家、床位、费用和国际服务能力',
-      type: 'comparison', primary: ['发送承接申请', 'requestHospital'],
-      metrics: [['候选医院','4'],['可承接','3'],['床位待确认','1'],['预计响应','24h']],
+      eyebrow: 'RECEIVING TEAM DECISION', title: '接诊团队决策', description: '专家评审或MDT会审后人工确认医院、科室和接诊医生',
+      type: 'comparison', primary: ['发送已确认团队申请', 'requestHospital'],
+      metrics: [['会审候选团队','4'],['专家已确认','1'],['待重新决策','0'],['预计响应','24h']],
     },
     handoff: {
       eyebrow: 'ACCESS AUDIT', title: '资料访问审计', description: '查看受控访问的人员、用途、资料范围、时间和结果',
@@ -97,10 +97,10 @@ export const pageSchemas = {
       rowSource: 'expertQueue',
     },
     case: {
-      eyebrow: 'CASE REVIEW', title: '病例详情', description: '结构化病历、原始资料、关键影像、检查缺口和评审意见',
+      eyebrow: 'AGH CASE REVIEW', title: '病例详情', description: 'AGH内部牵头专家查看结构化病历、检查缺口并形成评审意见和接诊团队决策',
       type: 'case-list', primary: ['提交评审意见', 'finishReview'],
       filters: ['全部病例', '待接收', '评审中', '待补资料', '已完成'],
-      columns: ['患者', 'Case ID', '诊断', '资料完整度', '评审专家', '评审状态', '意见版本'],
+      columns: ['患者', 'Case ID', '诊断', '资料完整度', 'AGH牵头专家', '评审状态', '意见版本'],
       rowSource: 'expertCases',
     },
     mdt: {
@@ -108,7 +108,7 @@ export const pageSchemas = {
       type: 'case-list', primary: ['完成 MDT', 'finishMdt'],
       metrics: [['今日会议','3'],['待确认专家','2'],['待出具纪要','1'],['本月MDT','22']],
       filters: ['全部会议', '待安排', '待召开', '已完成'],
-      columns: ['患者', 'Case ID', '诊断', '会议时间', '牵头专家', '参会科室', '会议状态'],
+      columns: ['患者', 'Case ID', '诊断', '会议时间', 'AGH牵头专家', '参会方向', '会议状态'],
       rowSource: 'mdtCases',
     },
     history: {
@@ -429,8 +429,8 @@ function metricsFromState(system, page, state, fallback) {
   }
   if (system === 'china' && page === 'hospitals') {
     return [
-      ['当前患者候选', String(state.cases[state.activeCaseId]?.hospitalMatching?.candidates.length || 0)],
-      ['待匹配患者', String(cases.filter((item) => ['ready', 'waiting_review'].includes(item.hospitalMatching?.status)).length)],
+      ['当前患者候选团队', String(state.cases[state.activeCaseId]?.hospitalMatching?.candidates.length || 0)],
+      ['待专家决策', String(cases.filter((item) => ['awaiting_expert_decision', 'expert_reconsideration', 'waiting_review'].includes(item.hospitalMatching?.status)).length)],
       ['已发送申请', String(cases.filter((item) => item.hospitalMatching?.status === 'requested').length)],
       ['已确认承接', String(cases.filter((item) => ['accepted', 'completed'].includes(item.hospitalMatching?.status)).length)],
     ]

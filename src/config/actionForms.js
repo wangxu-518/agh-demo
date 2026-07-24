@@ -34,10 +34,10 @@ export const actionForms = {
     fields: [field('summary', '病例摘要', 'textarea', { required: true, placeholder: '主诉、现病史、病理、影像、分期和待解决问题' })],
   },
   assignExpert: {
-    title: '分配评审专家',
+    title: '指派 AGH 牵头专家',
     fields: [
-      field('expert', '评审专家', 'select', { required: true, options: ['张建国 主任', '周敏 教授', '陈力 主任'] }),
-      field('specialty', '评审专科', 'select', { options: ['胸外科', '肿瘤内科', '放疗科', '妇科肿瘤'] }),
+      field('expert', 'AGH 内部专家', 'select', { required: true, options: ['林志远 医学总监', '郑慧敏 首席医学顾问', '陈嘉豪 医学顾问'] }),
+      field('specialty', '牵头方向', 'select', { options: ['肿瘤内科', '肿瘤外科', '放射肿瘤与MDT'] }),
       field('meetingAt', '计划评审时间', 'datetime-local'),
       field('dueAt', '任务截止时间', 'datetime-local'),
       field('priority', '优先级', 'select', { options: ['normal', 'high', 'urgent'] }),
@@ -67,7 +67,14 @@ export const actionForms = {
     title: '提交并签署评审意见',
     fields: [
       field('recommendation', '正式评审意见', 'textarea', { required: true, placeholder: '检查建议、分期判断、治疗路径、风险和复评条件' }),
-      field('hospital', '建议医院'),
+    ],
+  },
+  selectReceivingTeam: {
+    title: '确认医院与接诊医生',
+    fields: [
+      field('hospitalId', '候选接诊团队', 'text', { required: true, readonly: true }),
+      field('rationale', '专业选择依据', 'textarea', { required: true, placeholder: '说明为何由该医院、科室和医生负责接诊' }),
+      field('source', '决策来源', 'select', { options: ['专家评审', 'MDT会审'] }),
     ],
   },
   requestMoreDocuments: {
@@ -158,7 +165,7 @@ export const actionForms = {
     fields: [
       field('alertId', '预警编号', 'text', { required: true }),
       field('assessment', '风险评估', 'textarea', { required: true }),
-      field('expert', '复评负责人', 'select', { options: ['肿瘤质控组', '张建国 主任', '周敏 教授'] }),
+      field('expert', '复评负责人', 'select', { options: ['AGH肿瘤质控组', '林志远 医学总监', '郑慧敏 首席医学顾问'] }),
       field('dueAt', '响应期限', 'datetime-local'),
     ],
   },

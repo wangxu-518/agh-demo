@@ -72,11 +72,11 @@ const matchingPatients = computed(() => store.state.patients.map((patient) => {
     reviewStatus: currentCase.review.status,
     matchingStatus: currentCase.hospitalMatching?.status || 'not_started',
     candidateCount: currentCase.hospitalMatching?.candidates.length || 0,
-    selectedHospital: currentCase.hospitalMatching?.candidates.find((item) => item.id === currentCase.hospitalMatching.selectedHospitalId)?.name || '',
+    selectedHospital: currentCase.review.receivingTeamDecision?.hospital || '',
   }
 }))
 const hospitalCandidates = computed(() => store.activeHospitalMatching?.candidates || [])
-const canRequestHospital = computed(() => store.activeReview.status === 'completed' && ['ready', 'rejected'].includes(store.activeHospitalMatching?.status))
+const canRequestHospital = computed(() => store.activeReview.receivingTeamDecision?.status === 'confirmed' && store.activeHospitalMatching?.status === 'decision_confirmed')
 const prefix = computed(() => ({ china: 'china-ops', health: 'health-management' }[system.value] || system.value))
 const filteredRows = computed(() => (schema.value.rows || []).filter((row) => {
   const firstFilter = schema.value.filters?.[0]
@@ -129,23 +129,25 @@ function selectMatchingPatient(caseId) {
 }
 
 function requestCandidate(candidate) {
+  if (candidate.id !== store.activeReview.receivingTeamDecision?.hospitalId) return
   startAction('requestHospital', {
     caseId: store.activePatient.caseId,
     hospitalId: candidate.id,
     hospital: candidate.name,
     department: candidate.department,
-    doctor: candidate.expert,
+    doctor: candidate.doctor,
   })
 }
 
 function matchingStatusLabel(status) {
   return {
     waiting_review: '待专家意见',
-    ready: '可选择医院',
+    awaiting_expert_decision: '待专家决定接诊团队',
+    decision_confirmed: '专家已确认接诊团队',
     requested: '等待医院响应',
     accepted: '医院已承接',
     completed: '已完成治疗',
-    rejected: '需重新匹配',
+    expert_reconsideration: '待专家重新决策',
   }[status] || status
 }
 
@@ -154,7 +156,8 @@ function candidateActionLabel(candidate) {
   if (candidate.status === 'completed') return '已完成治疗'
   if (candidate.status === 'requested') return '已发送申请'
   if (candidate.status === 'rejected') return '本次申请被拒'
-  return '选择并发送申请'
+  if (candidate.id !== store.activeReview.receivingTeamDecision?.hospitalId) return '等待专家选择'
+  return '发送承接申请'
 }
 function confirmAction() {
   const payload = effectiveAction.value === 'completeDischarge'
@@ -253,7 +256,7 @@ function confirmTask() {
       <div class="grid-2">
         <SectionCard title="临床摘要与评审结论">
           <div class="clinical-summary"><h3>{{ store.activePatient.diagnosis }}</h3><p>{{ store.activeReview.summary }}</p>
-            <div class="info-list"><div class="info-row"><span>评审专家</span><b>{{ store.activeReview.expert || '待分配' }}</b></div><div class="info-row"><span>评审状态</span><b>{{ store.activeReview.status }}</b></div><div class="info-row"><span>MDT时间</span><b>{{ formatDateTime(store.activeReview.meetingAt) }}</b></div></div>
+            <div class="info-list"><div class="info-row"><span>AGH牵头专家</span><b>{{ store.activeReview.expert || '待指派' }}</b></div><div class="info-row"><span>评审状态</span><b>{{ store.activeReview.status }}</b></div><div class="info-row"><span>MDT时间</span><b>{{ formatDateTime(store.activeReview.meetingAt) }}</b></div></div>
           </div>
         </SectionCard>
         <SectionCard title="推荐治疗路径">
@@ -261,7 +264,7 @@ function confirmTask() {
           <div class="notice">{{ store.activeReview.recommendation || '专家评审中，正式意见将在完成后展示。' }}</div>
         </SectionCard>
       </div>
-      <SectionCard title="医院与费用方案"><div class="completion-grid"><div><span>推荐医院</span><b>{{ store.activeTreatment.hospital || '待匹配' }}</b></div><div><span>接诊科室</span><b>{{ store.activeTreatment.department || '待确认' }}</b></div><div><span>主诊医生</span><b>{{ store.activeTreatment.doctor || '待确认' }}</b></div><div><span>费用预估</span><b>{{ store.activeTreatment.estimatedCost }}</b></div></div></SectionCard>
+      <SectionCard title="医院与费用方案"><div class="completion-grid"><div><span>专家确认医院</span><b>{{ store.activeTreatment.hospital || '待专家决策' }}</b></div><div><span>接诊科室</span><b>{{ store.activeTreatment.department || '待确认' }}</b></div><div><span>接诊医生</span><b>{{ store.activeTreatment.doctor || '待确认' }}</b></div><div><span>费用预估</span><b>{{ store.activeTreatment.estimatedCost }}</b></div></div></SectionCard>
     </template>
 
     <template v-else-if="schema.type === 'journey' || schema.type === 'calendar'">
@@ -279,32 +282,32 @@ function confirmTask() {
 
     <template v-else-if="schema.type === 'comparison'">
       <div class="hospital-match-layout">
-        <SectionCard title="待匹配患者" subtitle="先选择患者，再比较该病例专属候选医院">
+        <SectionCard title="待确认接诊团队患者" subtitle="先选择患者，再查看专家端的接诊团队决策">
           <div class="matching-patient-list">
             <button v-for="patient in matchingPatients" :key="patient.caseId" :class="{ active: patient.caseId === store.activePatient.caseId }" @click="selectMatchingPatient(patient.caseId)">
               <span class="small-avatar">{{ patient.avatar }}</span>
               <div><b>{{ patient.name }}</b><small>{{ patient.caseId }} · {{ patient.diagnosis }}</small></div>
-              <em>{{ patient.selectedHospital || `${patient.candidateCount} 家候选` }}</em>
+              <em>{{ patient.selectedHospital || `${patient.candidateCount} 组待会审团队` }}</em>
               <i>{{ matchingStatusLabel(patient.matchingStatus) }}</i>
             </button>
           </div>
         </SectionCard>
         <div class="matching-case-panel">
-          <SectionCard title="当前匹配病例" subtitle="候选医院只对当前 Case 生效">
+          <SectionCard title="当前病例接诊决策" subtitle="医院与医生由AGH专家评审或MDT会审后确认">
             <div class="matching-case-summary">
               <div><span class="small-avatar">{{ store.activePatient.avatar }}</span><div><h3>{{ store.activePatient.name }} · {{ store.activePatient.caseId }}</h3><p>{{ store.activePatient.diagnosis }} · 专家 {{ store.activeReview.expert || '待分配' }}</p></div></div>
               <div><span>专家意见</span><b>{{ store.activeReview.status }}</b></div>
-              <div><span>匹配状态</span><b>{{ matchingStatusLabel(store.activeHospitalMatching.status) }}</b></div>
+              <div><span>决策状态</span><b>{{ matchingStatusLabel(store.activeHospitalMatching.status) }}</b></div>
               <div><span>当前选择</span><b>{{ matchingPatients.find((item) => item.caseId === store.activePatient.caseId)?.selectedHospital || '尚未发送承接申请' }}</b></div>
             </div>
-            <div v-if="store.activeReview.status !== 'completed'" class="action-warning">专家正式意见尚未签署。当前候选及评分仅供预匹配，暂不能发送承接申请。</div>
+            <div v-if="store.activeReview.receivingTeamDecision.status !== 'confirmed'" class="action-warning">医院和医生尚未由专家评审或MDT会审确认，马来运营不能选择或发送承接申请。</div>
           </SectionCard>
           <div v-if="hospitalCandidates.length" class="hospital-comparison">
-            <article v-for="candidate in hospitalCandidates" :key="candidate.id" :class="{ recommended: candidate.rank === 1, selected: candidate.id === store.activeHospitalMatching.selectedHospitalId }">
-              <header><span>{{ candidate.recommendation }}</span><strong>{{ candidate.score }}<small>匹配分</small></strong></header>
+            <article v-for="candidate in hospitalCandidates" :key="candidate.id" :class="{ selected: candidate.id === store.activeReview.receivingTeamDecision.hospitalId }">
+              <header><span>{{ candidate.id === store.activeReview.receivingTeamDecision.hospitalId ? '专家已选择' : '会审候选' }}</span><strong>{{ candidate.status === 'rejected' ? '已拒绝' : '人工决策' }}<small>无自动评分</small></strong></header>
               <h3>{{ candidate.name }}</h3>
-              <p>{{ candidate.department }} · {{ candidate.expert }} · {{ candidate.internationalService }}</p>
-              <div class="match-reasons"><b>匹配依据</b><span v-for="reason in candidate.matchReasons" :key="reason">✓ {{ reason }}</span></div>
+              <p>{{ candidate.department }} · {{ candidate.doctor }} · {{ candidate.internationalService }}</p>
+              <div class="match-reasons"><b>会审参考</b><span v-for="reason in candidate.reviewFactors" :key="reason">• {{ reason }}</span></div>
               <ul>
                 <li>专科能力：{{ candidate.capability.join(' / ') }}</li>
                 <li>床位状态：{{ candidate.bedStatus }}</li>
@@ -314,14 +317,14 @@ function confirmTask() {
               <div v-if="candidate.constraints.length" class="match-constraints"><b>限制条件</b><span v-for="item in candidate.constraints" :key="item">{{ item }}</span></div>
               <footer>
                 <span>{{ candidate.status }}</span>
-                <button class="primary-button" :disabled="!canRequestHospital || candidate.status === 'rejected' || !isActionAllowed('requestHospital')" @click="requestCandidate(candidate)">
+                <button class="primary-button" :disabled="!canRequestHospital || candidate.id !== store.activeReview.receivingTeamDecision.hospitalId || candidate.status === 'rejected' || !isActionAllowed('requestHospital')" @click="requestCandidate(candidate)">
                   {{ candidateActionLabel(candidate) }}
                 </button>
               </footer>
             </article>
           </div>
-          <SectionCard v-else title="暂无候选医院">
-            <div class="empty-state">该患者尚未完成专家评审或医院匹配规则尚未生成。</div>
+          <SectionCard v-else title="暂无候选接诊团队">
+            <div class="empty-state">该患者尚未进入专家评审，暂未准备供会审比较的医院与医生资料。</div>
           </SectionCard>
         </div>
       </div>
@@ -337,7 +340,7 @@ function confirmTask() {
     </template>
 
     <template v-else-if="schema.type === 'meeting'">
-      <div class="grid-2"><SectionCard title="会议议程"><div class="meeting-agenda"><b>15:00–15:10 病例汇报</b><p>中国运营介绍病史、影像与检查缺口</p><b>15:10–15:35 多学科讨论</b><p>胸外科 / 肿瘤内科 / 放疗科发表意见</p><b>15:35–15:45 形成结论</b><p>明确补充检查、治疗路径与医院安排</p></div></SectionCard><SectionCard title="参会专家"><div v-for="person in ['张建国 · 胸外科','周敏 · 肿瘤内科','陈力 · 放疗科','李雯 · 病例协调']" :key="person" class="participant"><span>{{ person.slice(0,1) }}</span><b>{{ person }}</b><em>已确认</em></div></SectionCard></div><SectionCard title="会议记录"><textarea v-model="mdtNotes" class="review-editor" placeholder="记录各学科意见、争议点和最终结论"></textarea></SectionCard>
+      <div class="grid-2"><SectionCard title="会议议程"><div class="meeting-agenda"><b>15:00–15:10 病例汇报</b><p>AGH牵头专家介绍病史、影像与检查缺口</p><b>15:10–15:35 多学科讨论</b><p>肿瘤内科 / 肿瘤外科 / 放射肿瘤方向发表意见</p><b>15:35–15:45 形成结论</b><p>明确补充检查、治疗路径及接诊团队决策</p></div></SectionCard><SectionCard title="AGH参会专家"><div v-for="person in ['林志远 · 肿瘤内科','郑慧敏 · 肿瘤外科','陈嘉豪 · 放射肿瘤与MDT','Aisyah · 病例协调']" :key="person" class="participant"><span>{{ person.slice(0,1) }}</span><b>{{ person }}</b><em>已确认</em></div></SectionCard></div><SectionCard title="会议记录"><textarea v-model="mdtNotes" class="review-editor" placeholder="记录各专家意见、争议点、最终结论和接诊团队选择依据"></textarea></SectionCard>
     </template>
 
     <template v-else-if="schema.type === 'timeline'">

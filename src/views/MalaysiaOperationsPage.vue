@@ -26,7 +26,7 @@ const pageCopy = computed(() => ({
   cases: ['Patient record', '患者全景档案', '统一查看咨询、病案、协同、行程与术后状态'],
   documents: ['Collection workspace', '资料采集工作台', '归类、查缺、核验和合并重复资料'],
   tasks: ['AI structuring', 'AI 病案整理', 'AI 先生成草稿，由马来运营人员校对确认'],
-  resources: ['Screening & consultation', '初筛与面诊协同', '完成初筛、安排专家与医院，并记录患者选择'],
+  resources: ['Screening & consultation', '初筛与面诊协同', '指派AGH牵头专家、协调面诊，并跟进专家确认的接诊团队'],
   leads: ['Treatment journey', '治疗行程与跨境交接', '管理赴华前、在华治疗和归国交接的每个节点'],
 })[page.value])
 
@@ -162,6 +162,14 @@ function analyzeTranscript() {
 function markJourney(item) {
   const next = item.status === 'completed' ? 'planned' : 'completed'
   show(store.updateJourneyItem({ id: item.id, status: next, actor: 'Aisyah Rahman' }))
+}
+
+function assignAghExpert(expert) {
+  show(store.assignExpert({
+    expert: expert.id,
+    specialty: expert.specialty,
+    actor: 'Aisyah Rahman',
+  }))
 }
 </script>
 
@@ -399,7 +407,7 @@ function markJourney(item) {
         </header>
         <div class="zoom-flow">
           <div :class="{done:true}"><span>1</span><b>患者确认报告</b><small>{{ store.activeAiStructuring.patientConfirmation.status === 'confirmed' ? '已确认' : '待确认' }}</small></div>
-          <div :class="{done:store.activeConsultation.timeCoordination.patient.status === 'confirmed' && store.activeConsultation.timeCoordination.expert.status === 'confirmed'}"><span>2</span><b>三方确认时间</b><small>患者 + 专家 + 马来团队</small></div>
+          <div :class="{done:store.activeConsultation.timeCoordination.patient.status === 'confirmed' && store.activeConsultation.timeCoordination.expert.status === 'confirmed'}"><span>2</span><b>三方确认时间</b><small>患者 + AGH牵头专家 + 马来团队</small></div>
           <div :class="{done:store.activeConsultation.meeting.status !== 'not_booked'}"><span>3</span><b>创建并分发 Zoom</b><small>{{ store.activeConsultation.meeting.status === 'not_booked' ? '待创建' : '邀请已发送' }}</small></div>
           <div :class="{done:store.activeConsultation.recording.transcriptStatus === 'ready'}"><span>4</span><b>录制与转写</b><small>{{ store.activeConsultation.recording.transcriptStatus === 'ready' ? '转写已就绪' : '会后生成' }}</small></div>
           <div :class="{done:store.activeConsultation.aiMinutes.status === 'added_to_record'}"><span>5</span><b>AI回填档案</b><small>{{ store.activeConsultation.aiMinutes.status === 'added_to_record' ? '已写入报告' : '待人工审核' }}</small></div>
@@ -412,7 +420,7 @@ function markJourney(item) {
             <header><div><span>01 · TIME COORDINATION</span><h3>三方时间确认</h3></div><strong>双方已确认</strong></header>
             <div class="coordination-people">
               <article><span class="person-avatar patient">林</span><div><small>患者</small><b>{{ store.activePatient.name }}</b><em>✓ 已确认时间</em></div></article>
-              <article><span class="person-avatar expert">张</span><div><small>专家</small><b>{{ store.activeConsultation.expert }}</b><em>✓ 已确认时间</em></div></article>
+              <article><span class="person-avatar expert">{{ store.activeConsultation.expert.slice(0, 1) }}</span><div><small>AGH牵头专家</small><b>{{ store.activeConsultation.expert }}</b><em>✓ 已确认时间</em></div></article>
               <label><small>面诊时间</small><input v-model="consultationDate" type="datetime-local" /></label>
             </div>
           </section>
@@ -420,7 +428,7 @@ function markJourney(item) {
           <section class="zoom-meeting-card">
             <div class="zoom-meeting-main">
               <span class="zoom-camera">Z</span>
-              <div><small>02 · ZOOM MEETING</small><h3>{{ store.activeConsultation.meeting.status === 'not_booked' ? '等待创建视频会议' : '专家远程面诊会议' }}</h3><p>{{ store.activeConsultation.expert }} · {{ store.activeConsultation.hospital }}</p></div>
+              <div><small>02 · ZOOM MEETING</small><h3>{{ store.activeConsultation.meeting.status === 'not_booked' ? '等待创建视频会议' : '专家远程面诊会议' }}</h3><p>{{ store.activeConsultation.expert }} · AGH内部评审</p></div>
               <button v-if="store.activeConsultation.meeting.status === 'not_booked'" class="primary-button" @click="bookZoomMeeting">创建会议并分发</button>
               <span v-else class="zoom-booked">✓ 已预定</span>
             </div>
@@ -466,10 +474,19 @@ function markJourney(item) {
         <SectionCard title="面诊议程" subtitle="会议中共享患者已确认的结构化病案">
           <div class="check-list"><div v-for="item in store.activeConsultation.agenda" :key="item" class="check-item"><span class="check-mark">✓</span>{{ item }}</div></div>
         </SectionCard>
-        <SectionCard title="推荐专家与医院">
-          <button v-for="candidate in store.activeHospitalMatching.candidates.slice(0, 2)" :key="candidate.id" class="candidate-row">
-            <span>{{ candidate.rank }}</span><div><b>{{ candidate.expert }}</b><small>{{ candidate.name }} · {{ candidate.department }}</small></div><strong>{{ candidate.score }}%</strong>
+        <SectionCard title="AGH牵头专家" subtitle="马来团队只负责从公司内部专家中指派">
+          <button v-for="expert in store.state.aghExperts" :key="expert.id" class="candidate-row" :class="{ selected: store.activeReview.expert === expert.name }" :disabled="store.activeReview.status !== 'unassigned'" @click="assignAghExpert(expert)">
+            <span>AGH</span><div><b>{{ expert.name }}</b><small>{{ expert.specialty }} · {{ expert.role }}</small></div><strong>{{ store.activeReview.expert === expert.name ? '牵头' : expert.availability }}</strong>
           </button>
+        </SectionCard>
+        <SectionCard title="接诊团队决策" subtitle="医院与医生必须由专家评审或MDT会审人工确认">
+          <div v-if="store.activeReview.receivingTeamDecision.status === 'confirmed'" class="team-decision-summary">
+            <span>已确认</span>
+            <h3>{{ store.activeReview.receivingTeamDecision.hospital }}</h3>
+            <p>{{ store.activeReview.receivingTeamDecision.department }} · {{ store.activeReview.receivingTeamDecision.doctor }}</p>
+            <small>{{ store.activeReview.receivingTeamDecision.source }} · {{ store.activeReview.receivingTeamDecision.decidedBy }}</small>
+          </div>
+          <div v-else class="empty-state">当前仅准备候选团队资料，不排序、不打分。等待 AGH 专家完成评审或会审后作出选择。</div>
         </SectionCard>
       </div>
     </template>

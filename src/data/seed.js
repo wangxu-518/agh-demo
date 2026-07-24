@@ -33,7 +33,12 @@ const scheduleFor = (startOffset = 6) => ([
 
 const baseReview = (overrides = {}) => ({
   status: 'unassigned', expert: '', specialty: '', summary: '', recommendation: '',
-  hospital: '', meetingAt: '', version: 0, revisions: [], signedAt: null, ...overrides,
+  meetingAt: '', version: 0, revisions: [], signedAt: null, mdtConclusion: '', mdtCompletedAt: null,
+  receivingTeamDecision: {
+    status: 'pending', hospitalId: '', hospital: '', department: '', doctor: '',
+    rationale: '', source: '', decidedAt: null, decidedBy: '',
+  },
+  ...overrides,
 })
 
 const baseTreatment = (overrides = {}) => ({
@@ -67,27 +72,28 @@ const baseConsent = (overrides = {}) => ({
   scopes: ['malaysia'], version: 1, ...overrides,
 })
 
-const hospitalCandidate = (id, name, score, rank, department, expert, overrides = {}) => ({
-  id, name, score, rank, department, expert,
-  recommendation: rank === 1 ? '首选' : '备选',
-  capability: [], matchReasons: [], constraints: [],
+const hospitalCandidate = (id, name, department, doctor, overrides = {}) => ({
+  id, name, department, doctor,
+  capability: [], reviewFactors: [], constraints: [],
   bedStatus: '待确认', responseHours: 24, costMin: 0, costMax: 0,
   internationalService: '双语协调', status: 'candidate', ...overrides,
 })
+
+const aghExperts = [
+  { id: 'AGH-EXP-01', name: '林志远 医学总监', specialty: '肿瘤内科', role: 'AGH牵头专家', availability: '可接收' },
+  { id: 'AGH-EXP-02', name: '郑慧敏 首席医学顾问', specialty: '肿瘤外科', role: 'AGH牵头专家', availability: '可接收' },
+  { id: 'AGH-EXP-03', name: '陈嘉豪 医学顾问', specialty: '放射肿瘤与MDT', role: 'AGH牵头专家', availability: '会审中' },
+]
 
 const cases = {
   'AGH-MY-2026-0018': {
     id: 'AGH-MY-2026-0018',
     review: baseReview({
-      status: 'in_review', expert: '张建国 主任', specialty: '胸外科',
+      status: 'in_review', expert: '林志远 医学总监', specialty: '肿瘤内科',
       summary: '影像提示右上肺原发灶伴纵隔淋巴结转移，需结合分子检测和肺功能评估确定综合治疗路径。',
       meetingAt: dateTime(1, 15), version: 1,
     }),
-    treatment: baseTreatment({
-      status: 'planning', hospital: '广州医科大学附属第一医院', department: '胸外科',
-      doctor: '张建国 主任', admissionDate: dateOnly(6), estimatedCost: '¥180,000–230,000',
-      schedule: scheduleFor(),
-    }),
+    treatment: baseTreatment(),
     billing: baseBilling({
       estimatedMin: 180000, estimatedMax: 230000,
       items: [
@@ -96,33 +102,27 @@ const cases = {
         { id: 'BI-3', name: '药品及其他', amountMin: 13500, amountMax: 23500 },
       ],
     }),
-    travel: baseTravel({
-      status: 'planning', visaStatus: 'approved', flightStatus: 'held',
-      hospitalConfirmed: false, itinerary: [
-        { id: 'FLIGHT', title: '吉隆坡 → 广州', date: dateOnly(5), status: 'held' },
-        { id: 'PICKUP', title: '白云机场专车接送', date: dateOnly(5), status: 'planned' },
-      ],
-    }),
+    travel: baseTravel(),
     followup: baseFollowup(),
     consent: baseConsent({ status: 'active', signedAt: dateTime(-3, 14, 30), scopes: ['malaysia', 'china', 'expert', 'hospital'] }),
     hospitalMatching: {
-      status: 'ready', selectedHospitalId: null, requestedAt: null,
+      status: 'awaiting_expert_decision', selectedHospitalId: null, requestedAt: null,
       candidates: [
-        hospitalCandidate('HOS-GZFAH', '广州医科大学附属第一医院', 94, 1, '胸外科', '张建国 主任', {
+        hospitalCandidate('HOS-GZFAH', '广州医科大学附属第一医院', '胸外科', '张建国 主任', {
           capability: ['国家呼吸医学中心', '胸部肿瘤 MDT', '复杂胸外科手术'],
-          matchReasons: ['与专家评审专科一致', '肺癌手术及纵隔分期经验丰富', '可提供国际患者双语协调'],
+          reviewFactors: ['肺癌手术及纵隔分期经验', '可提供国际患者双语协调', '需结合 EBUS 与肺功能结果判断'],
           constraints: ['需完成 EBUS 与肺功能评估后最终确认手术方案'],
           bedStatus: '预计 3 日内可预留', responseHours: 24, costMin: 180000, costMax: 230000,
         }),
-        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', 88, 2, '胸科', '周敏 教授', {
+        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', '胸科', '周敏 教授', {
           capability: ['肿瘤专科 MDT', '精准治疗', '放化疗综合治疗'],
-          matchReasons: ['适合需要多学科综合治疗的 IIIB 期肺癌', '分子诊断与临床试验资源较强'],
+          reviewFactors: ['IIIB 期肺癌多学科综合治疗', '分子诊断与临床试验资源', '肿瘤专科会审能力'],
           constraints: ['床位和首次会诊响应预计较慢'],
           bedStatus: '床位待排期', responseHours: 48, costMin: 200000, costMax: 260000,
         }),
-        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', 82, 3, '胸外科', '陈力 主任', {
+        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', '胸外科', '陈力 主任', {
           capability: ['综合医院多学科资源', '胸部肿瘤放疗', '国际医疗服务'],
-          matchReasons: ['检查资源齐全', '可快速组织多学科复核'],
+          reviewFactors: ['检查资源完整', '可组织多学科复核', '国际医疗协调条件'],
           constraints: ['主评专家与接诊团队并非同一机构'],
           bedStatus: '有床位', responseHours: 24, costMin: 160000, costMax: 220000,
         }),
@@ -137,15 +137,15 @@ const cases = {
     hospitalMatching: {
       status: 'waiting_review', selectedHospitalId: null, requestedAt: null,
       candidates: [
-        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', 91, 1, '胃外科', '梁寒 教授', {
+        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', '胃外科', '梁寒 教授', {
           capability: ['胃癌规范化诊疗', '腹腔镜胃癌手术', '肿瘤内外科 MDT'],
-          matchReasons: ['胃癌专科病例量较高', '适合完成分期后制定综合方案'],
-          constraints: ['患者尚未完成分期，评分为初步结果'],
+          reviewFactors: ['胃癌专科病例量', '腹腔镜手术经验', '肿瘤内外科会审条件'],
+          constraints: ['患者尚未完成分期，暂不能形成接诊团队决策'],
           bedStatus: '需完成分期后确认', responseHours: 48, costMin: 150000, costMax: 210000,
         }),
-        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', 84, 2, '普通外科', '李国新 主任', {
+        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', '普通外科', '李国新 主任', {
           capability: ['微创胃肠外科', '综合检查能力', '国际医疗中心'],
-          matchReasons: ['微创手术能力匹配', '入院前检查安排较灵活'],
+          reviewFactors: ['微创胃肠外科经验', '综合检查能力', '入院前检查安排条件'],
           constraints: ['需先明确是否存在远处转移'],
           bedStatus: '预计 5 日内', responseHours: 24, costMin: 130000, costMax: 190000,
         }),
@@ -155,7 +155,15 @@ const cases = {
   },
   'AGH-MY-2026-0012': {
     id: 'AGH-MY-2026-0012',
-    review: baseReview({ status: 'completed', expert: '周敏 教授', specialty: '乳腺肿瘤内科', recommendation: '维持内分泌治疗并按期复查。', version: 2, signedAt: dateTime(-18, 16) }),
+    review: baseReview({
+      status: 'completed', expert: '郑慧敏 首席医学顾问', specialty: '肿瘤外科',
+      recommendation: '维持内分泌治疗并按期复查。', version: 2, signedAt: dateTime(-18, 16),
+      receivingTeamDecision: {
+        status: 'confirmed', hospitalId: 'HOS-SYSUCC', hospital: '中山大学肿瘤防治中心',
+        department: '乳腺科', doctor: '周敏 教授', rationale: '乳腺癌专科能力、术后系统治疗经验及患者既往方案连续性更适合本病例。',
+        source: '专家评审', decidedAt: dateTime(-18, 16, 30), decidedBy: '郑慧敏 首席医学顾问',
+      },
+    }),
     treatment: baseTreatment({ status: 'post_operation', hospital: '中山大学肿瘤防治中心', department: '乳腺科', doctor: '周敏 教授', admissionDate: dateOnly(-13), bed: '已出院', estimatedCost: '¥120,000–150,000', schedule: scheduleFor(-13), dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
     billing: baseBilling({ estimatedMin: 120000, estimatedMax: 150000, paid: 145000, patientConfirmed: true, insuranceStatus: 'submitted', payments: [{ id: 'PAY-12-1', amount: 145000, method: 'bank_transfer', paidAt: dateOnly(-14) }] }),
     travel: baseTravel({ status: 'completed', visaStatus: 'approved', flightStatus: 'completed', patientConfirmed: true, hospitalConfirmed: true }),
@@ -164,14 +172,14 @@ const cases = {
     hospitalMatching: {
       status: 'accepted', selectedHospitalId: 'HOS-SYSUCC', requestedAt: dateTime(-18, 17),
       candidates: [
-        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', 96, 1, '乳腺科', '周敏 教授', {
-          recommendation: '已选择', capability: ['乳腺癌专科', '术后辅助治疗', '精准分型'],
-          matchReasons: ['专家与医院团队一致', '适合术后系统治疗和长期管理'],
+        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', '乳腺科', '周敏 教授', {
+          capability: ['乳腺癌专科', '术后辅助治疗', '精准分型'],
+          reviewFactors: ['术后系统治疗经验', '长期管理条件', '患者既往方案连续性'],
           bedStatus: '已承接', responseHours: 12, costMin: 120000, costMax: 150000, status: 'accepted',
         }),
-        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', 85, 2, '乳腺中心', '叶长生 主任', {
+        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', '乳腺中心', '叶长生 主任', {
           capability: ['乳腺外科', '整形修复', '综合治疗'],
-          matchReasons: ['综合医院支持能力较强'], constraints: ['并非原评审团队'],
+          reviewFactors: ['乳腺外科与整形修复', '综合医院支持能力'], constraints: ['需重新核对既往治疗衔接'],
           bedStatus: '可协调', responseHours: 24, costMin: 110000, costMax: 145000,
         }),
       ],
@@ -180,7 +188,15 @@ const cases = {
   },
   'AGH-MY-2026-0007': {
     id: 'AGH-MY-2026-0007',
-    review: baseReview({ status: 'completed', expert: '陈力 主任', specialty: '妇科肿瘤', recommendation: '归国后持续监测 CA-125，异常时复评。', version: 3, signedAt: dateTime(-42, 10) }),
+    review: baseReview({
+      status: 'completed', expert: '林志远 医学总监', specialty: '肿瘤内科',
+      recommendation: '归国后持续监测 CA-125，异常时复评。', version: 3, signedAt: dateTime(-42, 10),
+      receivingTeamDecision: {
+        status: 'confirmed', hospitalId: 'HOS-NFYY', hospital: '南方医科大学南方医院',
+        department: '妇科肿瘤', doctor: '陈力 主任', rationale: '妇科肿瘤综合治疗能力及复发风险管理经验符合本病例需要。',
+        source: 'MDT会审', decidedAt: dateTime(-42, 14), decidedBy: 'AGH MDT会审组',
+      },
+    }),
     treatment: baseTreatment({ status: 'completed', hospital: '南方医科大学南方医院', department: '妇科肿瘤', doctor: '陈力 主任', admissionDate: dateOnly(-38), bed: '已出院', estimatedCost: '¥160,000–190,000', dischargeReady: true, dischargeChecklist: { summary: true, imaging: true, medication: true, followup: true, patientSigned: true } }),
     billing: baseBilling({ estimatedMin: 160000, estimatedMax: 190000, paid: 182000, patientConfirmed: true, insuranceStatus: 'approved' }),
     travel: baseTravel({ status: 'completed', visaStatus: 'approved', flightStatus: 'completed', patientConfirmed: true, hospitalConfirmed: true }),
@@ -189,13 +205,13 @@ const cases = {
     hospitalMatching: {
       status: 'completed', selectedHospitalId: 'HOS-NFYY', requestedAt: dateTime(-42, 15),
       candidates: [
-        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', 92, 1, '妇科肿瘤', '陈力 主任', {
-          recommendation: '已选择', capability: ['妇科肿瘤手术', '复发风险管理', '综合治疗'],
-          matchReasons: ['与主评专家团队一致', '适合卵巢癌综合治疗'],
+        hospitalCandidate('HOS-NFYY', '南方医科大学南方医院', '妇科肿瘤', '陈力 主任', {
+          capability: ['妇科肿瘤手术', '复发风险管理', '综合治疗'],
+          reviewFactors: ['妇科肿瘤综合治疗', '复发风险管理经验', '国际患者协调能力'],
           bedStatus: '已完成治疗', responseHours: 12, costMin: 160000, costMax: 190000, status: 'completed',
         }),
-        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', 89, 2, '妇科', '刘继红 教授', {
-          capability: ['妇科肿瘤专科', '复发卵巢癌 MDT'], matchReasons: ['专科能力匹配'],
+        hospitalCandidate('HOS-SYSUCC', '中山大学肿瘤防治中心', '妇科', '刘继红 教授', {
+          capability: ['妇科肿瘤专科', '复发卵巢癌 MDT'], reviewFactors: ['复发卵巢癌专科会审能力'],
           constraints: ['床位排期较长'], bedStatus: '排期较长', responseHours: 48, costMin: 180000, costMax: 230000,
         }),
       ],
@@ -242,8 +258,8 @@ const baseAiStructuring = (overrides = {}) => ({
 const baseConsultation = (overrides = {}) => ({
   status: 'time_confirmed',
   date: dateTime(2, 15),
-  expert: '张建国 主任',
-  hospital: '广州医科大学附属第一医院',
+  expert: '林志远 医学总监',
+  hospital: 'AGH 医学顾问委员会',
   mode: 'Zoom 视频面诊',
   location: 'AGH 吉隆坡咨询中心 · 3F 远程诊室',
   timeCoordination: {
@@ -279,7 +295,7 @@ const baseConsultation = (overrides = {}) => ({
     actions: [],
     addedToRecordAt: null,
   },
-  agenda: ['病案摘要核对', '治疗路径讨论', '医院与时间确认'],
+  agenda: ['病案摘要核对', '治疗路径讨论', '形成接诊团队决策依据'],
   notes: '',
   options: [
     { id: 'A', title: '赴华进一步分期及手术评估', recommended: true },
@@ -400,13 +416,13 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
   currentCase.consultation = baseConsultation({
     status: caseId === 'AGH-MY-2026-0018' ? 'time_confirmed' : 'not_scheduled',
     ...(caseId === 'AGH-MY-2026-0012' ? {
-      expert: '周敏 教授',
-      hospital: '中山大学肿瘤防治中心',
+      expert: '郑慧敏 首席医学顾问',
+      hospital: 'AGH 医学顾问委员会',
       agenda: ['术后病理核对', '内分泌治疗随访', '复查与康复计划'],
     } : {}),
     ...(caseId === 'AGH-MY-2026-0007' ? {
-      expert: '陈力 主任',
-      hospital: '南方医科大学南方医院',
+      expert: '林志远 医学总监',
+      hospital: 'AGH 医学顾问委员会',
       agenda: ['CA-125趋势核对', '复查影像安排', '异常症状处理'],
     } : {}),
   })
@@ -468,14 +484,15 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 12,
+  schemaVersion: 13,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
+  aghExperts,
   currentUsers: {
     patient: { name: '林秀英', role: '患者', organization: 'AGH Patient Services' },
     malaysia: { name: 'Aisyah Rahman', role: '患者运营负责人', organization: 'AGH Malaysia' },
     china: { name: '资料访问账户', role: '国内诊疗资料查看', organization: 'AGH China Data Center' },
-    expert: { name: '张建国', role: '胸外科主任医师', organization: '广州医科大学附属第一医院' },
+    expert: { name: '林志远', role: 'AGH 医学总监', organization: 'AGH Medical Advisory Board' },
     hospital: { name: '刘敏', role: '国际医疗协调员', organization: '国际医疗中心' },
     health: { name: 'Farah Lim', role: '归国健康管家', organization: 'AGH Health Management' },
   },
@@ -483,7 +500,7 @@ export const seedState = {
     patient: ['view_own_case', 'upload_document', 'confirm_plan', 'confirm_travel', 'send_message'],
     malaysia: ['create_patient', 'edit_patient', 'upload_document', 'submit_case', 'manage_consent', 'export_case', 'verify_document', 'publish_summary', 'assign_expert', 'request_hospital', 'manage_handoff'],
     china: ['view_china_records', 'view_access_audit'],
-    expert: ['view_clinical', 'request_document', 'edit_review', 'sign_review', 'create_mdt'],
+    expert: ['view_clinical', 'request_document', 'edit_review', 'sign_review', 'create_mdt', 'select_receiving_team'],
     hospital: ['view_authorized_case', 'respond_intake', 'manage_schedule', 'manage_billing', 'complete_discharge'],
     health: ['view_discharge_case', 'manage_followup', 'manage_medication', 'manage_alert', 'close_alert'],
   },
@@ -526,7 +543,7 @@ export const seedState = {
   tasks: [
     { id: 'T-101', caseId: 'AGH-MY-2026-0018', title: '补充最新肿瘤标志物报告', from: 'expert', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(1, 18), status: 'pending', priority: 'high', comments: [], attachments: [], slaPausedAt: null },
     { id: 'T-102', caseId: 'AGH-MY-2026-0018', title: '完成人工校对并锁定病案摘要', from: 'malaysia', to: 'malaysia', owner: 'Aisyah', dueAt: dateTime(0, 10), status: 'done', priority: 'normal', comments: [], attachments: [], slaPausedAt: null },
-    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'malaysia', to: 'expert', owner: '张主任', dueAt: dateTime(1, 18), status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
+    { id: 'T-103', caseId: 'AGH-MY-2026-0018', title: '提交专家评审意见', from: 'malaysia', to: 'expert', owner: '林志远 医学总监', dueAt: dateTime(1, 18), status: 'pending', priority: 'urgent', comments: [], attachments: [], slaPausedAt: null },
     { id: 'T-104', caseId: 'AGH-MY-2026-0018', title: '预留胸外科床位', from: 'malaysia', to: 'hospital', owner: '刘协调员', dueAt: dateTime(2, 18), status: 'blocked', priority: 'normal', comments: [], attachments: [], slaPausedAt: dateTime(0, 11) },
   ],
   alerts: [
@@ -542,6 +559,6 @@ export const seedState = {
     { id: 2, caseId: 'AGH-MY-2026-0018', at: dateTime(-4, 10, 5), actor: 'Aisyah', system: 'malaysia', title: '建立患者档案', detail: '生成 Case AGH-MY-2026-0018' },
     { id: 3, caseId: 'AGH-MY-2026-0018', at: dateTime(-3, 14, 30), actor: '患者', system: 'patient', title: '签署数据授权', detail: '授权中马团队按角色访问资料' },
     { id: 4, caseId: 'AGH-MY-2026-0018', at: dateTime(-2, 11, 20), actor: 'Aisyah', system: 'malaysia', title: '完成病历整理', detail: 'AI形成草稿，运营人员完成人工校对 v1' },
-    { id: 5, caseId: 'AGH-MY-2026-0018', at: dateTime(0, 10, 32), actor: '系统', system: 'expert', title: '进入专家评审', detail: '已分配张建国主任' },
+    { id: 5, caseId: 'AGH-MY-2026-0018', at: dateTime(0, 10, 32), actor: 'Aisyah', system: 'malaysia', title: '指派 AGH 牵头专家', detail: '林志远 医学总监 · AGH内部专家' },
   ],
 }

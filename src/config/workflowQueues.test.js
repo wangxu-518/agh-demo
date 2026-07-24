@@ -27,9 +27,11 @@ describe('workflow patient queues', () => {
       activeCaseId: 'AGH-MY-2026-0021',
     }).rows
     const wang = rows.find((row) => row.caseId === 'AGH-MY-2026-0012')
+    const huang = rows.find((row) => row.caseId === 'AGH-MY-2026-0007')
     const lin = rows.find((row) => row.caseId === 'AGH-MY-2026-0018')
     expect(wang.primaryValue).toContain('乳腺科')
-    expect(lin.primaryValue).toContain('胸外科')
+    expect(huang.primaryValue).toContain('妇科肿瘤')
+    expect(lin).toBeUndefined()
   })
 
   it('keeps the main demo case clinically consistent across the workflow', () => {

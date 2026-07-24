@@ -77,7 +77,7 @@ function openZoomMeeting() {
         <p>进入会议前将再次提示录制与AI转写说明，您同意后才会开始录制。</p>
         <button @click="openZoomMeeting">进入 Zoom 面诊</button>
       </section>
-      <section class="patient-plan-status"><span>{{ store.activeReview.status === 'completed' ? '专家意见已完成' : '专家评审中' }}</span><h2>{{ store.activePatient.diagnosis }}</h2><p>评审专家：{{ store.activeReview.expert || '待分配' }}</p><div><i></i><b>预计 {{ store.activeReview.meetingAt || '待安排' }} 完成</b></div></section>
+      <section class="patient-plan-status"><span>{{ store.activeReview.status === 'completed' ? '专家意见已完成' : '专家评审中' }}</span><h2>{{ store.activePatient.diagnosis }}</h2><p>AGH牵头专家：{{ store.activeReview.expert || '待指派' }}</p><div><i></i><b>预计 {{ store.activeReview.meetingAt || '待安排' }} 完成</b></div></section>
       <section class="patient-mobile-section">
         <div class="section-heading"><h2>推荐治疗路径</h2><button>专家建议</button></div>
         <div class="patient-path patient-plan-path">
@@ -100,7 +100,7 @@ function openZoomMeeting() {
           </div>
         </div>
       </section>
-      <section class="patient-mobile-section"><h2>医院方案</h2><button class="patient-hospital-card" @click="router.push('/patient/detail/hospital-plan?type=plan')"><span>H</span><div><b>{{ store.activeTreatment.hospital || '待匹配医院' }}</b><small>{{ store.activeTreatment.department || '待确认科室' }} · {{ store.activeTreatment.doctor || '待确认医生' }}</small><em>费用预估 {{ store.activeTreatment.estimatedCost }}</em></div><i>›</i></button></section>
+      <section class="patient-mobile-section"><h2>医院方案</h2><button class="patient-hospital-card" @click="router.push('/patient/detail/hospital-plan?type=plan')"><span>H</span><div><b>{{ store.activeTreatment.hospital || '待专家确认医院' }}</b><small>{{ store.activeTreatment.department || '待确认科室' }} · {{ store.activeTreatment.doctor || '待确认医生' }}</small><em>费用预估 {{ store.activeTreatment.estimatedCost }}</em></div><i>›</i></button></section>
       <button class="patient-primary-action" @click="act('confirmPlan')">确认已阅读方案</button>
     </template>
 

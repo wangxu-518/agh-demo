@@ -17,7 +17,7 @@ const router = useRouter()
     <section class="patient-home-section">
       <small>WHY AGH</small><h2>为什么选择我们</h2>
       <div class="patient-reason-grid">
-        <article><span>01</span><b>专业医疗匹配</b><p>根据病种、分期和需求协调适合的专家与医院，而不是简单转诊。</p></article>
+        <article><span>01</span><b>专业医疗决策</b><p>由AGH专家评审或会审后确认适合的医院与接诊医生，而不是系统自动匹配。</p></article>
         <article><span>02</span><b>跨境全程协调</b><p>从资料整理、远程评审到签证、接送、入院和归国随访均有专人负责。</p></article>
         <article><span>03</span><b>双语信息透明</b><p>重要医疗资料、治疗方案、费用和出院安排以患者可理解的方式呈现。</p></article>
         <article><span>04</span><b>归国持续管理</b><p>治疗结束后继续提供复查、用药、康复、预警和专家复评服务。</p></article>

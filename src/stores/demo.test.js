@@ -42,17 +42,26 @@ describe('case-isolated workflow store', () => {
     expect(store.state.tasks.some((task) => task.id === `T-MY-${store.activePatient.caseId}`)).toBe(true)
   })
 
-  it('requires a completed expert review before requesting a hospital', async () => {
+  it('requires expert review and a human receiving-team decision before requesting a hospital', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
     expect(store.requestHospital({ hospitalId: 'HOS-GZFAH' }).ok).toBe(false)
 
     store.finishReview({ recommendation: '建议医院承接评估' })
-    const result = store.requestHospital({ hospitalId: 'HOS-GZFAH' })
+    expect(store.requestHospital({ hospitalId: 'HOS-GZFAH' }).code).toBe('EXPERT_TEAM_DECISION_REQUIRED')
+    expect(store.selectReceivingTeam({ hospitalId: 'HOS-GZFAH' }).ok).toBe(false)
+    expect(store.selectReceivingTeam({
+      hospitalId: 'HOS-GZFAH',
+      rationale: '胸部肿瘤手术经验与纵隔分期能力符合当前治疗路径。',
+      actor: '林志远 医学总监',
+    }).ok).toBe(true)
+    expect(store.requestHospital({ hospitalId: 'HOS-SYSUCC' }).code).toBe('EXPERT_TEAM_DECISION_MISMATCH')
+    const result = store.requestHospital()
 
     expect(result.ok).toBe(true)
     expect(store.activeTreatment.status).toBe('requested')
     expect(store.activeTreatment.hospitalId).toBe('HOS-GZFAH')
+    expect(store.activeTreatment.doctor).toBe('张建国 主任')
     expect(store.activeHospitalMatching.selectedHospitalId).toBe('HOS-GZFAH')
     expect(store.state.tasks.some((task) => task.id === `T-HOS-${store.activePatient.caseId}`)).toBe(true)
   })
@@ -61,7 +70,8 @@ describe('case-isolated workflow store', () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
     store.finishReview({ recommendation: '建议承接' })
-    store.requestHospital({ hospitalId: 'HOS-GZFAH' })
+    store.selectReceivingTeam({ hospitalId: 'HOS-GZFAH', rationale: '适合当前病例治疗路径。' })
+    store.requestHospital()
     store.acceptHospital({ bed: '8F-12', admissionDate: '2026-06-28' })
 
     expect(store.completeHandoff().ok).toBe(false)
@@ -324,16 +334,19 @@ describe('case-isolated workflow store', () => {
   it('blocks role-forbidden business actions when a system context is provided', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
+    expect(store.state.aghExperts).toHaveLength(3)
 
-    const forbidden = store.performAction('assignExpert', { __system: 'patient', expert: '张建国 主任' })
+    const forbidden = store.performAction('assignExpert', { __system: 'patient', expert: '林志远 医学总监' })
     expect(forbidden.ok).toBe(false)
     expect(forbidden.code).toBe('FORBIDDEN')
 
-    const chinaForbidden = store.performAction('assignExpert', { __system: 'china', expert: '张建国 主任' })
+    const chinaForbidden = store.performAction('assignExpert', { __system: 'china', expert: '林志远 医学总监' })
     expect(chinaForbidden.ok).toBe(false)
 
-    const allowed = store.performAction('assignExpert', { __system: 'malaysia', expert: '张建国 主任' })
+    expect(store.performAction('assignExpert', { __system: 'malaysia', expert: '张建国 主任' }).code).toBe('AGH_EXPERT_REQUIRED')
+    const allowed = store.performAction('assignExpert', { __system: 'malaysia', expert: '林志远 医学总监' })
     expect(allowed.ok).toBe(true)
+    expect(store.activeReview.expert).toBe('林志远 医学总监')
   })
 
   it('keeps seed task due dates current for demo review', async () => {
@@ -346,19 +359,39 @@ describe('case-isolated workflow store', () => {
     expect(openDueTimes.every((time) => time >= Date.now() - 60000)).toBe(true)
   })
 
-  it('keeps hospital candidates and selections bound to the selected case', async () => {
+  it('keeps receiving-team candidates and expert decisions bound to the selected case', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
     const mainCandidates = store.activeHospitalMatching.candidates.map((item) => item.id)
     const otherSelected = store.state.cases['AGH-MY-2026-0012'].hospitalMatching.selectedHospitalId
 
     expect(mainCandidates).toContain('HOS-GZFAH')
+    expect(store.activeHospitalMatching.candidates[0]).not.toHaveProperty('score')
+    expect(store.activeHospitalMatching.candidates[0]).not.toHaveProperty('rank')
     expect(store.requestHospital({ hospitalId: 'UNKNOWN-HOSPITAL' }).ok).toBe(false)
     store.finishReview({ recommendation: '建议胸外科医院承接' })
-    expect(store.requestHospital({ hospitalId: 'HOS-GZFAH' }).ok).toBe(true)
+    expect(store.selectReceivingTeam({
+      hospitalId: 'HOS-GZFAH',
+      rationale: '胸部肿瘤手术与纵隔分期经验符合病例需要。',
+    }).ok).toBe(true)
+    expect(store.requestHospital().ok).toBe(true)
 
     expect(store.activeHospitalMatching.selectedHospitalId).toBe('HOS-GZFAH')
+    expect(store.activeReview.receivingTeamDecision.doctor).toBe('张建国 主任')
     expect(store.state.cases['AGH-MY-2026-0012'].hospitalMatching.selectedHospitalId).toBe(otherSelected)
     expect(store.state.cases['AGH-MY-2026-0021'].hospitalMatching.candidates.map((item) => item.id)).not.toEqual(mainCandidates)
+  })
+
+  it('returns a rejected hospital request to AGH experts for a new decision', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.finishReview({ recommendation: '建议赴华治疗' })
+    store.selectReceivingTeam({ hospitalId: 'HOS-GZFAH', rationale: '符合当前胸部肿瘤治疗路径。' })
+    store.requestHospital()
+
+    expect(store.rejectHospital({ reason: '当前床位无法满足治疗时点' }).ok).toBe(true)
+    expect(store.activeHospitalMatching.status).toBe('expert_reconsideration')
+    expect(store.activeReview.receivingTeamDecision.status).toBe('reconsideration_required')
+    expect(store.requestHospital().code).toBe('EXPERT_TEAM_DECISION_REQUIRED')
   })
 })

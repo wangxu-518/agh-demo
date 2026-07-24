@@ -49,9 +49,9 @@ describe('business page schemas', () => {
     expect(hospitalQueue.rows.every((row) => seedState.cases[row.id])).toBe(true)
   })
 
-  it('derives hospital matching metrics from case-bound candidate sets', () => {
+  it('derives receiving-team decision metrics from case-bound candidate sets', () => {
     const hospitals = schemaFor('china', 'hospitals', seedState)
-    expect(hospitals.metrics[0]).toEqual(['当前患者候选', '3'])
+    expect(hospitals.metrics[0]).toEqual(['当前患者候选团队', '3'])
     expect(seedState.cases['AGH-MY-2026-0018'].hospitalMatching.candidates[0].name).not.toBe(
       seedState.cases['AGH-MY-2026-0021'].hospitalMatching.candidates[0].name,
     )

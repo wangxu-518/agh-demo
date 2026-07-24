@@ -77,10 +77,10 @@ function malaysiaRows(page, state) {
     if (page === 'resources') {
       const status = consultationLabels[currentCase.consultation.status] || '待协调'
       return baseRow(state, patient, status, {
-        primaryLabel: '面诊专家',
+        primaryLabel: 'AGH牵头专家',
         primaryValue: currentCase.consultation.expert || currentCase.review.expert || '待安排',
-        secondaryLabel: '候选医院',
-        secondaryValue: String(currentCase.hospitalMatching.candidates.length),
+        secondaryLabel: '接诊团队决策',
+        secondaryValue: currentCase.review.receivingTeamDecision?.status === 'confirmed' ? '专家已确认' : '待评审/会审',
         nextAction: currentCase.consultation.status === 'not_scheduled' ? '协调患者与专家时间' : '查看面诊和会议资料',
       })
     }
@@ -123,7 +123,7 @@ function expertRows(page, state) {
       return baseRow(state, patient, status, {
         primaryLabel: page === 'mdt' ? '会议时间' : '资料完整度',
         primaryValue: page === 'mdt' ? (review.meetingAt || '待安排') : `${patient.completeness}%`,
-        secondaryLabel: page === 'mdt' ? '牵头专家' : '意见版本',
+        secondaryLabel: page === 'mdt' ? 'AGH牵头专家' : '意见版本',
         secondaryValue: review.expert || (page === 'mdt' ? '待确定' : `v${review.version}`),
         nextAction: page === 'mdt' ? '查看议程、共享病案与会诊结论' : '查看结构化病案并形成专家意见',
       })

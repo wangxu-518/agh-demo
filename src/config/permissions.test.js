@@ -28,6 +28,8 @@ describe('role permissions', () => {
     expect(canPerformAction(seedState.permissions, 'malaysia', 'assignExpert')).toBe(true)
     expect(canPerformAction(seedState.permissions, 'china', 'assignExpert')).toBe(false)
     expect(canPerformAction(seedState.permissions, 'patient', 'assignExpert')).toBe(false)
+    expect(canPerformAction(seedState.permissions, 'expert', 'selectReceivingTeam')).toBe(true)
+    expect(canPerformAction(seedState.permissions, 'malaysia', 'selectReceivingTeam')).toBe(false)
     expect(canPerformAction(seedState.permissions, 'hospital', 'recordPayment')).toBe(true)
     expect(canPerformAction(seedState.permissions, 'expert', 'recordPayment')).toBe(false)
   })

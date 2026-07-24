@@ -153,7 +153,7 @@ function exportRecord() {
           <SectionCard title="结构化临床摘要">
             <div class="info-list">
               <div class="info-row"><span>诊断</span><b>{{ patient.diagnosis }}</b></div>
-              <div class="info-row"><span>评审专家</span><b>{{ currentCase.review.expert || '待分配' }}</b></div>
+              <div class="info-row"><span>AGH牵头专家</span><b>{{ currentCase.review.expert || '待指派' }}</b></div>
               <div class="info-row"><span>评审状态</span><b>{{ currentCase.review.status }}</b></div>
               <div class="info-row"><span>意见版本</span><b>v{{ currentCase.review.version }}</b></div>
             </div>
@@ -174,7 +174,7 @@ function exportRecord() {
 
       <template v-else-if="source === 'mdt'">
         <div class="grid-2 detail-grid">
-          <SectionCard title="MDT 会议信息"><div class="info-list"><div class="info-row"><span>患者</span><b>{{ patient.name }} · {{ patient.caseId }}</b></div><div class="info-row"><span>会议时间</span><b>{{ currentCase.review.meetingAt || '待安排' }}</b></div><div class="info-row"><span>牵头专家</span><b>{{ currentCase.review.expert || '待分配' }}</b></div><div class="info-row"><span>参会科室</span><b>{{ currentCase.review.specialty || '待确定' }} / 肿瘤内科 / 放疗科</b></div></div></SectionCard>
+          <SectionCard title="MDT 会议信息"><div class="info-list"><div class="info-row"><span>患者</span><b>{{ patient.name }} · {{ patient.caseId }}</b></div><div class="info-row"><span>会议时间</span><b>{{ currentCase.review.meetingAt || '待安排' }}</b></div><div class="info-row"><span>AGH牵头专家</span><b>{{ currentCase.review.expert || '待指派' }}</b></div><div class="info-row"><span>参会方向</span><b>{{ currentCase.review.specialty || '待确定' }} / 肿瘤内科 / 放射肿瘤</b></div></div></SectionCard>
           <SectionCard title="讨论依据"><div class="notice">{{ currentCase.review.summary || patient.diagnosis }}</div><div class="info-list" style="margin-top:12px"><div class="info-row"><span>医疗文件</span><b>{{ store.state.documents.filter(item => item.caseId === caseId).length }} 份</b></div><div class="info-row"><span>专家意见版本</span><b>v{{ currentCase.review.version }}</b></div></div></SectionCard>
         </div>
         <SectionCard title="MDT 会议记录与结论"><textarea v-model="mdtDraft" class="review-editor" placeholder="记录各学科意见、争议点和最终结论"></textarea><div class="detail-actions"><button class="primary-button" @click="saveMdt">确认 MDT 结论</button></div></SectionCard>

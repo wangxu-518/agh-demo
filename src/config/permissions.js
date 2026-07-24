@@ -63,6 +63,7 @@ export const actionPermissions = {
   completeHandoff: 'manage_handoff',
   claimReview: 'view_clinical',
   finishReview: 'sign_review',
+  selectReceivingTeam: 'select_receiving_team',
   requestMoreDocuments: 'request_document',
   rejectReview: 'edit_review',
   finishMdt: 'create_mdt',

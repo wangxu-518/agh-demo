@@ -4,7 +4,7 @@ import { seedState } from '../data/seed'
 import { createBreastCancerMonthlyPlan, createGeneralCancerMonthlyPlan } from '../data/breastCancerCarePlan'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v12'
+const KEY = 'agh-demo-v13'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -25,11 +25,12 @@ export const actionDefinitions = {
   submitCase: { system: 'malaysia', title: '完成资料初筛' },
   acceptChinaCase: { system: 'china', title: '接收跨境病例' },
   publishSummary: { system: 'malaysia', title: '确认 AI 病案摘要' },
-  assignExpert: { system: 'malaysia', title: '分配评审专家' },
+  assignExpert: { system: 'malaysia', title: '指派 AGH 牵头专家' },
   requestHospital: { system: 'malaysia', title: '发送医院承接申请' },
   completeHandoff: { system: 'malaysia', title: '完成赴华交接' },
   claimReview: { system: 'expert', title: '专家接收病例' },
   finishReview: { system: 'expert', title: '提交专家评审意见' },
+  selectReceivingTeam: { system: 'expert', title: '确认医院与接诊医生' },
   requestMoreDocuments: { system: 'expert', title: '要求补充资料' },
   rejectReview: { system: 'expert', title: '拒绝评审任务' },
   finishMdt: { system: 'expert', title: '完成 MDT 会诊' },
@@ -238,16 +239,18 @@ export const useDemoStore = defineStore('demo', () => {
   function assignExpert(payload = {}, caseId = state.value.activeCaseId) {
     const patient = patientByCase(caseId)
     const currentCase = caseById(caseId)
-    if (!['review', 'intake'].includes(patient.phase)) return result(false, '当前阶段不能分配专家')
-    if (!payload.expert) return result(false, '请选择评审专家')
+    if (!['review', 'intake'].includes(patient.phase)) return result(false, '当前阶段不能指派牵头专家')
+    if (!payload.expert) return result(false, '请选择 AGH 牵头专家')
+    const aghExpert = state.value.aghExperts.find((expert) => expert.name === payload.expert || expert.id === payload.expert)
+    if (!aghExpert) return result(false, '牵头专家必须从 AGH 内部专家中选择', 'AGH_EXPERT_REQUIRED')
     currentCase.review.status = 'assigned'
-    currentCase.review.expert = payload.expert
-    currentCase.review.specialty = payload.specialty || '肿瘤专科'
+    currentCase.review.expert = aghExpert.name
+    currentCase.review.specialty = payload.specialty || aghExpert.specialty
     currentCase.review.meetingAt = payload.meetingAt || ''
-    ensureTask(`T-EXP-${caseId}`, { caseId, title: `完成 ${patient.name} 专家评审`, from: 'malaysia', to: 'expert', owner: payload.expert, dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
-    addEvent('malaysia', payload.actor || 'Aisyah', '分配评审专家', `${payload.expert} · ${currentCase.review.specialty}`, caseId)
+    ensureTask(`T-EXP-${caseId}`, { caseId, title: `完成 ${patient.name} 专家评审`, from: 'malaysia', to: 'expert', owner: aghExpert.name, dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
+    addEvent('malaysia', payload.actor || 'Aisyah', '指派 AGH 牵头专家', `${aghExpert.name} · ${currentCase.review.specialty}`, caseId)
     notify('expert', `${patient.name} 的病例待评审`, caseId)
-    return result(true, `病例已分配给 ${payload.expert}`)
+    return result(true, `病例已指派给 ${aghExpert.name}`)
   }
 
   function claimReview(payload = {}, caseId = state.value.activeCaseId) {
@@ -266,7 +269,6 @@ export const useDemoStore = defineStore('demo', () => {
     currentCase.review.revisions.push({ version: currentCase.review.version || 1, recommendation: currentCase.review.recommendation, savedAt: nowIso() })
     currentCase.review.status = 'completed'
     currentCase.review.recommendation = payload.recommendation.trim()
-    currentCase.review.hospital = payload.hospital || currentCase.treatment.hospital
     currentCase.review.version = (currentCase.review.version || 0) + 1
     currentCase.review.signedAt = nowIso()
     setPhase(patient, 'planning')
@@ -275,7 +277,8 @@ export const useDemoStore = defineStore('demo', () => {
     if (legacyTask) legacyTask.status = 'done'
     addEvent('expert', payload.actor || currentCase.review.expert, '完成专家评审', currentCase.review.recommendation, caseId)
     notify('malaysia', `${patient.name} 的专家意见已签署`, caseId)
-    return result(true, '专家评审已签署，马来运营可申请医院承接')
+    currentCase.hospitalMatching.status = 'awaiting_expert_decision'
+    return result(true, '专家评审已签署，请继续确认医院与接诊医生')
   }
 
   function requestMoreDocuments(payload = {}, caseId = state.value.activeCaseId) {
@@ -296,13 +299,53 @@ export const useDemoStore = defineStore('demo', () => {
     return result(true, '评审任务已退回马来运营')
   }
 
+  function selectReceivingTeam(payload = {}, caseId = state.value.activeCaseId) {
+    const patient = patientByCase(caseId)
+    const currentCase = caseById(caseId)
+    const reviewCompleted = currentCase.review.status === 'completed'
+    const mdtCompleted = Boolean(currentCase.review.mdtCompletedAt)
+    if (!reviewCompleted && !mdtCompleted) {
+      return result(false, '请先完成专家评审或 MDT 会审，再决定接诊团队', 'REVIEW_DECISION_REQUIRED')
+    }
+    if (!payload.hospitalId) return result(false, '请选择医院及接诊医生')
+    if (!payload.rationale?.trim()) return result(false, '请填写选择该接诊团队的专业依据')
+    const candidate = currentCase.hospitalMatching?.candidates.find((item) => item.id === payload.hospitalId)
+    if (!candidate) return result(false, '所选接诊团队不属于当前病例候选范围')
+    if (candidate.status === 'rejected') return result(false, '该接诊团队已拒绝承接，请选择其他团队')
+    currentCase.review.receivingTeamDecision = {
+      status: 'confirmed',
+      hospitalId: candidate.id,
+      hospital: candidate.name,
+      department: candidate.department,
+      doctor: candidate.doctor,
+      rationale: payload.rationale.trim(),
+      source: payload.source || (mdtCompleted ? 'MDT会审' : '专家评审'),
+      decidedAt: nowIso(),
+      decidedBy: payload.actor || currentCase.review.expert || 'AGH专家组',
+    }
+    currentCase.hospitalMatching.status = 'decision_confirmed'
+    currentCase.hospitalMatching.selectedHospitalId = candidate.id
+    currentCase.hospitalMatching.candidates.forEach((item) => {
+      if (item.status !== 'rejected') item.status = item.id === candidate.id ? 'expert_selected' : 'candidate'
+    })
+    addEvent('expert', payload.actor || currentCase.review.expert, '确认接诊团队', `${candidate.name} · ${candidate.department} · ${candidate.doctor} · ${payload.rationale.trim()}`, caseId)
+    notify('malaysia', `${patient.name} 的接诊团队已由专家确认`, caseId)
+    return result(true, `已确认 ${candidate.name} · ${candidate.doctor}`)
+  }
+
   function requestHospital(payload = {}, caseId = state.value.activeCaseId) {
     const patient = patientByCase(caseId)
     const currentCase = caseById(caseId)
     if (currentCase.review.status !== 'completed') return result(false, '专家评审尚未完成，不能申请医院')
-    if (!payload.hospitalId) return result(false, '请从该患者候选医院中选择一家医院')
-    const candidate = currentCase.hospitalMatching?.candidates.find((item) => item.id === payload.hospitalId)
-    if (!candidate) return result(false, '所选医院不属于当前患者的候选医院')
+    const decision = currentCase.review.receivingTeamDecision
+    if (decision?.status !== 'confirmed') {
+      return result(false, '接诊医院和医生尚未由专家评审或 MDT 会审确认', 'EXPERT_TEAM_DECISION_REQUIRED')
+    }
+    if (payload.hospitalId && payload.hospitalId !== decision.hospitalId) {
+      return result(false, '马来运营只能向专家已确认的接诊团队发送申请', 'EXPERT_TEAM_DECISION_MISMATCH')
+    }
+    const candidate = currentCase.hospitalMatching?.candidates.find((item) => item.id === decision.hospitalId)
+    if (!candidate) return result(false, '专家确认的接诊团队不存在')
     if (candidate.status === 'unavailable') return result(false, '该医院当前不可承接')
     if (currentCase.hospitalMatching.selectedHospitalId && currentCase.treatment.status === 'requested') {
       return result(false, '当前病例已有承接申请，请先等待医院响应或撤回申请')
@@ -311,7 +354,7 @@ export const useDemoStore = defineStore('demo', () => {
     currentCase.treatment.hospitalId = candidate.id
     currentCase.treatment.hospital = candidate.name
     currentCase.treatment.department = candidate.department
-    currentCase.treatment.doctor = candidate.expert || currentCase.review.expert
+    currentCase.treatment.doctor = candidate.doctor
     currentCase.treatment.admissionDate = payload.admissionDate || ''
     currentCase.treatment.estimatedCost = `¥${Math.round(candidate.costMin / 10000)}–${Math.round(candidate.costMax / 10000)}万`
     currentCase.hospitalMatching.status = 'requested'
@@ -321,7 +364,7 @@ export const useDemoStore = defineStore('demo', () => {
       item.status = item.id === candidate.id ? 'requested' : 'candidate'
     })
     ensureTask(`T-HOS-${caseId}`, { caseId, title: `确认 ${patient.name} 国际患者承接申请`, from: 'malaysia', to: 'hospital', owner: payload.owner || '国际医疗中心', dueAt: payload.dueAt || nowIso(), status: 'pending', priority: payload.priority || 'high' })
-    addEvent('malaysia', payload.actor || 'Aisyah', '发送医院承接申请', `${candidate.name} · ${candidate.department} · 匹配分 ${candidate.score}`, caseId)
+    addEvent('malaysia', payload.actor || 'Aisyah', '发送专家确认的医院承接申请', `${candidate.name} · ${candidate.department} · ${candidate.doctor}`, caseId)
     notify('hospital', `${patient.name} 的承接申请待处理`, caseId)
     return result(true, `${patient.name} 的承接申请已发送 ${candidate.name}`)
   }
@@ -353,16 +396,22 @@ export const useDemoStore = defineStore('demo', () => {
     if (!payload.reason?.trim()) return result(false, '请填写拒绝原因')
     currentCase.treatment.status = 'rejected'
     currentCase.treatment.rejectionReason = payload.reason.trim()
-    currentCase.hospitalMatching.status = 'ready'
+    currentCase.hospitalMatching.status = 'expert_reconsideration'
     const selectedCandidate = currentCase.hospitalMatching.candidates.find((item) => item.id === currentCase.hospitalMatching.selectedHospitalId)
     if (selectedCandidate) {
       selectedCandidate.status = 'rejected'
       selectedCandidate.rejectionReason = payload.reason.trim()
     }
     currentCase.hospitalMatching.selectedHospitalId = null
+    currentCase.review.receivingTeamDecision = {
+      ...currentCase.review.receivingTeamDecision,
+      status: 'reconsideration_required',
+      decidedAt: null,
+    }
     addEvent('hospital', payload.actor || '刘敏', '医院拒绝承接', payload.reason.trim(), caseId)
-    notify('malaysia', '医院无法承接，请重新匹配', caseId)
-    return result(true, '承接申请已退回马来运营')
+    notify('expert', '医院无法承接，请重新确认接诊团队', caseId)
+    notify('malaysia', '医院无法承接，已退回专家重新决策', caseId)
+    return result(true, '承接申请已退回专家重新确认接诊团队')
   }
 
   function recordPayment(payload = {}, caseId = state.value.activeCaseId) {
@@ -627,7 +676,7 @@ export const useDemoStore = defineStore('demo', () => {
       return result(false, '当前角色没有执行该操作的权限', 'FORBIDDEN')
     }
     const handlers = {
-      submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, requestMoreDocuments,
+      submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, selectReceivingTeam, requestMoreDocuments,
       rejectReview, requestHospital, acceptHospital, rejectHospital, recordPayment, recordRefund,
       confirmSchedule, completeHandoff, advanceTreatment, completeDischarge, generateFollowup,
       escalateAlert, closeAlert, uploadDocument, confirmPlan, confirmTravel, revokeConsent, createPatient,
@@ -664,8 +713,9 @@ export const useDemoStore = defineStore('demo', () => {
       if (!payload.conclusion?.trim()) return result(false, '请填写 MDT 结论')
       currentCase.review.mdtConclusion = payload.conclusion.trim()
       currentCase.review.mdtCompletedAt = nowIso()
+      currentCase.hospitalMatching.status = 'awaiting_expert_decision'
       addEvent('expert', payload.actor || 'MDT秘书', '完成 MDT 会诊', payload.conclusion.trim(), caseId)
-      return result(true, 'MDT 结论已确认并同步')
+      return result(true, 'MDT 结论已确认，请继续确认医院与接诊医生')
     }
     if (action === 'confirmMedication') {
       const alert = state.value.alerts.find((item) => item.caseId === caseId && item.type === '用药提醒' && item.status === 'open')
@@ -881,7 +931,7 @@ export const useDemoStore = defineStore('demo', () => {
     }
     consultation.transcript = {
       generatedAt: nowIso(),
-      text: payload.transcript || '张建国主任：现有病理和 PET-CT 支持肺腺癌 IIIB 期判断。建议赴华后补充肺功能、EBUS 及分子检测，再由胸外科、肿瘤内科和放疗科联合确认综合治疗路径。患者林秀英：理解检查目的，愿意赴华进一步评估。Aisyah：将协调医院档期、费用预估和赴华行程。',
+      text: payload.transcript || '林志远医学总监：现有病理和 PET-CT 支持肺腺癌 IIIB 期判断。建议赴华后补充肺功能、EBUS 及分子检测，再由AGH专家评审或MDT会审确认治疗路径和接诊团队。患者林秀英：理解检查目的，愿意赴华进一步评估。Aisyah：将在专家确认医院与医生后协调承接申请、费用预估和赴华行程。',
     }
     consultation.aiMinutes.status = 'ready_for_review'
     addEvent('malaysia', payload.actor || 'Zoom 回调', 'Zoom 面诊转写完成', consultation.recording.transcriptSource, caseId)
@@ -1079,7 +1129,7 @@ export const useDemoStore = defineStore('demo', () => {
     activeConsultation, activeHealthPlan, activeHomeVisits, activeCommunications, activeChinaRecords,
     activeTasks, activeDocuments, activeEvents, progress,
     toggleLanguage, setActiveCase, completeTask, startTask, addTaskComment, reassignTask, pauseTaskSla,
-    submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, requestMoreDocuments,
+    submitCase, acceptChinaCase, assignExpert, claimReview, finishReview, selectReceivingTeam, requestMoreDocuments,
     rejectReview, requestHospital, acceptHospital, rejectHospital, recordPayment, recordRefund,
     confirmSchedule, completeHandoff, advanceTreatment, completeDischarge, generateFollowup,
     escalateAlert, closeAlert, uploadDocument, saveCaseNote, addAttachment, updatePatient,
