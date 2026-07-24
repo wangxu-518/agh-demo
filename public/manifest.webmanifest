@@ -1,0 +1,50 @@
+{
+  "id": "/care",
+  "name": "AGH Care 患者服务",
+  "short_name": "AGH Care",
+  "description": "AGH跨境肿瘤治疗与归国健康管理患者服务端",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "/care?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7fb",
+  "theme_color": "#1f5fd6",
+  "categories": ["medical", "health", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "医疗资料",
+      "short_name": "资料",
+      "url": "/patient/records",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "归国随访",
+      "short_name": "随访",
+      "url": "/patient/followup",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { systems } from '../config/systems'
 import { canAccessPage } from '../config/permissions'
 import { useAuthStore } from '../stores/auth'
 import { useDemoStore } from '../stores/demo'
+import PwaInstallPrompt from './PwaInstallPrompt.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,9 +37,10 @@ function logout() {
     </aside>
     <main class="system-main">
       <header class="system-topbar">
-        <div v-if="isPatient" class="patient-top-brand"><span>{{ config.icon }}</span><b>{{ config.name }}</b></div>
+        <div v-if="isPatient" class="patient-top-brand"><img src="/icons/icon-192.png" alt="" /><div><b>AGH Care</b><small>Patient Service</small></div></div>
         <div v-else><b>{{ route.meta.title || config.short }}</b><small>{{ config.name }} · 演示环境</small></div>
         <div class="top-actions">
+          <PwaInstallPrompt v-if="isPatient" variant="icon" />
           <button class="ghost-button" @click="demo.toggleLanguage()">{{ demo.state.language === 'zh' ? 'EN' : '中文' }}</button>
           <button v-if="isPatient" class="ghost-button" @click="logout">退出</button>
           <div v-else class="avatar">{{ config.icon }}</div>

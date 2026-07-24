@@ -1,5 +1,5 @@
 {
-  "version": "3.7.0",
+  "version": "3.8.0",
   "updated": "2026-07-24",
   "scope_governance": {
     "commercial_source": "参考资料/跨境肿瘤医疗协同平台建设方案.pptx",
@@ -24,6 +24,19 @@
     ]
   },
   "features": [
+    {
+      "id": "PAT-006",
+      "module": "patient",
+      "title": "AGH Care可安装PWA患者服务端",
+      "behavior": "将现有患者移动端包装为可安装PWA，提供AGH Care品牌入口、患者工作台、Web App Manifest、Service Worker离线兜底、iOS添加主屏幕引导和桌面启动体验",
+      "verification": "生产环境HTTPS可访问；manifest与180/192/512图标有效；Safari可添加到主屏幕；安装后从桌面独立窗口启动并进入患者服务；离线时显示安全兜底页；桌面与390px手机无横向溢出",
+      "status": "in_progress",
+      "phase": "Demo改版",
+      "quote_basis": "客户希望患者侧具备App体验，但医疗类原生App上架审核严格，确认先将当前患者移动端包装为AGH Care PWA",
+      "scope_class": "B",
+      "scope_status": "limited",
+      "scope_limit": "仅实现Web/PWA演示和安装引导，不包含原生iOS/Android App、应用商店上架、系统级后台任务、HealthKit或医疗设备接入"
+    },
     {
       "id": "EXP-004",
       "module": "expert",

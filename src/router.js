@@ -5,6 +5,7 @@ import SystemLayout from './components/SystemLayout.vue'
 import PatientPortal from './views/PatientPortal.vue'
 import PatientMobilePage from './views/PatientMobilePage.vue'
 import PatientMobileDetail from './views/PatientMobileDetail.vue'
+import CareEntry from './views/CareEntry.vue'
 import MalaysiaWorkspace from './views/MalaysiaWorkspace.vue'
 import ChinaOpsWorkspace from './views/ChinaOpsWorkspace.vue'
 import ExpertWorkspace from './views/ExpertWorkspace.vue'
@@ -38,6 +39,7 @@ const pageComponent = (system, page) => {
 const routes = [
   { path: '/', redirect: '/portal' },
   { path: '/portal', component: PortalView, meta: { public: true, title: '系统入口' } },
+  { path: '/care', component: CareEntry, meta: { public: true, title: 'AGH Care' } },
 ]
 for (const [system, config] of Object.entries(systems)) {
   const prefix = prefixes[system]

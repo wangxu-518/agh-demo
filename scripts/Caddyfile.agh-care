@@ -1,0 +1,10 @@
+{
+	auto_https disable_redirects
+}
+
+agh-care.43-155-231-220.sslip.io {
+	reverse_proxy 127.0.0.1:8789
+
+	@pwaMetadata path /sw.js /manifest.webmanifest
+	header @pwaMetadata Cache-Control "no-cache, no-store, must-revalidate"
+}

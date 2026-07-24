@@ -1,7 +1,7 @@
 export const systems = {
   patient: {
-    name: '患者服务门户', en: 'Patient Care Portal', short: '患者端', icon: 'P',
-    color: '#2264e5', home: '/patient/home', account: 'patient@agh.demo', password: '123456',
+    name: 'AGH Care 患者服务', en: 'AGH Care Patient Service', short: 'AGH Care', icon: 'A',
+    color: '#1f5fd6', home: '/patient/home', account: 'patient@agh.demo', password: '123456',
     nav: [
       ['home', '首页', 'Home'], ['records', '医疗资料', 'Medical Records'],
       ['plan', '治疗方案', 'Treatment Plan'], ['travel', '赴华行程', 'Travel'],

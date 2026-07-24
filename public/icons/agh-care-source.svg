@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#1f5fd6"/>
+  <rect x="176" y="176" width="672" height="672" rx="168" fill="#ffffff"/>
+  <rect x="684" y="104" width="236" height="236" rx="78" fill="#d94c5b"/>
+  <path d="M802 151v142M731 222h142" stroke="#ffffff" stroke-width="46" stroke-linecap="round"/>
+  <text x="512" y="590" fill="#173b76" font-family="Arial, Helvetica, sans-serif" font-size="246" font-weight="700" text-anchor="middle" letter-spacing="0">AGH</text>
+  <rect x="312" y="656" width="400" height="30" rx="15" fill="#1f5fd6"/>
+</svg>
