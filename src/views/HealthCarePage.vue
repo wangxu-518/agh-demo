@@ -1,11 +1,12 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
 import { useDemoStore } from '../stores/demo'
 
 const route = useRoute()
+const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
 const isVisit = computed(() => page.value === 'home-visits')
@@ -75,11 +76,32 @@ function submitVisit() {
         <button class="primary-button" @click="show(store.publishHealthPlan({ actor: 'Farah Lim' }))">审核并发布方案</button>
       </PageHeader>
       <div v-if="message" :class="messageOk ? 'action-success' : 'form-error'">{{ message }}</div>
-      <section class="case-context-bar">
-        <div class="case-context-main"><span class="case-avatar">{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }} · {{ store.activePatient.englishName }}</b><small>{{ store.activePatient.caseId }} · {{ store.activePatient.diagnosis }}</small></div></div>
-        <div class="case-context-meta"><span>方案版本 <b>v{{ store.activeHealthPlan.version }}</b></span><span class="status-pill done">{{ store.activeHealthPlan.status }}</span></div>
+      <section class="health-visual-dashboard">
+        <div class="health-human-panel">
+          <header><span>RECOVERY BODY MAP</span><h2>术后恢复人体图</h2><p>把方案放回患者身体上，而不是只看表格。</p></header>
+          <div class="health-portrait-stage">
+            <img :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
+            <button class="health-hotspot breast"><i></i><span><b>手术区域</b><small>伤口恢复良好</small></span></button>
+            <button class="health-hotspot shoulder"><i></i><span><b>上肢活动</b><small>每日 2 组训练</small></span></button>
+            <button class="health-hotspot nutrition"><i></i><span><b>营养状态</b><small>蛋白 70-80g/日</small></span></button>
+          </div>
+          <footer><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.age }}岁 · {{ store.activePatient.diagnosis }}</small></div><span class="status-pill done">恢复稳定</span></footer>
+        </div>
+        <div class="health-overview">
+          <header><div><span>PERSONALIZED CARE</span><h2>{{ store.activePatient.name }}的健康管理方案</h2><p>根据中国手术资料与康复方案，由 Farah Lim 人工制定。</p></div><div class="care-score"><strong>82</strong><small>恢复指数</small></div></header>
+          <section class="care-vitals">
+            <article><span>伤口</span><b>恢复良好</b><small>无渗液、轻微牵拉感</small></article>
+            <article><span>疼痛</span><b>2 / 10</b><small>活动后轻微</small></article>
+            <article><span>活动度</span><b>78%</b><small>较上周 +9%</small></article>
+            <article><span>营养</span><b>稳定</b><small>体重 58.4kg</small></article>
+          </section>
+          <button class="china-surgery-entry" @click="openRecords">
+            <span>CN</span><div><small>中国诊疗资料中心</small><b>调用手术资料与康复方案</b><p>{{ store.activeDomesticReference.chinaCaseId }} · {{ store.activeDomesticReference.availableCount }} 份境内资料</p></div><i>受控打开 →</i>
+          </button>
+          <section class="care-next-action"><span>下一次家访</span><b>{{ visit.scheduledAt.slice(0,10) }} · {{ visit.visitor }}</b><button @click="router.push('/health-management/home-visits')">进入 Pad 模式</button></section>
+        </div>
       </section>
-      <div class="health-plan-layout">
+      <div class="health-plan-layout enhanced">
         <main>
           <section class="plan-band">
             <header><div><span>01</span><h2>饮食建议</h2></div><b>根据术后恢复阶段</b></header>
@@ -95,8 +117,8 @@ function submitVisit() {
           </section>
         </main>
         <aside>
-          <SectionCard title="国内资料引用" subtitle="仅显示引用状态，不保存正文">
-            <div class="domain-reference"><div><span>境内病例号</span><b>{{ store.activeDomesticReference.chinaCaseId }}</b></div><div><span>最新阶段</span><b>{{ store.activeDomesticReference.treatmentStage }}</b></div><div><span>可查看资料</span><b>{{ store.activeDomesticReference.availableCount }} 份</b></div><p>点击“受控查看”后需登记用途并完成二次验证。</p></div>
+          <SectionCard title="方案来源" subtitle="人工参考资料留痕">
+            <div class="plan-source-list"><div v-for="record in store.activeChinaRecords.slice(0,3)" :key="record.id"><span>{{ record.type.slice(0,1) }}</span><div><b>{{ record.title }}</b><small>{{ record.occurredAt }} · {{ record.hospital }}</small></div></div></div>
           </SectionCard>
           <SectionCard title="推送状态">
             <div v-if="store.activeHealthPlan.pushBatches.length" class="push-status"><b>已推送患者端与家访 Pad</b><small>{{ store.activeHealthPlan.approvedAt }}</small></div>

@@ -124,9 +124,14 @@ describe('case-isolated workflow store', () => {
   it('supports the demo case model from AI structuring through home visit', async () => {
     const { useDemoStore } = await import('./demo')
     const store = useDemoStore()
-    expect(store.scheduleConsultation().code).toBe('AI_CONFIRMATION_REQUIRED')
+    expect(store.scheduleConsultation().code).toBe('PATIENT_CONFIRMATION_REQUIRED')
     expect(store.confirmAiStructuring({ actor: 'Aisyah' }).ok).toBe(true)
-    expect(store.activeAiStructuring.status).toBe('confirmed')
+    expect(store.activeAiStructuring.status).toBe('operator_confirmed')
+    expect(store.scheduleConsultation().code).toBe('PATIENT_CONFIRMATION_REQUIRED')
+    expect(store.sendAiReportToPatient({ actor: 'Aisyah' }).ok).toBe(true)
+    expect(store.activeAiStructuring.patientConfirmation.status).toBe('pending')
+    expect(store.confirmAiReportByPatient({ actor: '林秀英' }).ok).toBe(true)
+    expect(store.activeAiStructuring.status).toBe('patient_confirmed')
     expect(store.scheduleConsultation().ok).toBe(true)
     expect(store.recordConsultationDecision({ decision: '选择方案 A，赴华评估' }).ok).toBe(true)
 
@@ -142,6 +147,25 @@ describe('case-isolated workflow store', () => {
     }).ok).toBe(true)
     expect(visit.status).toBe('completed')
     expect(store.state.alerts[0].type).toBe('家访异常')
+  })
+
+  it('creates a new AI report version and requires patient reconfirmation', async () => {
+    const { useDemoStore } = await import('./demo')
+    const store = useDemoStore()
+    store.confirmAiStructuring({ actor: 'Aisyah' })
+    store.sendAiReportToPatient({ actor: 'Aisyah' })
+    store.confirmAiReportByPatient({ actor: '林秀英' })
+
+    const result = store.reviseAiReport({
+      summary: '补充最新检查后更新的结构化病情摘要。',
+      actor: 'Aisyah',
+    })
+
+    expect(result.ok).toBe(true)
+    expect(store.activeAiStructuring.reportVersion).toBe(2)
+    expect(store.activeAiStructuring.revisions).toHaveLength(1)
+    expect(store.activeAiStructuring.patientConfirmation.status).toBe('not_sent')
+    expect(store.scheduleConsultation().code).toBe('PATIENT_CONFIRMATION_REQUIRED')
   })
 
   it('creates versioned documents instead of overwriting duplicates', async () => {

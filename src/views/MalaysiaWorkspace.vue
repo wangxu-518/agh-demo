@@ -1,79 +1,94 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
-import SectionCard from '../components/SectionCard.vue'
-import StatCard from '../components/StatCard.vue'
-import TaskList from '../components/TaskList.vue'
 import { useDemoStore } from '../stores/demo'
-const store = useDemoStore()
-const tab = ref('crm')
-const showPatientForm = ref(false)
-const patientForm = ref({ name: '', phone: '', diagnosis: '', city: '', source: 'WhatsApp', owner: 'Aisyah' })
-const formMessage = ref('')
 
-function createPatient() {
-  const result = store.createPatient(patientForm.value)
-  formMessage.value = result.message
-  if (result.ok) {
-    showPatientForm.value = false
-    patientForm.value = { name: '', phone: '', diagnosis: '', city: '', source: 'WhatsApp', owner: 'Aisyah' }
+const store = useDemoStore()
+const router = useRouter()
+const filter = ref('全部患者')
+
+const patientCards = computed(() => store.state.patients.map((patient) => {
+  const currentCase = store.state.cases[patient.caseId]
+  const confirmation = currentCase.aiStructuring?.patientConfirmation?.status || 'not_sent'
+  return {
+    ...patient,
+    missing: currentCase.aiStructuring?.missingItems || [],
+    confirmation,
+    documentCount: store.state.documents.filter((document) => document.caseId === patient.caseId && !document.voidedAt).length,
   }
+}))
+
+const filteredPatients = computed(() => patientCards.value.filter((patient) => {
+  if (filter.value === '待补资料') return patient.missing.length > 0
+  if (filter.value === '待患者确认') return patient.confirmation === 'pending'
+  if (filter.value === '术后管理') return patient.phase === 'followup'
+  return true
+}))
+
+function openPatient(patient) {
+  store.setActiveCase(patient.caseId)
+  router.push('/malaysia/cases')
+}
+
+function confirmationLabel(status) {
+  return {
+    not_sent: '报告未发送',
+    pending: '待患者确认',
+    confirmed: '患者已确认',
+  }[status] || 'AI 整理中'
 }
 </script>
+
 <template>
-  <PageHeader eyebrow="Malaysia operations workspace" title="马来患者运营工作台" subtitle="从资料采集、AI整理到专家医院安排、行程和术后健康管理">
-    <button class="secondary-button" @click="showPatientForm=true">＋ 新建患者</button>
-    <button class="primary-button" @click="formMessage=store.submitCase({ note: '资料已完成人工核验，可进入专家协调' }).message">完成资料初筛</button>
-  </PageHeader>
-  <div v-if="formMessage" class="action-success">{{ formMessage }}</div>
-  <div class="stats-grid">
-    <StatCard label="今日新线索" value="12" note="Facebook 占58%" icon="+" />
-    <StatCard label="待补资料" value="7" note="2例今天到期" icon="▤" tone="orange" />
-    <StatCard label="本月签约" value="18" note="转化率 31.6%" icon="✓" tone="green" />
-    <StatCard label="需关注患者" value="3" note="含1例高风险" icon="!" tone="red" />
-  </div>
-  <div class="grid-2">
-    <SectionCard title="患者 CRM" subtitle="线索、签约与Case状态统一管理" flush>
-      <div class="tabs" style="margin:0;padding:0 14px">
-        <button v-for="item in ['crm','documents','contract','resources']" :key="item" class="tab-button" :class="{active:tab===item}" @click="tab=item">{{ {crm:'患者列表',documents:'资料完整性',contract:'合同与授权',resources:'本地资源'}[item] }}</button>
+  <div class="patient-centric-dashboard">
+    <PageHeader eyebrow="Patient command center" title="今天，先看患者" subtitle="以患者为中心管理资料、病案确认、面诊和跨境治疗进度">
+      <button class="secondary-button">新建患者</button>
+      <button class="primary-button" @click="router.push('/malaysia/tasks')">进入 AI 报告中心</button>
+    </PageHeader>
+
+    <section class="command-strip">
+      <div><span>在管患者</span><strong>{{ store.state.patients.length }}</strong><small>2 位需要今天跟进</small></div>
+      <div><span>待补资料</span><strong>{{ patientCards.filter(item => item.missing.length).length }}</strong><small>最近到期：肿瘤标志物</small></div>
+      <div><span>待患者确认</span><strong>{{ patientCards.filter(item => item.confirmation === 'pending').length }}</strong><small>确认后才能进入面诊</small></div>
+      <div><span>术后健康管理</span><strong>{{ patientCards.filter(item => item.phase === 'followup').length }}</strong><small>1 位有高风险预警</small></div>
+    </section>
+
+    <div class="patient-board-heading">
+      <div><h2>患者全景卡片</h2><p>点击患者，打开身体档案、资料缺口和下一步行动</p></div>
+      <div class="segmented-filter">
+        <button v-for="item in ['全部患者','待补资料','待患者确认','术后管理']" :key="item" :class="{ active: filter === item }" @click="filter=item">{{ item }}</button>
       </div>
-      <table class="data-table">
-        <thead><tr><th>患者 / CASE</th><th>诊断</th><th>阶段</th><th>完整度</th><th>负责人</th></tr></thead>
-        <tbody><tr v-for="patient in store.state.patients" :key="patient.id" @click="store.setActiveCase(patient.caseId)">
-          <td><div class="table-patient"><div class="small-avatar">{{ patient.avatar }}</div><div><b>{{ patient.name }}</b><small>{{ patient.caseId }}</small></div></div></td>
-          <td>{{ patient.diagnosis }}</td><td><span class="status-pill" :class="patient.risk">{{ patient.phaseLabel }}</span></td>
-          <td><b>{{ patient.completeness }}%</b></td><td>{{ patient.owner }}</td>
-        </tr></tbody>
-      </table>
-    </SectionCard>
-    <SectionCard title="我的跨端待办" subtitle="完成后自动同步其他工作台"><TaskList system="malaysia" /></SectionCard>
-  </div>
-  <SectionCard title="主案例初筛检查清单" subtitle="满足门槛后由马来运营直接安排专家、面诊和医院">
-    <div class="grid-3">
-      <div class="check-list">
-        <div class="check-item"><span class="check-mark">✓</span>双语癌症咨询表</div>
-        <div class="check-item"><span class="check-mark">✓</span>患者身份及联系方式</div>
-        <div class="check-item"><span class="check-mark">✓</span>跨境数据授权书</div>
-      </div>
-      <div class="check-list">
-        <div class="check-item"><span class="check-mark">✓</span>病理与影像资料</div>
-        <div class="check-item"><span class="check-mark">✓</span>既往治疗记录</div>
-        <div class="check-item"><span class="check-mark">!</span>最新肿瘤标志物待补</div>
-      </div>
-      <div class="notice">系统会锁定当前资料版本并进入马来运营协同流程。后续补充资料以新版本追加，不覆盖原始医疗记录。</div>
     </div>
-  </SectionCard>
-  <div v-if="showPatientForm" class="business-modal-backdrop" @click.self="showPatientForm=false">
-    <form class="business-modal" @submit.prevent="createPatient">
-      <header><div><small>PATIENT INTAKE</small><h2>建立患者档案</h2></div><button type="button" @click="showPatientForm=false">×</button></header>
-      <div class="modal-fields">
-        <label>患者姓名<input v-model="patientForm.name" required /></label>
-        <label>联系电话<input v-model="patientForm.phone" required /></label>
-        <label>所在城市<input v-model="patientForm.city" /></label>
-        <label>线索来源<select v-model="patientForm.source"><option>WhatsApp</option><option>Facebook</option><option>TikTok</option><option>患者转介绍</option></select></label>
-        <label class="wide">初步诊断或病情描述<textarea v-model="patientForm.diagnosis" required></textarea></label>
+
+    <section class="visual-patient-grid">
+      <button v-for="patient in filteredPatients" :key="patient.id" class="visual-patient-card" @click="openPatient(patient)">
+        <div class="patient-card-portrait">
+          <img v-if="patient.portrait" :src="patient.portrait" :alt="`${patient.name}演示肖像`" />
+          <span v-else>{{ patient.avatar }}</span>
+          <i :class="patient.risk"></i>
+          <em>{{ patient.phaseLabel }}</em>
+        </div>
+        <div class="patient-card-content">
+          <header><div><h3>{{ patient.name }}</h3><p>{{ patient.englishName }} · {{ patient.age }}岁</p></div><b>{{ patient.completeness }}%</b></header>
+          <div class="patient-diagnosis"><span>主要诊断</span><strong>{{ patient.diagnosis }}</strong></div>
+          <div class="patient-card-progress"><span :style="{ width: `${patient.completeness}%` }"></span></div>
+          <div class="patient-card-meta"><span>{{ patient.documentCount }} 份资料</span><span>{{ patient.owner }} 负责</span><span>{{ patient.city }}</span></div>
+          <div v-if="patient.missing.length" class="patient-missing"><b>缺少</b><span v-for="item in patient.missing" :key="item">{{ item }}</span></div>
+          <div v-else class="patient-ready">资料已齐备</div>
+          <footer><span :class="['confirmation-chip', patient.confirmation]">{{ confirmationLabel(patient.confirmation) }}</span><b>打开患者档案 →</b></footer>
+        </div>
+      </button>
+    </section>
+
+    <section class="today-journey">
+      <header><div><span>今日运营主线</span><h2>从零散资料到患者确认</h2></div><b>林秀英 · 主演示病例</b></header>
+      <div>
+        <article class="done"><span>1</span><div><b>资料已采集</b><small>5 份来源已归档</small></div></article>
+        <article class="active"><span>2</span><div><b>AI 报告待确认</b><small>运营校对 → 患者确认</small></div></article>
+        <article><span>3</span><div><b>初筛与面诊</b><small>确认后自动解锁</small></div></article>
+        <article><span>4</span><div><b>治疗行程</b><small>专家与医院协同</small></div></article>
       </div>
-      <footer><button type="button" class="secondary-button" @click="showPatientForm=false">取消</button><button class="primary-button" type="submit">建立档案</button></footer>
-    </form>
+    </section>
   </div>
 </template>

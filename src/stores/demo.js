@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v6'
+const KEY = 'agh-demo-v7'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -745,19 +745,72 @@ export const useDemoStore = defineStore('demo', () => {
   function confirmAiStructuring(payload = {}, caseId = state.value.activeCaseId) {
     const structuring = caseById(caseId)?.aiStructuring
     if (!structuring) return result(false, '尚未生成 AI 病案草稿')
-    structuring.status = 'confirmed'
+    structuring.status = 'operator_confirmed'
     structuring.confirmedAt = nowIso()
     structuring.confirmedBy = payload.actor || state.value.currentUsers.malaysia.name
     addEvent('malaysia', structuring.confirmedBy, '确认 AI 结构化病案', `置信度 ${structuring.confidence}% · 人工校对完成`, caseId)
-    return result(true, 'AI 病案草稿已人工确认')
+    return result(true, '运营人员已确认报告，可发送患者核对')
+  }
+
+  function reviseAiReport(payload = {}, caseId = state.value.activeCaseId) {
+    const structuring = caseById(caseId)?.aiStructuring
+    if (!structuring) return result(false, '病案报告不存在')
+    if (!payload.summary?.trim()) return result(false, '报告摘要不能为空')
+    structuring.revisions.unshift({
+      version: structuring.reportVersion,
+      summary: structuring.reportSummary,
+      savedAt: nowIso(),
+      savedBy: payload.actor || state.value.currentUsers.malaysia.name,
+    })
+    structuring.reportVersion += 1
+    structuring.reportSummary = payload.summary.trim()
+    structuring.status = 'operator_confirmed'
+    structuring.patientConfirmation = {
+      status: 'not_sent', sentAt: null, confirmedAt: null, confirmedBy: '', note: '',
+    }
+    addEvent('malaysia', payload.actor || 'Aisyah', '更新结构化病案报告', `生成 v${structuring.reportVersion}，等待重新发送患者确认`, caseId)
+    return result(true, `报告已保存为 v${structuring.reportVersion}`)
+  }
+
+  function sendAiReportToPatient(payload = {}, caseId = state.value.activeCaseId) {
+    const structuring = caseById(caseId)?.aiStructuring
+    if (!structuring || structuring.status !== 'operator_confirmed') {
+      return result(false, '请先完成人工校对，再发送患者确认', 'OPERATOR_CONFIRMATION_REQUIRED')
+    }
+    structuring.status = 'awaiting_patient'
+    structuring.patientConfirmation = {
+      status: 'pending',
+      sentAt: nowIso(),
+      confirmedAt: null,
+      confirmedBy: '',
+      note: payload.note || '请患者确认基本信息、病程时间和资料出处。',
+    }
+    notify('patient', `结构化病案报告 v${structuring.reportVersion} 待确认`, caseId)
+    addEvent('malaysia', payload.actor || 'Aisyah', '发送患者确认', `结构化病案报告 v${structuring.reportVersion}`, caseId)
+    return result(true, '报告已发送患者确认')
+  }
+
+  function confirmAiReportByPatient(payload = {}, caseId = state.value.activeCaseId) {
+    const structuring = caseById(caseId)?.aiStructuring
+    if (!structuring || structuring.patientConfirmation?.status !== 'pending') {
+      return result(false, '当前没有待确认的病案报告', 'NO_PENDING_REPORT')
+    }
+    structuring.status = 'patient_confirmed'
+    structuring.patientConfirmation.status = 'confirmed'
+    structuring.patientConfirmation.confirmedAt = nowIso()
+    structuring.patientConfirmation.confirmedBy = payload.actor || patientByCase(caseId)?.name || '患者'
+    structuring.patientConfirmation.note = payload.note || '患者确认病案信息无误'
+    addEvent('patient', structuring.patientConfirmation.confirmedBy, '确认结构化病案报告', `v${structuring.reportVersion} 已确认`, caseId)
+    notify('malaysia', `${patientByCase(caseId)?.name} 已确认结构化病案报告`, caseId)
+    return result(true, '病案报告已确认，可以进入下一流程')
   }
 
   function scheduleConsultation(payload = {}, caseId = state.value.activeCaseId) {
     const currentCase = caseById(caseId)
     const consultation = currentCase?.consultation
     if (!consultation) return result(false, '面诊信息不存在')
-    if (currentCase.aiStructuring?.status !== 'confirmed') {
-      return result(false, '请先完成人工校对并确认结构化病案', 'AI_CONFIRMATION_REQUIRED')
+    if (currentCase.aiStructuring?.patientConfirmation?.status !== 'confirmed') {
+      return result(false, '结构化病案必须先由患者确认，才能安排面诊', 'PATIENT_CONFIRMATION_REQUIRED')
     }
     Object.assign(consultation, {
       status: 'scheduled', date: payload.date || consultation.date, expert: payload.expert || consultation.expert,
@@ -839,6 +892,7 @@ export const useDemoStore = defineStore('demo', () => {
     confirmPlan, confirmTravel, revokeConsent, createPatient, createLead, bookLocalResource,
     completeRehab, generateQuality, sendMessage, accessDocument,
     requestDomesticAccess, closeDomesticAccess, uploadChinaRecord, confirmAiStructuring,
+    reviseAiReport, sendAiReportToPatient, confirmAiReportByPatient,
     scheduleConsultation, recordConsultationDecision, updateJourneyItem, publishHealthPlan, saveHomeVisit,
     performAction, reset, caseById, patientByCase,
   }

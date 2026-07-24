@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
@@ -12,6 +12,8 @@ const page = computed(() => route.meta.page)
 const message = ref('')
 const messageOk = ref(true)
 const decision = ref(store.activeConsultation?.options?.[0]?.title || '')
+const reportEditing = ref(false)
+const reportSummary = ref(store.activeAiStructuring?.reportSummary || '')
 
 const pageCopy = computed(() => ({
   cases: ['Patient record', '患者全景档案', '统一查看咨询、病案、协同、行程与术后状态'],
@@ -35,6 +37,30 @@ const timeline = computed(() => [
   ...store.activeTravel.itinerary.map((item) => ({ ...item, owner: '马来运营端' })),
 ].sort((a, b) => String(a.date).localeCompare(String(b.date))))
 
+const confirmationCopy = computed(() => ({
+  not_sent: ['尚未发送患者', 'neutral'],
+  pending: ['等待患者确认', 'pending'],
+  confirmed: ['患者已确认', 'done'],
+}[store.activeAiStructuring.patientConfirmation.status] || ['AI 整理中', 'neutral']))
+
+const bodyMarkers = computed(() => {
+  if (store.activePatient.caseId === 'AGH-MY-2026-0012') return [
+    { position: 'chest-left', tone: 'diagnosis', label: '乳腺术后', detail: '手术资料在中国域' },
+    { position: 'shoulder-right', tone: 'rehab', label: '上肢康复', detail: '活动度持续改善' },
+    { position: 'waist-left', tone: 'record', label: '健康方案', detail: '饮食与运动已制定' },
+  ]
+  return [
+    { position: 'chest-right', tone: 'diagnosis', label: '肺腺癌 IIIB期', detail: '病理 + PET-CT 支持' },
+    { position: 'head-left', tone: 'record', label: '5 份档案资料', detail: '4 类资料已核验' },
+    { position: 'waist-right', tone: 'missing', label: '缺少 1 项', detail: store.activeAiStructuring.missingItems[0] },
+  ]
+})
+
+watch(() => store.state.activeCaseId, () => {
+  reportSummary.value = store.activeAiStructuring?.reportSummary || ''
+  reportEditing.value = false
+})
+
 function selectCase(caseId) {
   store.setActiveCase(caseId)
   decision.value = store.activeConsultation?.options?.[0]?.title || ''
@@ -56,6 +82,35 @@ function addDemoDocument() {
 
 function confirmAi() {
   show(store.confirmAiStructuring({ actor: 'Aisyah Rahman' }))
+}
+
+function saveReportRevision() {
+  const result = store.reviseAiReport({ summary: reportSummary.value, actor: 'Aisyah Rahman' })
+  show(result)
+  if (result.ok) reportEditing.value = false
+}
+
+function sendForConfirmation() {
+  show(store.sendAiReportToPatient({ actor: 'Aisyah Rahman' }))
+}
+
+function downloadReport() {
+  const patient = store.activePatient
+  const report = store.activeAiStructuring
+  const sourceRows = store.activeDocuments.map((document) =>
+    `<tr><td>${document.type}</td><td>${document.name}</td><td>${document.source}</td><td>v${document.version}</td></tr>`,
+  ).join('')
+  const timelineRows = report.timeline.map((item) =>
+    `<tr><td>${item.date}</td><td>${item.title}</td><td>${item.source}</td></tr>`,
+  ).join('')
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${report.reportTitle}</title><style>body{font-family:Arial,"Microsoft YaHei",sans-serif;color:#1d2a3d;max-width:900px;margin:40px auto;line-height:1.7}header{border-bottom:3px solid #0d7c73;padding-bottom:20px}h1{font-size:26px}small{color:#6e7b8f}section{margin-top:28px}h2{font-size:17px;color:#0d7c73}table{width:100%;border-collapse:collapse}th,td{padding:10px;border:1px solid #dfe5eb;text-align:left;font-size:13px}th{background:#f2f7f6}.notice{padding:14px;background:#fff7e8;border-left:4px solid #dd8a28}</style></head><body><header><small>AGH · STRUCTURED MEDICAL RECORD</small><h1>${report.reportTitle}</h1><p>${patient.name} · ${patient.englishName}　${patient.caseId}　报告版本 v${report.reportVersion}</p></header><section><h2>一、患者概况</h2><p>${patient.age}岁，${patient.city}，主要诊断：<b>${patient.diagnosis}</b></p></section><section><h2>二、结构化病情摘要</h2><p>${report.reportSummary}</p></section><section><h2>三、病程时间线与出处</h2><table><tr><th>时间</th><th>医疗事件</th><th>资料出处</th></tr>${timelineRows}</table></section><section><h2>四、原始资料索引</h2><table><tr><th>类型</th><th>文件</th><th>来源</th><th>版本</th></tr>${sourceRows}</table></section><section><h2>五、待补资料</h2><div class="notice">${report.missingItems.join('、') || '无'}</div></section><p><small>本报告由 AI 辅助整理并经运营人员校对，仅用于跨境医疗资料沟通，不构成临床诊断或治疗建议。</small></p></body></html>`
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }))
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${patient.name}-结构化病案-v${report.reportVersion}.html`
+  anchor.click()
+  URL.revokeObjectURL(url)
+  show({ ok: true, message: '完整报告已下载，可打开后打印为 PDF' })
 }
 
 function scheduleConsultation() {
@@ -84,7 +139,9 @@ function markJourney(item) {
   <div class="ops-page">
     <PageHeader :eyebrow="pageCopy[0]" :title="pageCopy[1]" :subtitle="pageCopy[2]">
       <button v-if="page === 'documents'" class="primary-button" @click="addDemoDocument">上传补充资料</button>
-      <button v-if="page === 'tasks'" class="primary-button" @click="confirmAi">人工确认病案</button>
+      <button v-if="page === 'tasks'" class="secondary-button" @click="downloadReport">下载完整报告</button>
+      <button v-if="page === 'tasks' && store.activeAiStructuring.status === 'ready_to_confirm'" class="primary-button" @click="confirmAi">完成运营校对</button>
+      <button v-else-if="page === 'tasks' && store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="sendForConfirmation">发送患者确认</button>
       <button v-if="page === 'resources'" class="primary-button" @click="scheduleConsultation">确认面诊安排</button>
       <button v-if="page === 'leads'" class="primary-button" @click="show(store.completeHandoff({ note: '演示：跨境交接清单已确认' }))">确认跨境交接</button>
     </PageHeader>
@@ -103,32 +160,50 @@ function markJourney(item) {
     </section>
 
     <template v-if="page === 'cases'">
-      <div class="ops-summary-grid">
-        <SectionCard title="患者概况" subtitle="马来运营端主档">
-          <div class="detail-grid">
-            <div><span>城市</span><b>{{ store.activePatient.city }}</b></div>
-            <div><span>首选语言</span><b>{{ store.activePatient.language === 'zh' ? '中文' : 'English' }}</b></div>
-            <div><span>联系电话</span><b>{{ store.activePatient.phone }}</b></div>
-            <div><span>来源</span><b>{{ store.activePatient.source }}</b></div>
+      <section class="patient-story-layout">
+        <div class="patient-visual-panel">
+          <div class="patient-photo-stage">
+            <img v-if="store.activePatient.portrait" :src="store.activePatient.portrait" :alt="`${store.activePatient.name}演示肖像`" />
+            <div v-else class="portrait-fallback">{{ store.activePatient.avatar }}</div>
+            <div v-for="marker in bodyMarkers" :key="marker.label" :class="['body-marker', marker.position, marker.tone]">
+              <i></i><div><b>{{ marker.label }}</b><small>{{ marker.detail }}</small></div>
+            </div>
           </div>
+          <footer><span>虚构演示患者</span><b>{{ store.activePatient.name }} · {{ store.activePatient.age }}岁</b><small>{{ store.activePatient.city }} · {{ store.activePatient.phone }}</small></footer>
+        </div>
+        <div class="patient-story-content">
+          <header>
+            <div><span>PATIENT 360° PROFILE</span><h2>{{ store.activePatient.diagnosis }}</h2><p>{{ store.activePatient.diagnosisEn }}</p></div>
+            <div class="completeness-orbit"><strong>{{ store.activePatient.completeness }}%</strong><small>档案完整度</small></div>
+          </header>
+          <section class="patient-facts">
+            <div><span>病例编号</span><b>{{ store.activePatient.caseId }}</b></div>
+            <div><span>当前阶段</span><b>{{ store.activePatient.phaseLabel }}</b></div>
+            <div><span>语言</span><b>{{ store.activePatient.language === 'zh' ? '中文' : 'English' }}</b></div>
+            <div><span>负责人</span><b>{{ store.activePatient.owner }}</b></div>
+          </section>
+          <section class="record-constellation">
+            <header><div><h3>档案资料星图</h3><p>每一项都能追溯来源与版本</p></div><b>{{ store.activeDocuments.length }} 份资料</b></header>
+            <div><article v-for="document in store.activeDocuments" :key="document.id"><span>{{ document.type.slice(0,1) }}</span><div><b>{{ document.type }}</b><small>{{ document.source }} · v{{ document.version }}</small></div></article></div>
+          </section>
+          <section class="missing-focus">
+            <div><span>!</span><div><b>进入下一流程前仍需补齐</b><p>{{ store.activeAiStructuring.missingItems.join('、') || '资料已齐备' }}</p></div></div>
+            <button class="secondary-button" @click="message='已向患者发送补资料提醒';messageOk=true">发送补充提醒</button>
+          </section>
+          <section class="profile-flow">
+            <div v-for="(step,index) in ['资料采集','AI报告','患者确认','专家面诊','治疗行程']" :key="step" :class="{ done:index < 2, active:index === 2 }"><span>{{ index < 2 ? '✓' : index + 1 }}</span><b>{{ step }}</b></div>
+          </section>
+        </div>
+      </section>
+      <div class="grid-2 patient-detail-lower">
+        <SectionCard title="最近业务动态" subtitle="所有端的动作统一回到患者时间线">
+          <div class="ops-timeline"><div v-for="event in store.activeEvents.slice(0, 5)" :key="event.id"><i></i><div><b>{{ event.title }}</b><p>{{ event.detail }}</p><small>{{ event.actor }} · {{ formatDateTime(event.at) }}</small></div></div></div>
         </SectionCard>
-        <SectionCard title="当前业务状态" subtitle="从咨询到健康管理的统一进度">
-          <div class="flow-strip">
-            <span v-for="(step,index) in ['资料采集','AI整理','初筛面诊','治疗行程','术后管理']" :key="step" :class="{ active: index < 3 }">{{ index + 1 }}<b>{{ step }}</b></span>
+        <SectionCard title="中国诊疗资料" subtitle="仅保存境内病例引用">
+          <div v-if="store.activeDomesticReference.chinaCaseId" class="china-link-teaser">
+            <span>CN</span><div><b>{{ store.activeDomesticReference.chinaCaseId }}</b><p>{{ store.activeDomesticReference.availableCount }} 份资料 · {{ store.activeDomesticReference.treatmentStage }}</p></div><button>受控查看</button>
           </div>
-        </SectionCard>
-      </div>
-      <div class="grid-2">
-        <SectionCard title="最近业务动态" subtitle="各端动作统一回写患者时间线">
-          <div class="ops-timeline"><div v-for="event in store.activeEvents.slice(0, 6)" :key="event.id"><i></i><div><b>{{ event.title }}</b><p>{{ event.detail }}</p><small>{{ event.actor }} · {{ formatDateTime(event.at) }}</small></div></div></div>
-        </SectionCard>
-        <SectionCard title="国内诊疗资料引用" subtitle="马来端不存储境内医疗内容">
-          <div v-if="store.activeDomesticReference.chinaCaseId" class="domain-reference">
-            <div><span>中国域病例号</span><b>{{ store.activeDomesticReference.chinaCaseId }}</b></div>
-            <div><span>资料状态</span><b>{{ store.activeDomesticReference.availableCount }} 份 · {{ store.activeDomesticReference.treatmentStage }}</b></div>
-            <p>仅保存状态和受控入口。查看正文需要用途登记、二次验证并生成审计记录。</p>
-          </div>
-          <div v-else class="empty-state">尚未形成中国境内诊疗资料</div>
+          <div v-else class="empty-state">患者赴华治疗后，将在这里显示中国域资料入口</div>
         </SectionCard>
       </div>
     </template>
@@ -156,23 +231,77 @@ function markJourney(item) {
     </template>
 
     <template v-else-if="page === 'tasks'">
-      <div class="ai-workbench">
-        <aside>
-          <h3>资料处理进度</h3>
-          <div class="ai-score"><strong>{{ store.activeAiStructuring.confidence }}%</strong><span>综合置信度</span></div>
-          <div class="info-list">
-            <div class="info-row"><span>来源文件</span><b>{{ store.activeAiStructuring.sourceCount }}</b></div>
-            <div class="info-row"><span>已归类</span><b>{{ store.activeAiStructuring.classifiedCount }}</b></div>
-            <div class="info-row"><span>重复版本</span><b>{{ store.activeAiStructuring.duplicateCount }}</b></div>
-          </div>
-          <p class="ai-disclaimer">AI 结果仅作为运营整理草稿，必须人工核对后才能进入初筛与专家协同。</p>
+      <div class="report-studio">
+        <aside class="report-rail">
+          <div class="report-patient-mini"><img v-if="store.activePatient.portrait" :src="store.activePatient.portrait" /><span v-else>{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.caseId }}</small></div></div>
+          <nav>
+            <button class="active"><span>01</span><div><b>完整报告</b><small>当前 v{{ store.activeAiStructuring.reportVersion }}</small></div></button>
+            <button><span>02</span><div><b>原始资料</b><small>{{ store.activeDocuments.length }} 份来源</small></div></button>
+            <button><span>03</span><div><b>修改记录</b><small>{{ store.activeAiStructuring.revisions.length }} 个历史版本</small></div></button>
+          </nav>
+          <section>
+            <h3>报告可信度</h3>
+            <strong>{{ store.activeAiStructuring.confidence }}%</strong>
+            <div><i :style="{width:`${store.activeAiStructuring.confidence}%`}"></i></div>
+            <p>AI 完成归类和结构化，医疗事实仍需运营人员与患者共同确认。</p>
+          </section>
         </aside>
-        <main>
-          <div class="workbench-heading"><div><span>结构化病案草稿</span><h2>{{ store.activePatient.diagnosis }}</h2></div><span class="status-pill pending">{{ store.activeAiStructuring.status === 'confirmed' ? '已人工确认' : '待人工确认' }}</span></div>
-          <section><h3>关键字段</h3><div class="extracted-fields"><label v-for="field in store.activeAiStructuring.extractedFields" :key="field.label"><span>{{ field.label }} · 置信度 {{ field.confidence }}%</span><input :value="field.value" /></label></div></section>
-          <section><h3>病情时间线</h3><div class="ops-timeline"><div v-for="item in store.activeAiStructuring.timeline" :key="item.date"><i></i><div><b>{{ item.title }}</b><p>{{ item.source }}</p><small>{{ item.date }}</small></div></div></div></section>
-          <section class="missing-strip"><b>待补资料</b><span v-for="item in store.activeAiStructuring.missingItems" :key="item">{{ item }}</span></section>
+
+        <main class="medical-report-paper">
+          <header>
+            <div><span>AGH · STRUCTURED MEDICAL RECORD</span><h1>{{ store.activeAiStructuring.reportTitle }}</h1><p>{{ store.activePatient.name }} · {{ store.activePatient.englishName }}　{{ store.activePatient.caseId }}</p></div>
+            <div class="report-version"><b>v{{ store.activeAiStructuring.reportVersion }}</b><small>生成于 {{ store.activeAiStructuring.confirmedAt ? formatDateTime(store.activeAiStructuring.confirmedAt) : '今日' }}</small></div>
+          </header>
+          <section class="report-overview">
+            <div><span>主要诊断</span><strong>{{ store.activePatient.diagnosis }}</strong></div>
+            <div><span>资料范围</span><strong>{{ store.activeAiStructuring.sourceCount }} 份原始资料</strong></div>
+            <div><span>报告状态</span><strong>{{ confirmationCopy[0] }}</strong></div>
+          </section>
+          <section class="report-section">
+            <div class="report-section-number">01</div>
+            <div><header><h2>结构化病情摘要</h2><button @click="reportEditing=!reportEditing">{{ reportEditing ? '取消修改' : '二次修改' }}</button></header>
+              <textarea v-if="reportEditing" v-model="reportSummary" rows="6"></textarea>
+              <p v-else class="report-narrative">{{ store.activeAiStructuring.reportSummary }}</p>
+              <button v-if="reportEditing" class="primary-button" @click="saveReportRevision">保存为新版本</button>
+            </div>
+          </section>
+          <section class="report-section">
+            <div class="report-section-number">02</div>
+            <div><header><h2>关键医疗字段</h2><span>字段均显示来源置信度</span></header>
+              <div class="report-field-grid"><article v-for="field in store.activeAiStructuring.extractedFields" :key="field.label"><span>{{ field.label }}</span><b>{{ field.value }}</b><small>AI 置信度 {{ field.confidence }}%</small></article></div>
+            </div>
+          </section>
+          <section class="report-section">
+            <div class="report-section-number">03</div>
+            <div><header><h2>病程时间线与资料出处</h2><span>时间、事件、来源三者对应</span></header>
+              <div class="source-timeline"><article v-for="item in store.activeAiStructuring.timeline" :key="item.date"><time>{{ item.date }}</time><i></i><div><b>{{ item.title }}</b><span>{{ item.source }}</span></div></article></div>
+            </div>
+          </section>
+          <section class="report-section">
+            <div class="report-section-number">04</div>
+            <div><header><h2>原始资料索引</h2><span>支持回到原件核对</span></header>
+              <table class="report-source-table"><thead><tr><th>资料</th><th>来源</th><th>版本</th><th>状态</th></tr></thead><tbody><tr v-for="document in store.activeDocuments" :key="document.id"><td><b>{{ document.name }}</b><small>{{ document.type }}</small></td><td>{{ document.source }}</td><td>v{{ document.version }}</td><td><span>已归档</span></td></tr></tbody></table>
+            </div>
+          </section>
+          <section class="report-missing"><span>待补充</span><b>{{ store.activeAiStructuring.missingItems.join('、') }}</b><p>补充后可再次生成报告新版本，并重新发送患者确认。</p></section>
+          <footer>本报告由 AI 辅助整理并经运营人员校对，仅用于跨境医疗资料沟通，不构成临床诊断或治疗建议。</footer>
         </main>
+
+        <aside class="confirmation-panel">
+          <header><span>CONFIRMATION GATE</span><h2>患者确认门槛</h2></header>
+          <div :class="['confirmation-state', confirmationCopy[1]]"><i></i><b>{{ confirmationCopy[0] }}</b><small>报告 v{{ store.activeAiStructuring.reportVersion }}</small></div>
+          <ol>
+            <li :class="{done:store.activeAiStructuring.status !== 'ready_to_confirm'}"><span>1</span><div><b>运营人工校对</b><small>{{ store.activeAiStructuring.confirmedBy || '待完成' }}</small></div></li>
+            <li :class="{done:store.activeAiStructuring.patientConfirmation.sentAt}"><span>2</span><div><b>发送给患者</b><small>{{ store.activeAiStructuring.patientConfirmation.sentAt ? formatDateTime(store.activeAiStructuring.patientConfirmation.sentAt) : '待发送' }}</small></div></li>
+            <li :class="{done:store.activeAiStructuring.patientConfirmation.status === 'confirmed'}"><span>3</span><div><b>患者确认</b><small>{{ store.activeAiStructuring.patientConfirmation.confirmedBy || '下一流程锁定中' }}</small></div></li>
+          </ol>
+          <button v-if="store.activeAiStructuring.status === 'ready_to_confirm'" class="primary-button full-button" @click="confirmAi">完成运营校对</button>
+          <button v-else-if="store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button full-button" @click="sendForConfirmation">发送患者确认</button>
+          <button v-else-if="store.activeAiStructuring.patientConfirmation.status === 'pending'" class="primary-button full-button" disabled>等待患者确认</button>
+          <div v-else class="report-unlocked">✓ 下一流程已解锁</div>
+          <p>规则：没有患者确认，不能进入初筛、面诊和医院协调。</p>
+          <button class="download-report-button" @click="downloadReport">↓ 下载完整报告</button>
+        </aside>
       </div>
     </template>
 

@@ -204,6 +204,9 @@ const cases = {
 
 const baseAiStructuring = (overrides = {}) => ({
   status: 'draft',
+  reportTitle: '跨境肿瘤诊疗结构化病案报告',
+  reportVersion: 1,
+  reportSummary: '患者因持续咳嗽完成影像检查，后经穿刺病理确认肺腺癌。现有资料支持临床 IIIB 期判断，建议补充近期肿瘤标志物、肺功能及分子检测后进入专家面诊。',
   sourceCount: 5,
   classifiedCount: 4,
   duplicateCount: 1,
@@ -222,6 +225,14 @@ const baseAiStructuring = (overrides = {}) => ({
   ],
   confirmedAt: null,
   confirmedBy: '',
+  patientConfirmation: {
+    status: 'not_sent',
+    sentAt: null,
+    confirmedAt: null,
+    confirmedBy: '',
+    note: '',
+  },
+  revisions: [],
   ...overrides,
 })
 
@@ -313,7 +324,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 6,
+  schemaVersion: 7,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {
@@ -333,9 +344,9 @@ export const seedState = {
     health: ['view_discharge_case', 'manage_followup', 'manage_medication', 'manage_alert', 'close_alert'],
   },
   patients: [
-    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', source: 'Facebook', updatedAt: dateTime(0, 10, 32) },
+    { id: 'P-0018', caseId: 'AGH-MY-2026-0018', name: '林秀英', englishName: 'Lim Siew Eng', age: 52, gender: 'female', country: 'Malaysia', city: 'Kuala Lumpur', language: 'zh', phone: '+60 12-*** 8861', diagnosis: '肺腺癌 IIIB期', diagnosisEn: 'Stage IIIB lung adenocarcinoma', phase: 'review', phaseLabel: '专家评审', completeness: 86, owner: 'Aisyah', risk: 'high', avatar: '林', portrait: '/patients/lim-siew-eng.png', source: 'Facebook', updatedAt: dateTime(0, 10, 32) },
     { id: 'P-0021', caseId: 'AGH-MY-2026-0021', name: '陈伟强', englishName: 'Tan Wei Keong', age: 61, gender: 'male', country: 'Malaysia', city: 'Penang', language: 'en', phone: '+60 12-*** 1120', diagnosis: '胃癌待分期', diagnosisEn: 'Gastric cancer, staging pending', phase: 'lead', phaseLabel: '新咨询', completeness: 35, owner: 'Nur', risk: 'normal', avatar: '陈', source: 'TikTok', updatedAt: dateTime(0, 9, 10) },
-    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', source: 'Referral', updatedAt: dateTime(-1, 18, 22) },
+    { id: 'P-0012', caseId: 'AGH-MY-2026-0012', name: '王美玲', englishName: 'Ong Mei Ling', age: 47, gender: 'female', country: 'Malaysia', city: 'Johor Bahru', language: 'zh', phone: '+60 17-*** 2291', diagnosis: '乳腺癌术后', diagnosisEn: 'Post-operative breast cancer', phase: 'followup', phaseLabel: '归国随访', completeness: 100, owner: 'Aisyah', risk: 'normal', avatar: '王', portrait: '/patients/ong-mei-ling.png', source: 'Referral', updatedAt: dateTime(-1, 18, 22) },
     { id: 'P-0007', caseId: 'AGH-MY-2026-0007', name: '黄丽珍', englishName: 'Wong Lai Zhen', age: 58, gender: 'female', country: 'Malaysia', city: 'Kuching', language: 'zh', phone: '+60 16-*** 8802', diagnosis: '卵巢癌复查异常', diagnosisEn: 'Ovarian cancer, abnormal follow-up', phase: 'followup', phaseLabel: '高危随访', completeness: 100, owner: 'Farah', risk: 'critical', avatar: '黄', source: 'Referral', updatedAt: dateTime(0, 8, 45) },
   ],
   leads: [

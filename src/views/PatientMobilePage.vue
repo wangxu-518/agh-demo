@@ -29,6 +29,13 @@ function contactCoordinator() {
     text: '患者请求行程协调员联系，需确认航班或接送安排。',
   }).message
 }
+
+function confirmMedicalReport() {
+  message.value = store.confirmAiReportByPatient({
+    actor: store.activePatient.name,
+    note: '本人已核对基本信息、病程时间和资料出处，确认无误。',
+  }).message
+}
 </script>
 
 <template>
@@ -38,6 +45,17 @@ function contactCoordinator() {
 
     <template v-if="page === 'records'">
       <section class="patient-summary-card"><div><small>资料完整度</small><strong>{{ store.activePatient.completeness }}%</strong></div><div class="patient-ring"><span>{{ store.activeDocuments.length }}</span><small>份文件</small></div></section>
+      <section v-if="store.activeAiStructuring.patientConfirmation.status === 'pending'" class="patient-report-confirm">
+        <header><span>待确认</span><small>报告 v{{ store.activeAiStructuring.reportVersion }}</small></header>
+        <h2>{{ store.activeAiStructuring.reportTitle }}</h2>
+        <p>{{ store.activeAiStructuring.reportSummary }}</p>
+        <div><span v-for="item in store.activeAiStructuring.timeline" :key="item.date"><b>{{ item.date }}</b>{{ item.title }} · {{ item.source }}</span></div>
+        <button @click="confirmMedicalReport">确认资料准确无误</button>
+      </section>
+      <section v-else-if="store.activeAiStructuring.patientConfirmation.status === 'confirmed'" class="patient-report-confirm confirmed">
+        <header><span>已确认</span><small>报告 v{{ store.activeAiStructuring.reportVersion }}</small></header>
+        <h2>结构化病案已确认</h2><p>运营团队可以使用这份报告进入初筛与专家面诊流程。</p>
+      </section>
       <section class="patient-mobile-section"><div class="section-heading"><h2>我的文件</h2><button @click="act('uploadDocument')">＋ 上传</button></div>
         <button v-for="doc in store.activeDocuments" :key="doc.id" class="patient-file-card" @click="router.push(`/patient/detail/${doc.id}?type=record`)">
           <span class="patient-file-icon">PDF</span><div><b>{{ doc.name }}</b><small>{{ doc.type }} · v{{ doc.version }}</small><em>{{ doc.status === 'verified' ? '已核验' : '已翻译' }}</em></div><i>›</i>
