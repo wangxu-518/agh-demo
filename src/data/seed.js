@@ -232,17 +232,51 @@ const baseAiStructuring = (overrides = {}) => ({
     confirmedBy: '',
     note: '',
   },
+  reportAppendices: [],
   revisions: [],
   ...overrides,
 })
 
 const baseConsultation = (overrides = {}) => ({
-  status: 'scheduled',
+  status: 'time_confirmed',
   date: dateTime(2, 15),
   expert: '张建国 主任',
   hospital: '广州医科大学附属第一医院',
-  mode: '视频面诊',
+  mode: 'Zoom 视频面诊',
   location: 'AGH 吉隆坡咨询中心 · 3F 远程诊室',
+  timeCoordination: {
+    patient: { status: 'confirmed', confirmedAt: dateTime(0, 11) },
+    expert: { status: 'confirmed', confirmedAt: dateTime(0, 11, 15) },
+  },
+  meeting: {
+    provider: 'Zoom',
+    status: 'not_booked',
+    meetingId: '',
+    joinUrl: '',
+    passcode: '',
+    host: 'AGH Malaysia',
+    createdAt: null,
+  },
+  invitations: [
+    { recipient: '患者', channel: '患者端 + WhatsApp', status: 'not_sent', sentAt: null },
+    { recipient: '专家', channel: '专家端 + Email', status: 'not_sent', sentAt: null },
+  ],
+  recording: {
+    consentStatus: 'pending',
+    status: 'not_started',
+    cloudRecording: true,
+    transcriptStatus: 'not_started',
+    recordingUrl: '',
+    transcriptSource: '',
+  },
+  transcript: { text: '', generatedAt: null },
+  aiMinutes: {
+    status: 'not_started',
+    summary: '',
+    decisions: [],
+    actions: [],
+    addedToRecordAt: null,
+  },
   agenda: ['病案摘要核对', '治疗路径讨论', '医院与时间确认'],
   notes: '',
   options: [
@@ -283,10 +317,12 @@ for (const [caseId, currentCase] of Object.entries(cases)) {
     accessStatus: hasChinaRecords ? '二次验证后查看' : '暂无境内诊疗资料',
   }
   currentCase.aiStructuring = baseAiStructuring({
-    status: caseId === 'AGH-MY-2026-0018' ? 'ready_to_confirm' : 'draft',
+    status: caseId === 'AGH-MY-2026-0018' ? 'operator_confirmed' : 'draft',
+    confirmedAt: caseId === 'AGH-MY-2026-0018' ? dateTime(0, 9, 30) : null,
+    confirmedBy: caseId === 'AGH-MY-2026-0018' ? 'Aisyah Rahman' : '',
   })
   currentCase.consultation = baseConsultation({
-    status: caseId === 'AGH-MY-2026-0018' ? 'scheduled' : 'not_scheduled',
+    status: caseId === 'AGH-MY-2026-0018' ? 'time_confirmed' : 'not_scheduled',
   })
   currentCase.healthPlan = baseHealthPlan({
     status: hasChinaRecords ? 'ready_to_publish' : 'draft',
@@ -324,7 +360,7 @@ const chinaDomain = {
 }
 
 export const seedState = {
-  schemaVersion: 7,
+  schemaVersion: 8,
   language: 'zh',
   activeCaseId: 'AGH-MY-2026-0018',
   currentUsers: {

@@ -11,9 +11,9 @@ const store = useDemoStore()
 const page = computed(() => route.meta.page)
 const message = ref('')
 const messageOk = ref(true)
-const decision = ref(store.activeConsultation?.options?.[0]?.title || '')
 const reportEditing = ref(false)
 const reportSummary = ref(store.activeAiStructuring?.reportSummary || '')
+const consultationDate = ref(store.activeConsultation?.date?.slice(0, 16) || '')
 
 const pageCopy = computed(() => ({
   cases: ['Patient record', '患者全景档案', '统一查看咨询、病案、协同、行程与术后状态'],
@@ -59,11 +59,11 @@ const bodyMarkers = computed(() => {
 watch(() => store.state.activeCaseId, () => {
   reportSummary.value = store.activeAiStructuring?.reportSummary || ''
   reportEditing.value = false
+  consultationDate.value = store.activeConsultation?.date?.slice(0, 16) || ''
 })
 
 function selectCase(caseId) {
   store.setActiveCase(caseId)
-  decision.value = store.activeConsultation?.options?.[0]?.title || ''
 }
 
 function show(result) {
@@ -80,10 +80,6 @@ function addDemoDocument() {
   }))
 }
 
-function confirmAi() {
-  show(store.confirmAiStructuring({ actor: 'Aisyah Rahman' }))
-}
-
 function saveReportRevision() {
   const result = store.reviseAiReport({ summary: reportSummary.value, actor: 'Aisyah Rahman' })
   show(result)
@@ -92,6 +88,14 @@ function saveReportRevision() {
 
 function sendForConfirmation() {
   show(store.sendAiReportToPatient({ actor: 'Aisyah Rahman' }))
+}
+
+function confirmAndSend() {
+  if (store.activeAiStructuring.status === 'ready_to_confirm') {
+    const confirmed = store.confirmAiStructuring({ actor: 'Aisyah Rahman' })
+    if (!confirmed.ok) return show(confirmed)
+  }
+  sendForConfirmation()
 }
 
 function downloadReport() {
@@ -113,20 +117,21 @@ function downloadReport() {
   show({ ok: true, message: '完整报告已下载，可打开后打印为 PDF' })
 }
 
-function scheduleConsultation() {
+function bookZoomMeeting() {
   show(store.scheduleConsultation({
     actor: 'Aisyah Rahman',
-    mode: '视频面诊',
+    date: consultationDate.value,
+    mode: 'Zoom 视频面诊',
     location: 'AGH 吉隆坡咨询中心 · 3F 远程诊室',
   }))
 }
 
-function saveDecision() {
-  show(store.recordConsultationDecision({
-    actor: 'Aisyah Rahman',
-    decision: decision.value,
-    notes: '患者及家属已了解方案差异、预计费用与赴华准备事项。',
-  }))
+function simulateZoomTranscript() {
+  show(store.completeZoomConsultation({ actor: 'Zoom Cloud Recording' }))
+}
+
+function analyzeTranscript() {
+  show(store.appendConsultationMinutesToRecord({ actor: 'Aisyah Rahman' }))
 }
 
 function markJourney(item) {
@@ -140,9 +145,8 @@ function markJourney(item) {
     <PageHeader :eyebrow="pageCopy[0]" :title="pageCopy[1]" :subtitle="pageCopy[2]">
       <button v-if="page === 'documents'" class="primary-button" @click="addDemoDocument">上传补充资料</button>
       <button v-if="page === 'tasks'" class="secondary-button" @click="downloadReport">下载完整报告</button>
-      <button v-if="page === 'tasks' && store.activeAiStructuring.status === 'ready_to_confirm'" class="primary-button" @click="confirmAi">完成运营校对</button>
-      <button v-else-if="page === 'tasks' && store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="sendForConfirmation">发送患者确认</button>
-      <button v-if="page === 'resources'" class="primary-button" @click="scheduleConsultation">确认面诊安排</button>
+      <button v-if="page === 'tasks' && store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="confirmAndSend">发送给患者确认</button>
+      <button v-if="page === 'resources' && store.activeConsultation.meeting.status === 'not_booked'" class="primary-button" @click="bookZoomMeeting">创建 Zoom 会议</button>
       <button v-if="page === 'leads'" class="primary-button" @click="show(store.completeHandoff({ note: '演示：跨境交接清单已确认' }))">确认跨境交接</button>
     </PageHeader>
 
@@ -231,6 +235,19 @@ function markJourney(item) {
     </template>
 
     <template v-else-if="page === 'tasks'">
+      <section :class="['report-send-hub', confirmationCopy[1]]">
+        <span class="report-send-icon">P</span>
+        <div>
+          <small>REPORT DELIVERY</small>
+          <h2>将完整报告发送给患者核对</h2>
+          <p>患者将在手机端看到病情摘要、时间线和资料出处；确认后才能进入面诊安排。</p>
+        </div>
+        <button v-if="store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button" @click="confirmAndSend">
+          {{ store.activeAiStructuring.status === 'ready_to_confirm' ? '校对并发送患者' : '发送给患者确认' }}
+        </button>
+        <button v-else-if="store.activeAiStructuring.patientConfirmation.status === 'pending'" disabled>已发送 · 等待患者确认</button>
+        <strong v-else>✓ 患者已确认</strong>
+      </section>
       <div class="report-studio">
         <aside class="report-rail">
           <div class="report-patient-mini"><img v-if="store.activePatient.portrait" :src="store.activePatient.portrait" /><span v-else>{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }}</b><small>{{ store.activePatient.caseId }}</small></div></div>
@@ -283,6 +300,17 @@ function markJourney(item) {
               <table class="report-source-table"><thead><tr><th>资料</th><th>来源</th><th>版本</th><th>状态</th></tr></thead><tbody><tr v-for="document in store.activeDocuments" :key="document.id"><td><b>{{ document.name }}</b><small>{{ document.type }}</small></td><td>{{ document.source }}</td><td>v{{ document.version }}</td><td><span>已归档</span></td></tr></tbody></table>
             </div>
           </section>
+          <section v-for="appendix in store.activeAiStructuring.reportAppendices" :key="`${appendix.meetingId}-${appendix.occurredAt}`" class="report-section report-appendix">
+            <div class="report-section-number">AI</div>
+            <div>
+              <header><h2>{{ appendix.title }}</h2><span>{{ appendix.source }}</span></header>
+              <p class="report-narrative">{{ appendix.summary }}</p>
+              <div class="appendix-grid">
+                <article><span>专家共识</span><b v-for="item in appendix.decisions" :key="item">{{ item }}</b></article>
+                <article><span>后续行动</span><b v-for="item in appendix.actions" :key="item">{{ item }}</b></article>
+              </div>
+            </div>
+          </section>
           <section class="report-missing"><span>待补充</span><b>{{ store.activeAiStructuring.missingItems.join('、') }}</b><p>补充后可再次生成报告新版本，并重新发送患者确认。</p></section>
           <footer>本报告由 AI 辅助整理并经运营人员校对，仅用于跨境医疗资料沟通，不构成临床诊断或治疗建议。</footer>
         </main>
@@ -295,8 +323,9 @@ function markJourney(item) {
             <li :class="{done:store.activeAiStructuring.patientConfirmation.sentAt}"><span>2</span><div><b>发送给患者</b><small>{{ store.activeAiStructuring.patientConfirmation.sentAt ? formatDateTime(store.activeAiStructuring.patientConfirmation.sentAt) : '待发送' }}</small></div></li>
             <li :class="{done:store.activeAiStructuring.patientConfirmation.status === 'confirmed'}"><span>3</span><div><b>患者确认</b><small>{{ store.activeAiStructuring.patientConfirmation.confirmedBy || '下一流程锁定中' }}</small></div></li>
           </ol>
-          <button v-if="store.activeAiStructuring.status === 'ready_to_confirm'" class="primary-button full-button" @click="confirmAi">完成运营校对</button>
-          <button v-else-if="store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button full-button" @click="sendForConfirmation">发送患者确认</button>
+          <button v-if="store.activeAiStructuring.patientConfirmation.status === 'not_sent'" class="primary-button full-button" @click="confirmAndSend">
+            {{ store.activeAiStructuring.status === 'ready_to_confirm' ? '校对并发送患者' : '发送给患者确认' }}
+          </button>
           <button v-else-if="store.activeAiStructuring.patientConfirmation.status === 'pending'" class="primary-button full-button" disabled>等待患者确认</button>
           <div v-else class="report-unlocked">✓ 下一流程已解锁</div>
           <p>规则：没有患者确认，不能进入初筛、面诊和医院协调。</p>
@@ -306,28 +335,84 @@ function markJourney(item) {
     </template>
 
     <template v-else-if="page === 'resources'">
-      <div class="grid-2 consultation-layout">
-        <div>
-          <SectionCard title="初筛结论" subtitle="马来运营端汇总，不在中国设置运营团队">
-            <div class="screening-result"><span class="status-pill done">可进入专家面诊</span><h3>{{ store.activePatient.diagnosis }}</h3><p>资料完整度满足初筛，建议胸外科专家进一步评估，同时补充近 7 日肿瘤标志物。</p></div>
-          </SectionCard>
-          <SectionCard title="推荐专家与医院">
-            <button v-for="candidate in store.activeHospitalMatching.candidates.slice(0, 2)" :key="candidate.id" class="candidate-row">
-              <span>{{ candidate.rank }}</span><div><b>{{ candidate.expert }}</b><small>{{ candidate.name }} · {{ candidate.department }}</small></div><strong>{{ candidate.score }}%</strong>
-            </button>
-          </SectionCard>
+      <section class="zoom-command-center">
+        <header>
+          <div><span>ZOOM CONSULTATION FLOW</span><h2>专家视频面诊协调中心</h2><p>马来团队统一协调患者与专家时间、创建会议、分发邀请并归档会后纪要。</p></div>
+          <div class="zoom-brand"><b>zoom</b><small>演示接口</small></div>
+        </header>
+        <div class="zoom-flow">
+          <div :class="{done:true}"><span>1</span><b>患者确认报告</b><small>{{ store.activeAiStructuring.patientConfirmation.status === 'confirmed' ? '已确认' : '待确认' }}</small></div>
+          <div :class="{done:store.activeConsultation.timeCoordination.patient.status === 'confirmed' && store.activeConsultation.timeCoordination.expert.status === 'confirmed'}"><span>2</span><b>三方确认时间</b><small>患者 + 专家 + 马来团队</small></div>
+          <div :class="{done:store.activeConsultation.meeting.status !== 'not_booked'}"><span>3</span><b>创建并分发 Zoom</b><small>{{ store.activeConsultation.meeting.status === 'not_booked' ? '待创建' : '邀请已发送' }}</small></div>
+          <div :class="{done:store.activeConsultation.recording.transcriptStatus === 'ready'}"><span>4</span><b>录制与转写</b><small>{{ store.activeConsultation.recording.transcriptStatus === 'ready' ? '转写已就绪' : '会后生成' }}</small></div>
+          <div :class="{done:store.activeConsultation.aiMinutes.status === 'added_to_record'}"><span>5</span><b>AI回填档案</b><small>{{ store.activeConsultation.aiMinutes.status === 'added_to_record' ? '已写入报告' : '待人工审核' }}</small></div>
         </div>
-        <SectionCard title="面诊安排" subtitle="面诊画面将共享结构化病案">
-          <div class="consultation-card">
-            <span>{{ store.activeConsultation.mode }}</span>
-            <h2>{{ formatDateTime(store.activeConsultation.date) }}</h2>
-            <p>{{ store.activeConsultation.expert }} · {{ store.activeConsultation.hospital }}</p>
-            <p>{{ store.activeConsultation.location }}</p>
+      </section>
+
+      <div class="zoom-workspace">
+        <main>
+          <section class="coordination-board">
+            <header><div><span>01 · TIME COORDINATION</span><h3>三方时间确认</h3></div><strong>双方已确认</strong></header>
+            <div class="coordination-people">
+              <article><span class="person-avatar patient">林</span><div><small>患者</small><b>{{ store.activePatient.name }}</b><em>✓ 已确认时间</em></div></article>
+              <article><span class="person-avatar expert">张</span><div><small>专家</small><b>{{ store.activeConsultation.expert }}</b><em>✓ 已确认时间</em></div></article>
+              <label><small>面诊时间</small><input v-model="consultationDate" type="datetime-local" /></label>
+            </div>
+          </section>
+
+          <section class="zoom-meeting-card">
+            <div class="zoom-meeting-main">
+              <span class="zoom-camera">Z</span>
+              <div><small>02 · ZOOM MEETING</small><h3>{{ store.activeConsultation.meeting.status === 'not_booked' ? '等待创建视频会议' : '专家远程面诊会议' }}</h3><p>{{ store.activeConsultation.expert }} · {{ store.activeConsultation.hospital }}</p></div>
+              <button v-if="store.activeConsultation.meeting.status === 'not_booked'" class="primary-button" @click="bookZoomMeeting">创建会议并分发</button>
+              <span v-else class="zoom-booked">✓ 已预定</span>
+            </div>
+            <div v-if="store.activeConsultation.meeting.status !== 'not_booked'" class="zoom-meeting-detail">
+              <div><span>会议时间</span><b>{{ formatDateTime(store.activeConsultation.date) }}</b></div>
+              <div><span>Meeting ID</span><b>{{ store.activeConsultation.meeting.meetingId }}</b></div>
+              <div><span>Passcode</span><b>{{ store.activeConsultation.meeting.passcode }}</b></div>
+              <div><span>录制设置</span><b>云录制 + 转写</b></div>
+            </div>
+            <div class="invitation-distribution">
+              <article v-for="invitation in store.activeConsultation.invitations" :key="invitation.recipient">
+                <span>{{ invitation.recipient === '患者' ? 'P' : 'MD' }}</span>
+                <div><b>{{ invitation.recipient }}邀请</b><small>{{ invitation.channel }}</small></div>
+                <em>{{ invitation.status === 'sent' ? '✓ 已分发' : '待分发' }}</em>
+              </article>
+            </div>
+            <div class="recording-consent"><span>REC</span><p><b>录制知情同意</b>会议开始前向患者和专家展示录制及AI转写说明，双方同意后才启动。</p><em>{{ store.activeConsultation.recording.consentStatus === 'confirmed' ? '双方已同意' : '会议前确认' }}</em></div>
+          </section>
+        </main>
+
+        <aside class="ai-minutes-panel">
+          <header><span>03 · POST-MEETING AI</span><h3>会后纪要与档案回填</h3></header>
+          <div v-if="store.activeConsultation.meeting.status === 'not_booked'" class="minutes-empty"><span>AI</span><b>等待会议创建</b><p>会议完成后，Zoom转写将进入这里。</p></div>
+          <div v-else-if="store.activeConsultation.recording.transcriptStatus !== 'ready'" class="minutes-processing">
+            <div class="recording-wave"><i></i><i></i><i></i><i></i><i></i></div>
+            <b>Zoom 云录制已配置</b><p>演示时点击下方按钮，模拟会议结束及转写回调。</p>
+            <button class="primary-button full-button" @click="simulateZoomTranscript">模拟会议结束并获取纪要</button>
           </div>
-          <h4 class="subheading">面诊议程</h4>
+          <template v-else>
+            <div class="transcript-source"><span>VTT</span><div><b>会议转写已就绪</b><small>{{ store.activeConsultation.recording.transcriptSource }}</small></div><em>✓</em></div>
+            <blockquote>{{ store.activeConsultation.transcript.text }}</blockquote>
+            <div v-if="store.activeConsultation.aiMinutes.status === 'added_to_record'" class="ai-analysis-result">
+              <span>AI分析已归档</span><h4>{{ store.activeConsultation.aiMinutes.summary }}</h4>
+              <p>报告已更新为 v{{ store.activeAiStructuring.reportVersion }}，可重新发送患者确认。</p>
+            </div>
+            <button v-else class="primary-button full-button" @click="analyzeTranscript">AI分析并写入患者档案</button>
+          </template>
+          <footer>Demo 使用模拟 Zoom 回调与种子纪要，不连接真实 Zoom、录音或大模型服务。</footer>
+        </aside>
+      </div>
+
+      <div class="grid-2 consultation-support">
+        <SectionCard title="面诊议程" subtitle="会议中共享患者已确认的结构化病案">
           <div class="check-list"><div v-for="item in store.activeConsultation.agenda" :key="item" class="check-item"><span class="check-mark">✓</span>{{ item }}</div></div>
-          <label class="decision-field">患者选择<select v-model="decision"><option v-for="option in store.activeConsultation.options" :key="option.id">{{ option.title }}</option></select></label>
-          <button class="primary-button full-button" @click="saveDecision">记录面诊结论</button>
+        </SectionCard>
+        <SectionCard title="推荐专家与医院">
+          <button v-for="candidate in store.activeHospitalMatching.candidates.slice(0, 2)" :key="candidate.id" class="candidate-row">
+            <span>{{ candidate.rank }}</span><div><b>{{ candidate.expert }}</b><small>{{ candidate.name }} · {{ candidate.department }}</small></div><strong>{{ candidate.score }}%</strong>
+          </button>
         </SectionCard>
       </div>
     </template>

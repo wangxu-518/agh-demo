@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { seedState } from '../data/seed'
 import { canPerformAction } from '../config/permissions'
 
-const KEY = 'agh-demo-v7'
+const KEY = 'agh-demo-v8'
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const nowIso = () => new Date().toISOString()
 const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
@@ -814,11 +814,101 @@ export const useDemoStore = defineStore('demo', () => {
     }
     Object.assign(consultation, {
       status: 'scheduled', date: payload.date || consultation.date, expert: payload.expert || consultation.expert,
-      hospital: payload.hospital || consultation.hospital, mode: payload.mode || consultation.mode,
+      hospital: payload.hospital || consultation.hospital, mode: payload.mode || 'Zoom 视频面诊',
       location: payload.location || consultation.location,
     })
-    addEvent('malaysia', payload.actor || 'Aisyah', '安排专家面诊', `${consultation.date} · ${consultation.expert}`, caseId)
-    return result(true, '专家面诊已安排')
+    consultation.meeting = {
+      provider: 'Zoom',
+      status: 'booked',
+      meetingId: payload.meetingId || '894 1620 2607',
+      joinUrl: payload.joinUrl || 'https://zoom.us/j/89416202607',
+      passcode: payload.passcode || 'AGH2607',
+      host: payload.actor || 'AGH Malaysia',
+      createdAt: nowIso(),
+    }
+    consultation.invitations = consultation.invitations.map((invitation) => ({
+      ...invitation, status: 'sent', sentAt: nowIso(),
+    }))
+    consultation.recording.consentStatus = 'requested'
+    notify('patient', `Zoom 面诊已安排：${consultation.date}`, caseId)
+    notify('expert', `Zoom 面诊邀请：${patientByCase(caseId)?.name}`, caseId)
+    addEvent('malaysia', payload.actor || 'Aisyah', '创建并分发 Zoom 面诊', `${consultation.date} · ${consultation.expert} · ${consultation.meeting.meetingId}`, caseId)
+    return result(true, 'Zoom 会议已创建，并分发给患者和专家')
+  }
+
+  function completeZoomConsultation(payload = {}, caseId = state.value.activeCaseId) {
+    const consultation = caseById(caseId)?.consultation
+    if (!consultation || consultation.meeting?.status !== 'booked') {
+      return result(false, '请先创建并分发 Zoom 会议', 'ZOOM_NOT_BOOKED')
+    }
+    consultation.status = 'transcript_ready'
+    consultation.meeting.status = 'completed'
+    consultation.recording = {
+      ...consultation.recording,
+      consentStatus: 'confirmed',
+      status: 'ready',
+      transcriptStatus: 'ready',
+      recordingUrl: 'zoom-cloud://recordings/89416202607',
+      transcriptSource: 'Zoom Cloud Recording · audio_transcript.vtt',
+    }
+    consultation.transcript = {
+      generatedAt: nowIso(),
+      text: payload.transcript || '张建国主任：现有病理和 PET-CT 支持肺腺癌 IIIB 期判断。建议赴华后补充肺功能、EBUS 及分子检测，再由胸外科、肿瘤内科和放疗科联合确认综合治疗路径。患者林秀英：理解检查目的，愿意赴华进一步评估。Aisyah：将协调医院档期、费用预估和赴华行程。',
+    }
+    consultation.aiMinutes.status = 'ready_for_review'
+    addEvent('malaysia', payload.actor || 'Zoom 回调', 'Zoom 面诊转写完成', consultation.recording.transcriptSource, caseId)
+    return result(true, 'Zoom 云录制与会议转写已就绪，可进行 AI 分析')
+  }
+
+  function appendConsultationMinutesToRecord(payload = {}, caseId = state.value.activeCaseId) {
+    const currentCase = caseById(caseId)
+    const consultation = currentCase?.consultation
+    const structuring = currentCase?.aiStructuring
+    if (!consultation?.transcript?.text || consultation.aiMinutes.status !== 'ready_for_review') {
+      return result(false, '会议转写尚未就绪', 'TRANSCRIPT_NOT_READY')
+    }
+    const summary = payload.summary || '专家认为现有资料支持肺腺癌 IIIB 期判断，建议赴华补充肺功能、EBUS 与分子检测后，由胸外科、肿瘤内科及放疗科联合确定综合治疗路径；患者已理解并同意进一步评估。'
+    consultation.aiMinutes = {
+      status: 'added_to_record',
+      summary,
+      decisions: ['患者同意赴华进一步检查与专家联合评估', '当前不直接确定单一治疗方案'],
+      actions: ['马来团队协调 Zoom 后续沟通与赴华行程', '医院安排肺功能、EBUS 和分子检测', '补充检查后再次进入多学科评估'],
+      addedToRecordAt: nowIso(),
+    }
+    consultation.status = 'minutes_archived'
+    consultation.completedAt = nowIso()
+    consultation.notes = summary
+    structuring.revisions.unshift({
+      version: structuring.reportVersion,
+      summary: structuring.reportSummary,
+      savedAt: nowIso(),
+      savedBy: payload.actor || 'Aisyah Rahman',
+    })
+    structuring.reportVersion += 1
+    structuring.reportAppendices.unshift({
+      type: 'Zoom 专家面诊纪要',
+      title: '专家视频面诊纪要与 AI 分析',
+      source: consultation.recording.transcriptSource,
+      meetingId: consultation.meeting.meetingId,
+      occurredAt: consultation.date,
+      summary,
+      decisions: consultation.aiMinutes.decisions,
+      actions: consultation.aiMinutes.actions,
+    })
+    structuring.timeline.push({
+      date: nowIso().slice(0, 10),
+      title: '完成 Zoom 专家面诊并形成 AI 纪要',
+      source: `Zoom 会议转写 · ${consultation.meeting.meetingId}`,
+    })
+    structuring.status = 'operator_confirmed'
+    structuring.confirmedAt = nowIso()
+    structuring.confirmedBy = payload.actor || 'Aisyah Rahman'
+    structuring.patientConfirmation = {
+      status: 'not_sent', sentAt: null, confirmedAt: null, confirmedBy: '', note: '',
+    }
+    addEvent('malaysia', structuring.confirmedBy, 'AI 面诊纪要写入患者档案', `报告更新为 v${structuring.reportVersion}，来源：${consultation.recording.transcriptSource}`, caseId)
+    notify('patient', `面诊纪要已补充至病案报告 v${structuring.reportVersion}，待重新确认`, caseId)
+    return result(true, `AI 纪要已写入档案，报告更新为 v${structuring.reportVersion}`)
   }
 
   function recordConsultationDecision(payload = {}, caseId = state.value.activeCaseId) {
@@ -893,7 +983,8 @@ export const useDemoStore = defineStore('demo', () => {
     completeRehab, generateQuality, sendMessage, accessDocument,
     requestDomesticAccess, closeDomesticAccess, uploadChinaRecord, confirmAiStructuring,
     reviseAiReport, sendAiReportToPatient, confirmAiReportByPatient,
-    scheduleConsultation, recordConsultationDecision, updateJourneyItem, publishHealthPlan, saveHomeVisit,
+    scheduleConsultation, completeZoomConsultation, appendConsultationMinutesToRecord,
+    recordConsultationDecision, updateJourneyItem, publishHealthPlan, saveHomeVisit,
     performAction, reset, caseById, patientByCase,
   }
 })

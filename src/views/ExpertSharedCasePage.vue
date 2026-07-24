@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import SectionCard from '../components/SectionCard.vue'
 import { useDemoStore } from '../stores/demo'
+import { formatDateTime } from '../utils/format'
 
 const store = useDemoStore()
 const activeTab = ref('病案摘要')
@@ -12,6 +13,22 @@ const message = ref('')
 function finish() {
   const result = store.finishReview({ recommendation: note.value || '建议赴华完成补充检查后，由胸外科与肿瘤内科联合评估治疗路径。' })
   message.value = result.message
+}
+
+function openZoomMeeting() {
+  message.value = store.activeConsultation.meeting.status === 'completed'
+    ? 'Zoom 会议记录已打开（Demo 不加载真实录制）'
+    : 'Zoom 面诊入口已打开（Demo 不跳转真实会议）'
+}
+
+function consultationStatusLabel(status) {
+  return {
+    time_confirmed: '待创建会议',
+    scheduled: '即将开始',
+    transcript_ready: '纪要待审核',
+    minutes_archived: '纪要已归档',
+    completed: '已完成',
+  }[status] || '待协调'
 }
 </script>
 
@@ -23,8 +40,14 @@ function finish() {
     <div v-if="message" class="action-success">{{ message }}</div>
     <section class="shared-case-banner">
       <div><span>{{ store.activePatient.avatar }}</span><div><b>{{ store.activePatient.name }} · {{ store.activePatient.englishName }}</b><small>{{ store.activePatient.caseId }} · {{ store.activePatient.diagnosis }}</small></div></div>
-      <div><span>面诊状态</span><b>{{ store.activeConsultation.status === 'completed' ? '已完成' : '即将开始' }}</b></div>
-      <button class="primary-button">进入视频面诊</button>
+      <div><span>面诊状态</span><b>{{ consultationStatusLabel(store.activeConsultation.status) }}</b></div>
+      <button class="primary-button" @click="openZoomMeeting">{{ store.activeConsultation.meeting.status === 'completed' ? '查看会议记录' : '进入 Zoom 面诊' }}</button>
+    </section>
+    <section v-if="store.activeConsultation.meeting.status !== 'not_booked'" class="expert-zoom-strip">
+      <span class="zoom-camera">Z</span>
+      <div><small>ZOOM MEETING</small><b>{{ formatDateTime(store.activeConsultation.date) }}</b><p>Meeting ID {{ store.activeConsultation.meeting.meetingId }} · Passcode {{ store.activeConsultation.meeting.passcode }}</p></div>
+      <div><small>邀请状态</small><b>已确认参会</b><p>云录制与AI转写将在双方同意后开启</p></div>
+      <button @click="openZoomMeeting">{{ store.activeConsultation.meeting.status === 'completed' ? '查看记录' : '进入会议' }}</button>
     </section>
     <div class="shared-case-layout">
       <main>
@@ -39,6 +62,12 @@ function finish() {
         <section v-else class="clinical-sheet"><div><label>患者确认方案</label><p>{{ store.activeConsultation.patientDecision || '待面诊后确认' }}</p></div><div><label>运营备注</label><p>{{ store.activeConsultation.notes || '暂无' }}</p></div></section>
       </main>
       <aside>
+        <SectionCard v-if="store.activeConsultation.recording.transcriptStatus === 'ready'" title="会后 AI 纪要" subtitle="来源为 Zoom 会议转写">
+          <div class="expert-minutes-summary">
+            <span>{{ store.activeConsultation.aiMinutes.status === 'added_to_record' ? '已写入患者档案' : '等待马来团队审核' }}</span>
+            <p>{{ store.activeConsultation.aiMinutes.summary || store.activeConsultation.transcript.text }}</p>
+          </div>
+        </SectionCard>
         <SectionCard title="专家意见" subtitle="提交后回到马来运营端继续协调">
           <textarea v-model="note" rows="9" placeholder="输入评审意见、建议检查和治疗路径"></textarea>
           <button class="primary-button full-button" @click="finish">签署并提交</button>

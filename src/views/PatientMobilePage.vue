@@ -36,6 +36,10 @@ function confirmMedicalReport() {
     note: '本人已核对基本信息、病程时间和资料出处，确认无误。',
   }).message
 }
+
+function openZoomMeeting() {
+  message.value = 'Zoom 面诊入口已打开（Demo 不跳转真实会议）'
+}
 </script>
 
 <template>
@@ -65,6 +69,14 @@ function confirmMedicalReport() {
     </template>
 
     <template v-else-if="page === 'plan'">
+      <section v-if="store.activeConsultation.meeting.status !== 'not_booked'" class="patient-zoom-invite">
+        <header><span>Z</span><div><small>ZOOM EXPERT CONSULTATION</small><h2>专家视频面诊已安排</h2></div><em>已确认</em></header>
+        <div><span>面诊时间</span><b>{{ new Date(store.activeConsultation.date).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) }}</b></div>
+        <div><span>专家</span><b>{{ store.activeConsultation.expert }}</b></div>
+        <div><span>Meeting ID</span><b>{{ store.activeConsultation.meeting.meetingId }}</b></div>
+        <p>进入会议前将再次提示录制与AI转写说明，您同意后才会开始录制。</p>
+        <button @click="openZoomMeeting">进入 Zoom 面诊</button>
+      </section>
       <section class="patient-plan-status"><span>{{ store.activeReview.status === 'completed' ? '专家意见已完成' : '专家评审中' }}</span><h2>{{ store.activePatient.diagnosis }}</h2><p>评审专家：{{ store.activeReview.expert || '待分配' }}</p><div><i></i><b>预计 {{ store.activeReview.meetingAt || '待安排' }} 完成</b></div></section>
       <section class="patient-mobile-section">
         <div class="section-heading"><h2>推荐治疗路径</h2><button>专家建议</button></div>
