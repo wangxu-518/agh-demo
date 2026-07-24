@@ -8,6 +8,7 @@ const router = useRouter()
 const store = useDemoStore()
 const page = computed(() => route.meta.page)
 const message = ref('')
+const showNotifications = ref(false)
 const titles = {
   records: ['医疗资料','安全查看、上传与管理您的医疗文件'],
   plan: ['治疗方案','专家意见、医院安排与费用说明'],
@@ -64,8 +65,10 @@ const serviceMessages = computed(() => {
   }
   return items
 })
+const unreadServiceCount = computed(() => serviceMessages.value.length)
 
 function openServiceMessage(item) {
+  showNotifications.value = false
   router.push(item.target)
 }
 
@@ -99,29 +102,43 @@ function openZoomMeeting() {
 
 <template>
   <div class="patient-mobile-page">
-    <header class="patient-page-heading"><p>{{ titles[page][1] }}</p><h1>{{ titles[page][0] }}</h1></header>
-    <div v-if="message" class="patient-toast">✓ {{ message }}</div>
-    <section v-if="serviceMessages.length" class="patient-service-inbox">
-      <header>
-        <div><small>AGH SERVICE UPDATES</small><h2>服务消息</h2></div>
-        <span>{{ serviceMessages.length }} 项</span>
-      </header>
+    <header class="patient-page-heading patient-page-heading-with-action">
+      <div><p>{{ titles[page][1] }}</p><h1>{{ titles[page][0] }}</h1></div>
       <button
-        v-for="item in serviceMessages"
-        :key="item.id"
         type="button"
-        class="patient-service-message"
-        @click="openServiceMessage(item)"
+        class="patient-notification-bell"
+        aria-label="查看服务消息"
+        @click="showNotifications = true"
       >
-        <span>{{ item.type }}</span>
-        <div>
-          <b>{{ item.title }}</b>
-          <small>{{ item.desc }}</small>
-          <em>{{ item.status }}</em>
-        </div>
-        <i>{{ item.action }}</i>
+        <span>铃</span>
+        <i v-if="unreadServiceCount">{{ unreadServiceCount }}</i>
       </button>
-    </section>
+    </header>
+    <div v-if="message" class="patient-toast">✓ {{ message }}</div>
+    <div v-if="showNotifications" class="patient-notification-layer" @click.self="showNotifications = false">
+      <section class="patient-service-inbox patient-service-popover">
+        <header>
+          <div><small>AGH SERVICE UPDATES</small><h2>未读服务消息</h2></div>
+          <button type="button" @click="showNotifications = false">关闭</button>
+        </header>
+        <button
+          v-for="item in serviceMessages"
+          :key="item.id"
+          type="button"
+          class="patient-service-message"
+          @click="openServiceMessage(item)"
+        >
+          <span>{{ item.type }}</span>
+          <div>
+            <b>{{ item.title }}</b>
+            <small>{{ item.desc }}</small>
+            <em>{{ item.status }}</em>
+          </div>
+          <i>{{ item.action }}</i>
+        </button>
+        <p v-if="!serviceMessages.length" class="patient-message-empty">暂无新的服务消息</p>
+      </section>
+    </div>
 
     <template v-if="page === 'records'">
       <section class="patient-summary-card"><div><small>资料完整度</small><strong>{{ store.activePatient.completeness }}%</strong></div><div class="patient-ring"><span>{{ store.activeDocuments.length }}</span><small>份文件</small></div></section>
